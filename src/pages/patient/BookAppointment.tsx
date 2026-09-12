@@ -143,8 +143,8 @@ export const BookAppointment: React.FC = () => {
           <div className="space-y-4 mb-6">
             <div className="bg-white p-4 rounded-md border border-slate-200 text-xs space-y-1">
               <span className="text-[11px] font-semibold uppercase text-slate-400">Patient Details</span>
-              <p className="font-bold text-slate-900">{user?.name || 'Suman Roy'}</p>
-              <p className="text-slate-500">Mobile: {user?.phone || '9876543210'}</p>
+              <p className="font-bold text-slate-900">{user?.name || 'Patient'}</p>
+              <p className="text-slate-500">Mobile: {user?.phone || '—'}</p>
             </div>
 
             <Input

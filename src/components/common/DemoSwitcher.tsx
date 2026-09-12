@@ -6,7 +6,7 @@ import { Users, Shield, RotateCcw, ChevronDown, LogOut } from 'lucide-react';
 
 export const DemoSwitcher: React.FC = () => {
   const { user, logout, quickLoginPatient, quickLoginAdmin } = useAuth();
-  const { resetToDefaults } = useQueue();
+  const { resetToDefaults, tokens } = useQueue();
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -15,8 +15,19 @@ export const DemoSwitcher: React.FC = () => {
   const isPatient = user?.role === 'patient';
   const isAdmin = user?.role === 'admin';
 
+  const activeToken =
+    isPatient && user
+      ? tokens.find(
+          (t) =>
+            (t.patientId === user.id || (user.phone && t.patientPhone === user.phone)) &&
+            (t.status === 'waiting' || t.status === 'current')
+        )
+      : null;
+
   const switchToPatient = () => {
-    quickLoginPatient();
+    if (!isPatient) {
+      quickLoginPatient();
+    }
     setIsOpen(false);
     if (!location.pathname.startsWith('/patient')) {
       navigate('/patient/dashboard');
@@ -52,7 +63,7 @@ export const DemoSwitcher: React.FC = () => {
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
           <span>
-            {isAdmin ? 'Staff: Bishakha Roy' : isPatient ? `Patient: ${user?.name || 'Suman Roy'}` : 'Public View'}
+            {isAdmin ? `Staff: ${user?.name || 'Bishakha Roy'}` : isPatient ? `Patient: ${user?.name || 'Patient'}` : 'Public View'}
           </span>
           <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
         </button>
@@ -72,12 +83,39 @@ export const DemoSwitcher: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Users className="w-3.5 h-3.5 text-blue-600" />
                 <div>
-                  <p className="font-medium text-slate-900">Patient: Suman Roy</p>
-                  <p className="text-[11px] text-slate-500">Active Token A-042</p>
+                  <p className="font-medium text-slate-900">
+                    Patient: {isPatient && user ? user.name : 'Suman Roy'}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    {isPatient && user
+                      ? activeToken
+                        ? `Active Token ${activeToken.tokenNumber}`
+                        : user.phone || 'Active Session'
+                      : 'Active Token A-042'}
+                  </p>
                 </div>
               </div>
               {isPatient && <span className="text-[10px] bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded">Active</span>}
             </button>
+
+            {isPatient && user && user.name !== 'Suman Roy' && (
+              <button
+                onClick={() => {
+                  quickLoginPatient();
+                  setIsOpen(false);
+                  navigate('/patient/dashboard');
+                }}
+                className="w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-slate-50 text-xs text-slate-600 border-t border-slate-50"
+              >
+                <div className="flex items-center gap-2 pl-5">
+                  <span className="text-slate-400">↳</span>
+                  <div>
+                    <p className="text-[11px] text-slate-700 font-medium">Switch to Demo: Suman Roy</p>
+                    <p className="text-[10px] text-slate-400">Sample Token A-042</p>
+                  </div>
+                </div>
+              </button>
+            )}
 
             <button
               onClick={switchToAdmin}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Navbar } from '../../components/layout/Navbar';
 import { MobileNav } from '../../components/layout/MobileNav';
@@ -15,11 +15,21 @@ export const PatientProfile: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [name, setName] = useState(user?.name || 'Suman Roy');
-  const [phone, setPhone] = useState(user?.phone || '9876543210');
-  const [email, setEmail] = useState(user?.email || 'suman.roy@example.com');
-  const [dob, setDob] = useState(user?.dob || '1988-04-14');
-  const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>(user?.gender || 'Male');
+  const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [dob, setDob] = useState(user?.dob || '');
+  const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>((user?.gender as any) || 'Male');
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setPhone(user.phone || '');
+      setEmail(user.email || '');
+      setDob(user.dob || '');
+      setGender((user.gender as any) || 'Male');
+    }
+  }, [user]);
 
   const [smsNotification, setSmsNotification] = useState(true);
   const [whatsappNotification, setWhatsappNotification] = useState(true);
