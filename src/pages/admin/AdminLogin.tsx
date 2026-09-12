@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BrandLogo } from '../../components/layout/BrandLogo';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { ForgotPasswordModal } from '../../components/common/ForgotPasswordModal';
 import { useAuth } from '../../context/AuthContext';
 import { Shield, Lock, ArrowRight, UserCheck } from 'lucide-react';
 
@@ -11,6 +12,7 @@ export const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('admin@bolpurhealth.org');
   const [password, setPassword] = useState('admin123');
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -77,9 +79,18 @@ export const AdminLogin: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Staff Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Staff Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsForgotModalOpen(true)}
+                  className="text-xs text-blue-400 hover:text-blue-300 font-medium cursor-pointer transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <Input
                 type="password"
                 placeholder="••••••••"
@@ -132,6 +143,13 @@ export const AdminLogin: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        initialIdentifier={identifier}
+        theme="dark"
+      />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../../components/layout/BrandLogo';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { ForgotPasswordModal } from '../../components/common/ForgotPasswordModal';
 import { useAuth } from '../../context/AuthContext';
 import { Phone, Lock, ArrowRight, Shield } from 'lucide-react';
 
@@ -12,6 +13,7 @@ export const PatientLogin: React.FC = () => {
   const location = useLocation();
   const [identifier, setIdentifier] = useState('9876543210');
   const [password, setPassword] = useState('password123');
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -78,8 +80,8 @@ export const PatientLogin: React.FC = () => {
                 </label>
                 <button
                   type="button"
-                  onClick={() => alert('Password reset SMS link would be sent to your registered mobile number.')}
-                  className="text-xs text-brand-700 hover:text-brand-900 font-medium"
+                  onClick={() => setIsForgotModalOpen(true)}
+                  className="text-xs text-brand-700 hover:text-brand-900 font-medium cursor-pointer transition-colors"
                 >
                   Forgot password?
                 </button>
@@ -137,6 +139,12 @@ export const PatientLogin: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        initialIdentifier={identifier}
+      />
     </div>
   );
 };

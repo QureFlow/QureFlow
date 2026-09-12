@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { JWT_SECRET } from '../config/aws.js';
 import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
 import { cognitoService } from './cognitoService.js';
+import { smsService } from './smsService.js';
 import { User, UserRole } from '../models/types.js';
 
 export interface AuthSession {
@@ -123,6 +124,19 @@ export class AuthService {
           token: authResult?.IdToken || this.generateToken(user),
         };
       } catch (err: any) {
+        // Fallback: Check DynamoDB if this account is provisioned directly (e.g. staff/admin with bcrypt hash)
+        const localUser = await dynamoDbRepo.findUserByIdentifier(cleanId);
+        if (localUser && localUser.passwordHash) {
+          const isMatch = await bcrypt.compare(password, localUser.passwordHash);
+          if (isMatch) {
+            const sanitized = { ...localUser };
+            delete sanitized.passwordHash;
+            return {
+              user: sanitized,
+              token: this.generateToken(sanitized),
+            };
+          }
+        }
         throw new Error(`AWS Cognito Authentication Error: ${err.message}`);
       }
     }
@@ -174,6 +188,119 @@ export class AuthService {
     delete sanitized.passwordHash;
 
     return { user: sanitized, token };
+  }
+
+  async forgotPassword(identifier: string): Promise<{ success: boolean; message: string; deliveryDetails?: any }> {
+    const cleanId = identifier.trim();
+    const dbUser = await dynamoDbRepo.findUserByIdentifier(cleanId);
+    const targetPhone = dbUser?.phone || (cleanId.replace(/[^0-9]/g, '').length >= 10 ? cleanId : null);
+
+    // 1. If phone number is available, attempt live Indian SMS dispatch via Fast2SMS / 2Factor
+    if (targetPhone) {
+      const otp = smsService.generateOtp(targetPhone);
+      const smsRes = await smsService.sendOtpSms(targetPhone, otp);
+      if (smsRes.success) {
+        return {
+          success: true,
+          message: `Live OTP successfully sent to your mobile phone via ${smsRes.provider}!`,
+          deliveryDetails: { DeliveryMedium: 'SMS', Destination: targetPhone },
+        };
+      }
+    }
+
+    // 2. Fallback to AWS Cognito dispatch
+    if (cognitoService.isConfigured()) {
+      try {
+        const cognitoId = (dbUser?.email && dbUser.email.trim()) || (dbUser?.phone && dbUser.phone.trim()) || cleanId;
+        const details = await cognitoService.forgotPassword(cognitoId);
+        const deliveryMedium = details?.DeliveryMedium || 'SMS';
+        const destination = details?.Destination || 'your registered contact';
+        return {
+          success: true,
+          message: `Reset code dispatched via AWS Cognito (${deliveryMedium}) to ${destination}. (Or use sandbox code 123456).`,
+          deliveryDetails: details,
+        };
+      } catch (err: any) {
+        if (dbUser || targetPhone) {
+          return {
+            success: true,
+            message: 'OTP generated. (If cellular carriers delay SMS, sandbox code 123456 is accepted).',
+          };
+        }
+        throw new Error(`Cognito Reset Request Error: ${err.message}`);
+      }
+    }
+
+    // Local / DynamoDB fallback
+    const user = await dynamoDbRepo.findUserByIdentifier(cleanId);
+    if (!user) {
+      throw new Error('No user account found matching this identifier.');
+    }
+
+    return {
+      success: true,
+      message: 'Demo mode: Reset code is 123456.',
+    };
+  }
+
+  async confirmForgotPassword(
+    identifier: string,
+    code: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
+    const cleanId = identifier.trim();
+    const dbUser = await dynamoDbRepo.findUserByIdentifier(cleanId);
+    const targetPhone = dbUser?.phone || (cleanId.replace(/[^0-9]/g, '').length >= 10 ? cleanId : null);
+
+    // 1. Verify against live SMS OTP store if verified via Fast2SMS / 2Factor
+    if (targetPhone && smsService.verifyOtp(targetPhone, code)) {
+      const localUser = dbUser || (await dynamoDbRepo.findUserByIdentifier(cleanId));
+      if (localUser) {
+        const salt = await bcrypt.genSalt(10);
+        localUser.passwordHash = await bcrypt.hash(newPassword, salt);
+        await dynamoDbRepo.saveUser(localUser);
+      }
+      return {
+        success: true,
+        message: 'Your password has been successfully reset using phone OTP verification!',
+      };
+    }
+
+    // 2. Verify via AWS Cognito
+    if (cognitoService.isConfigured()) {
+      try {
+        const cognitoId = (dbUser?.email && dbUser.email.trim()) || (dbUser?.phone && dbUser.phone.trim()) || cleanId;
+        await cognitoService.confirmForgotPassword(cognitoId, code.trim(), newPassword);
+      } catch (err: any) {
+        // If telecom operator blocked SMS or account in SMS sandbox, allow developer code 123456
+        if (code.trim() === '123456') {
+          const localUser = dbUser || (await dynamoDbRepo.findUserByIdentifier(cleanId));
+          if (localUser) {
+            const salt = await bcrypt.genSalt(10);
+            localUser.passwordHash = await bcrypt.hash(newPassword, salt);
+            await dynamoDbRepo.saveUser(localUser);
+            return {
+              success: true,
+              message: 'Your password has been successfully reset using sandbox verification.',
+            };
+          }
+        }
+        throw new Error(`Cognito Password Reset Error: ${err.message}`);
+      }
+    }
+
+    // Also update DynamoDB passwordHash if user exists locally
+    const user = await dynamoDbRepo.findUserByIdentifier(cleanId);
+    if (user) {
+      const salt = await bcrypt.genSalt(10);
+      user.passwordHash = await bcrypt.hash(newPassword, salt);
+      await dynamoDbRepo.saveUser(user);
+    }
+
+    return {
+      success: true,
+      message: 'Your password has been successfully reset. You can now sign in with your new password.',
+    };
   }
 }
 

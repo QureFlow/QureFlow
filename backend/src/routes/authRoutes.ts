@@ -62,4 +62,32 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
   }
 });
 
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier) {
+      res.status(400).json({ error: 'Email or phone number is required.' });
+      return;
+    }
+    const result = await authService.forgotPassword(identifier);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to initiate password reset.' });
+  }
+});
+
+router.post('/confirm-forgot-password', async (req, res) => {
+  try {
+    const { identifier, code, newPassword } = req.body;
+    if (!identifier || !code || !newPassword) {
+      res.status(400).json({ error: 'Identifier, verification code, and new password are required.' });
+      return;
+    }
+    const result = await authService.confirmForgotPassword(identifier, code, newPassword);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to confirm new password.' });
+  }
+});
+
 export default router;

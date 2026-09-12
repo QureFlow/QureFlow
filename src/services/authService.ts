@@ -150,6 +150,34 @@ export const authService = {
     storage.setActiveUser(null);
   },
 
+  async forgotPassword(identifier: string): Promise<{ success: boolean; message: string }> {
+    if (!isMockEnabled()) {
+      return await apiClient.post('/auth/forgot-password', { identifier });
+    }
+    return {
+      success: true,
+      message: 'Demo mode: Reset code is 123456.',
+    };
+  },
+
+  async confirmForgotPassword(
+    identifier: string,
+    code: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> {
+    if (!isMockEnabled()) {
+      return await apiClient.post('/auth/confirm-forgot-password', {
+        identifier,
+        code,
+        newPassword,
+      });
+    }
+    return {
+      success: true,
+      message: 'Password reset successful in demo mode.',
+    };
+  },
+
   quickDemoPatient(): User {
     const p = storage.getDefaultPatient();
     storage.setActiveUser(p);

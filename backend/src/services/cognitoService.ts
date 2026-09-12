@@ -3,6 +3,8 @@ import {
   SignUpCommand,
   InitiateAuthCommand,
   ConfirmSignUpCommand,
+  ForgotPasswordCommand,
+  ConfirmForgotPasswordCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import crypto from 'crypto';
 import { AWS_REGION } from '../config/aws.js';
@@ -87,9 +89,8 @@ export const cognitoService = {
       userAttributes.push({ Name: 'email', Value: trimmedEmail });
     }
 
-    if (data.dob && data.dob.trim().length > 0) {
-      userAttributes.push({ Name: 'birthdate', Value: data.dob.trim() });
-    }
+    const birthdateValue = data.dob && data.dob.trim().length > 0 ? data.dob.trim() : '1990-01-01';
+    userAttributes.push({ Name: 'birthdate', Value: birthdateValue });
 
     if (data.gender && data.gender.trim().length > 0) {
       userAttributes.push({ Name: 'gender', Value: data.gender.toLowerCase().trim() });
@@ -147,6 +148,45 @@ export const cognitoService = {
       SecretHash: secretHash,
       Username: cognitoUsername,
       ConfirmationCode: confirmationCode,
+    });
+
+    return await cognitoClient.send(command);
+  },
+
+  async forgotPassword(username: string) {
+    if (!this.isConfigured()) {
+      throw new Error('Cognito User Pool ID and Client ID are not configured.');
+    }
+
+    const cleanId = username.trim();
+    const cognitoUsername = cleanId.includes('@') ? cleanId.toLowerCase() : normalizePhoneNumber(cleanId);
+    const secretHash = getSecretHash(cognitoUsername);
+
+    const command = new ForgotPasswordCommand({
+      ClientId: clientId,
+      SecretHash: secretHash,
+      Username: cognitoUsername,
+    });
+
+    const response = await cognitoClient.send(command);
+    return response.CodeDeliveryDetails;
+  },
+
+  async confirmForgotPassword(username: string, confirmationCode: string, newPassword: string) {
+    if (!this.isConfigured()) {
+      throw new Error('Cognito User Pool ID and Client ID are not configured.');
+    }
+
+    const cleanId = username.trim();
+    const cognitoUsername = cleanId.includes('@') ? cleanId.toLowerCase() : normalizePhoneNumber(cleanId);
+    const secretHash = getSecretHash(cognitoUsername);
+
+    const command = new ConfirmForgotPasswordCommand({
+      ClientId: clientId,
+      SecretHash: secretHash,
+      Username: cognitoUsername,
+      ConfirmationCode: confirmationCode,
+      Password: newPassword,
     });
 
     return await cognitoClient.send(command);
