@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../../components/layout/BrandLogo';
 import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
@@ -10,6 +10,7 @@ import { User, Phone, Mail, Calendar, ArrowRight } from 'lucide-react';
 export const PatientRegister: React.FC = () => {
   const { registerPatient } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -43,6 +44,9 @@ export const PatientRegister: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
+      // BACKEND INTEGRATION POINT (AWS Cognito & DynamoDB):
+      // 1. AWS Cognito: Auth.signUp({ username: phone, password, attributes: { name, email, birthdate: dob, gender } })
+      // 2. AWS DynamoDB: PutItem to PatientsTable with partition key { patientId: cognitoSub }
       await registerPatient({
         name,
         phone,
@@ -51,7 +55,10 @@ export const PatientRegister: React.FC = () => {
         gender,
         password,
       });
-      navigate('/patient/dashboard');
+
+      // Forward to original destination (e.g. /patient/doctors if user was trying to see doctors)
+      const destination = (location.state as { from?: { pathname: string } })?.from?.pathname || '/patient/dashboard';
+      navigate(destination, { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -168,7 +175,7 @@ export const PatientRegister: React.FC = () => {
 
           <div className="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-600">
             Already have an account?{' '}
-            <Link to="/patient/login" className="font-semibold text-brand-700 hover:underline">
+            <Link to="/patient/login" state={location.state} className="font-semibold text-brand-700 hover:underline">
               Sign in
             </Link>
           </div>

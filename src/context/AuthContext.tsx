@@ -31,14 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initial load
     storage.init();
     const current = storage.getActiveUser();
-    // Default to the demo patient if no active session so the reviewer can instantly experience the patient flows
-    if (!current) {
-      const defaultP = storage.getDefaultPatient();
-      storage.setActiveUser(defaultP);
-      setUser(defaultP);
-    } else {
-      setUser(current);
-    }
+    setUser(current);
     setIsLoading(false);
 
     // Sync when user changes anywhere

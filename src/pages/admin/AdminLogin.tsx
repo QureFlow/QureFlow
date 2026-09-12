@@ -24,6 +24,10 @@ export const AdminLogin: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
+      // BACKEND INTEGRATION POINT (AWS Cognito & DynamoDB):
+      // 1. AWS Cognito: Auth.signIn({ username: identifier, password })
+      // 2. Verify Cognito User Groups includes 'Admins' or 'HospitalStaff'
+      // 3. AWS DynamoDB: Fetch Staff profile from StaffTable by staffId/cognitoSub
       await loginAdmin(identifier, password);
       navigate('/admin/dashboard');
     } catch (err: unknown) {
@@ -109,6 +113,11 @@ export const AdminLogin: React.FC = () => {
             >
               Fill Demo Login
             </button>
+          </div>
+
+          {/* Explicit Administrative Security Note */}
+          <div className="mt-4 p-3 bg-slate-900 border border-slate-800 rounded-md text-[11px] text-slate-400 leading-relaxed">
+            <span className="font-semibold text-slate-300">Staff Account Policy:</span> Self-registration is disabled. Staff accounts are provisioned exclusively by Hospital IT Administration.
           </div>
         </div>
 

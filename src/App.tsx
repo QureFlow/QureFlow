@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { QueueProvider } from './context/QueueContext';
 import { ToastContainer } from './components/common/ToastContainer';
 import { DemoSwitcher } from './components/common/DemoSwitcher';
+import { PatientRoute, AdminRoute } from './components/common/ProtectedRoute';
 
 // Public
 import { LandingPage } from './pages/LandingPage';
@@ -39,30 +40,137 @@ export function App() {
 
           {/* Core Routes */}
           <Routes>
-            {/* Public Landing */}
+            {/* Public Landing Page */}
             <Route path="/" element={<LandingPage />} />
 
-            {/* Patient Flow */}
+            {/* Public Auth Routes */}
             <Route path="/patient/login" element={<PatientLogin />} />
             <Route path="/patient/register" element={<PatientRegister />} />
-            <Route path="/patient/dashboard" element={<PatientDashboard />} />
-            <Route path="/patient/doctors" element={<DoctorList />} />
-            <Route path="/patient/doctors/:id" element={<DoctorDetails />} />
-            <Route path="/patient/book" element={<BookAppointment />} />
-            <Route path="/patient/token" element={<TokenScreen />} />
-            <Route path="/patient/appointments" element={<PatientAppointments />} />
-            <Route path="/patient/profile" element={<PatientProfile />} />
-
-            {/* Admin / Reception Flow */}
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/queue" element={<AdminQueue />} />
-            <Route path="/admin/appointments" element={<AdminAppointments />} />
-            <Route path="/admin/doctors" element={<AdminDoctors />} />
-            <Route path="/admin/doctors/add" element={<AddDoctor />} />
-            <Route path="/admin/patients" element={<AdminPatients />} />
-            <Route path="/admin/clinics" element={<AdminClinics />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
+
+            {/* Protected Patient Routes */}
+            <Route
+              path="/patient/dashboard"
+              element={
+                <PatientRoute>
+                  <PatientDashboard />
+                </PatientRoute>
+              }
+            />
+            <Route
+              path="/patient/doctors"
+              element={
+                <PatientRoute>
+                  <DoctorList />
+                </PatientRoute>
+              }
+            />
+            <Route
+              path="/patient/doctors/:id"
+              element={
+                <PatientRoute>
+                  <DoctorDetails />
+                </PatientRoute>
+              }
+            />
+            <Route
+              path="/patient/book"
+              element={
+                <PatientRoute>
+                  <BookAppointment />
+                </PatientRoute>
+              }
+            />
+            <Route
+              path="/patient/token"
+              element={
+                <PatientRoute>
+                  <TokenScreen />
+                </PatientRoute>
+              }
+            />
+            <Route
+              path="/patient/appointments"
+              element={
+                <PatientRoute>
+                  <PatientAppointments />
+                </PatientRoute>
+              }
+            />
+            <Route
+              path="/patient/profile"
+              element={
+                <PatientRoute>
+                  <PatientProfile />
+                </PatientRoute>
+              }
+            />
+
+            {/* Protected Admin Routes */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/queue"
+              element={
+                <AdminRoute>
+                  <AdminQueue />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/appointments"
+              element={
+                <AdminRoute>
+                  <AdminAppointments />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/doctors"
+              element={
+                <AdminRoute>
+                  <AdminDoctors />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/doctors/add"
+              element={
+                <AdminRoute>
+                  <AddDoctor />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/patients"
+              element={
+                <AdminRoute>
+                  <AdminPatients />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/clinics"
+              element={
+                <AdminRoute>
+                  <AdminClinics />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <AdminRoute>
+                  <AdminSettings />
+                </AdminRoute>
+              }
+            />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />

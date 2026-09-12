@@ -26,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
 
   const handleLogout = async () => {
     await logout();
-    navigate('/admin/login');
+    navigate('/');
   };
 
   const navItemClass = ({ isActive }: { isActive: boolean }) =>

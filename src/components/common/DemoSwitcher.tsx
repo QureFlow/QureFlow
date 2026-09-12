@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useQueue } from '../../context/QueueContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users, Shield, RotateCcw, ChevronDown } from 'lucide-react';
+import { Users, Shield, RotateCcw, ChevronDown, LogOut } from 'lucide-react';
 
 export const DemoSwitcher: React.FC = () => {
-  const { user, quickLoginPatient, quickLoginAdmin } = useAuth();
+  const { user, logout, quickLoginPatient, quickLoginAdmin } = useAuth();
   const { resetToDefaults } = useQueue();
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,6 +34,12 @@ export const DemoSwitcher: React.FC = () => {
   const handleReset = () => {
     resetToDefaults();
     setIsOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await logout();
+    setIsOpen(false);
+    navigate('/');
   };
 
   return (
@@ -88,6 +94,16 @@ export const DemoSwitcher: React.FC = () => {
               </div>
               {isAdmin && <span className="text-[10px] bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded">Active</span>}
             </button>
+
+            {user && (
+              <button
+                onClick={handleSignOut}
+                className="w-full text-left px-3 py-1.5 flex items-center gap-2 text-[11px] text-red-600 hover:text-red-800 hover:bg-red-50"
+              >
+                <LogOut className="w-3 h-3 text-red-500" />
+                Sign Out (Return to Landing)
+              </button>
+            )}
 
             <div className="border-t border-slate-100 my-1"></div>
 

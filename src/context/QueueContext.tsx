@@ -55,6 +55,39 @@ interface QueueContextType {
 
 const QueueContext = createContext<QueueContextType | undefined>(undefined);
 
+const playClinicChimeAndAnnounce = (announcement: string) => {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.2); // A5
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    }
+  } catch {
+    // AudioContext blocked before interaction
+  }
+
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(announcement);
+      utterance.rate = 0.92;
+      window.speechSynthesis.speak(utterance);
+    }
+  } catch {
+    // Speech synthesis error fallback
+  }
+};
+
 export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tokens, setTokens] = useState<QueueToken[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -111,7 +144,13 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const token = await queueService.callNextPatient(doctorId);
       refreshState();
       if (token) {
-        showToast(`Token ${token.tokenNumber} (${token.patientName}) called for consultation`, 'success');
+        playClinicChimeAndAnnounce(
+          `Token ${token.tokenNumber}, please proceed to Consultation Room 102 for ${token.doctorName}.`
+        );
+        showToast(
+          `Token ${token.tokenNumber} (${token.patientName}) called for consultation (Room 102)`,
+          'success'
+        );
       } else {
         showToast('No more waiting patients in this queue', 'info');
       }

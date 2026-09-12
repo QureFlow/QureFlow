@@ -24,7 +24,7 @@ export const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/patient/login');
+    navigate('/');
   };
 
   const navItemClasses = ({ isActive }: { isActive: boolean }) =>

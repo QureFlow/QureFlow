@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../../components/layout/BrandLogo';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -9,6 +9,7 @@ import { Phone, Lock, ArrowRight, Shield } from 'lucide-react';
 export const PatientLogin: React.FC = () => {
   const { loginPatient } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [identifier, setIdentifier] = useState('9876543210');
   const [password, setPassword] = useState('password123');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,8 +25,11 @@ export const PatientLogin: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
+      // BACKEND HOOK: AWS Cognito signIn({ username: identifier, password })
       await loginPatient(identifier, password);
-      navigate('/patient/dashboard');
+      
+      const destination = (location.state as { from?: { pathname: string } })?.from?.pathname || '/patient/dashboard';
+      navigate(destination, { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Invalid login credentials');
     } finally {
@@ -116,7 +120,7 @@ export const PatientLogin: React.FC = () => {
 
           <div className="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-600">
             Don't have an account?{' '}
-            <Link to="/patient/register" className="font-semibold text-brand-700 hover:underline">
+            <Link to="/patient/register" state={location.state} className="font-semibold text-brand-700 hover:underline">
               Create patient account
             </Link>
           </div>

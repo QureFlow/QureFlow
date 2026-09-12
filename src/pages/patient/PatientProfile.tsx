@@ -48,7 +48,7 @@ export const PatientProfile: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/patient/login');
+    navigate('/');
   };
 
   return (
