@@ -50,7 +50,7 @@ export const PatientRegister: React.FC = () => {
       await registerPatient({
         name,
         phone,
-        email: email || `${phone}@sms.queless.org`,
+        email: email ? email.trim() : '',
         dob,
         gender,
         password,

@@ -24,7 +24,21 @@ const cognitoClient = new CognitoIdentityProviderClient({
   credentials,
 });
 
-function getSecretHash(username: string): string | undefined {
+export function normalizePhoneNumber(rawPhone: string): string {
+  const digits = rawPhone.replace(/[^0-9]/g, '');
+  if (rawPhone.trim().startsWith('+')) {
+    return `+${digits}`;
+  }
+  if (digits.length === 10) {
+    return `+91${digits}`;
+  }
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return `+${digits}`;
+  }
+  return `+91${digits}`;
+}
+
+export function getSecretHash(username: string): string | undefined {
   if (!clientSecret || !clientId) return undefined;
   return crypto
     .createHmac('SHA256', clientSecret)
@@ -40,7 +54,7 @@ export const cognitoService = {
   async signUp(data: {
     name: string;
     phone: string;
-    email: string;
+    email?: string;
     password?: string;
     gender?: string;
     dob?: string;
@@ -50,26 +64,41 @@ export const cognitoService = {
       throw new Error('Cognito User Pool ID and Client ID are not configured.');
     }
 
-    const cleanPhone = data.phone.startsWith('+') ? data.phone : `+91${data.phone.replace(/[^0-9]/g, '')}`;
-    const secretHash = getSecretHash(data.phone);
+    const normalizedPhone = normalizePhoneNumber(data.phone);
+    const trimmedEmail =
+      data.email && data.email.trim().length > 0 && !data.email.includes('@sms.queless.org')
+        ? data.email.trim().toLowerCase()
+        : undefined;
 
-    const userAttributes = [
-      { Name: 'name', Value: data.name },
-      { Name: 'phone_number', Value: cleanPhone },
-      { Name: 'email', Value: data.email },
+    // Cognito Username determination:
+    // If the user provides an email, use the email as the Cognito username.
+    // If email is not provided, use normalized E.164 phone (+91XXXXXXXXXX).
+    // NEVER the user's full name.
+    const cognitoUsername = trimmedEmail || normalizedPhone;
+    const secretHash = getSecretHash(cognitoUsername);
+
+    // Profile attributes sent separately:
+    const userAttributes: { Name: string; Value: string }[] = [
+      { Name: 'name', Value: data.name.trim() },
+      { Name: 'phone_number', Value: normalizedPhone },
     ];
 
-    if (data.dob) {
-      userAttributes.push({ Name: 'birthdate', Value: data.dob });
+    if (trimmedEmail) {
+      userAttributes.push({ Name: 'email', Value: trimmedEmail });
     }
-    if (data.gender) {
-      userAttributes.push({ Name: 'gender', Value: data.gender.toLowerCase() });
+
+    if (data.dob && data.dob.trim().length > 0) {
+      userAttributes.push({ Name: 'birthdate', Value: data.dob.trim() });
+    }
+
+    if (data.gender && data.gender.trim().length > 0) {
+      userAttributes.push({ Name: 'gender', Value: data.gender.toLowerCase().trim() });
     }
 
     const command = new SignUpCommand({
       ClientId: clientId,
       SecretHash: secretHash,
-      Username: data.phone,
+      Username: cognitoUsername,
       Password: data.password || 'TemporaryPass123!',
       UserAttributes: userAttributes,
     });
@@ -82,9 +111,12 @@ export const cognitoService = {
       throw new Error('Cognito User Pool ID and Client ID are not configured.');
     }
 
-    const secretHash = getSecretHash(username);
+    const cleanId = username.trim();
+    const cognitoUsername = cleanId.includes('@') ? cleanId.toLowerCase() : normalizePhoneNumber(cleanId);
+    const secretHash = getSecretHash(cognitoUsername);
+
     const authParams: Record<string, string> = {
-      USERNAME: username,
+      USERNAME: cognitoUsername,
       PASSWORD: password || '',
     };
     if (secretHash) {
@@ -106,11 +138,14 @@ export const cognitoService = {
       throw new Error('Cognito User Pool ID and Client ID are not configured.');
     }
 
-    const secretHash = getSecretHash(username);
+    const cleanId = username.trim();
+    const cognitoUsername = cleanId.includes('@') ? cleanId.toLowerCase() : normalizePhoneNumber(cleanId);
+    const secretHash = getSecretHash(cognitoUsername);
+
     const command = new ConfirmSignUpCommand({
       ClientId: clientId,
       SecretHash: secretHash,
-      Username: username,
+      Username: cognitoUsername,
       ConfirmationCode: confirmationCode,
     });
 
