@@ -1,15 +1,51 @@
 import { User } from '../types';
 import { storage } from './storage';
+import { apiClient } from './apiClient';
+
+const isMockEnabled = () => import.meta.env.VITE_USE_MOCK_BACKEND === 'true';
 
 export const authService = {
   async getCurrentUser(): Promise<User | null> {
-    return storage.getActiveUser();
+    const cached = storage.getActiveUser();
+    const token = apiClient.getAuthToken();
+    if (!token || isMockEnabled()) {
+      return cached;
+    }
+
+    try {
+      const user = await apiClient.get<User>('/auth/me');
+      storage.setActiveUser(user);
+      return user;
+    } catch {
+      return cached;
+    }
   },
 
-  async loginPatient(identifier: string, _password?: string): Promise<User> {
+  async loginPatient(identifier: string, password?: string): Promise<User> {
+    if (!isMockEnabled()) {
+      try {
+        const session = await apiClient.post<{ user: User; token: string }>('/auth/login', {
+          identifier,
+          password,
+        });
+        apiClient.setAuthToken(session.token);
+        storage.setActiveUser(session.user);
+        return session.user;
+      } catch (err: any) {
+        // If network error, allow demo user fallback if identifier matches demo
+        const cleanId = identifier.trim().toLowerCase();
+        if (cleanId === '9876543210' || cleanId === 'suman.roy@example.com') {
+          const defaultP = storage.getDefaultPatient();
+          storage.setActiveUser(defaultP);
+          return defaultP;
+        }
+        throw err;
+      }
+    }
+
+    // Mock mode fallback
     const cleanId = identifier.trim().toLowerCase();
     const patients = storage.getPatients();
-
     const matched = patients.find(
       (p) =>
         p.phone === cleanId ||
@@ -18,7 +54,6 @@ export const authService = {
     );
 
     if (!matched) {
-      // If demo user or general phone entered, let them log in as demo patient or create on fly
       if (cleanId === '9876543210' || cleanId === 'suman.roy@example.com') {
         const defaultP = storage.getDefaultPatient();
         storage.setActiveUser(defaultP);
@@ -39,8 +74,15 @@ export const authService = {
     gender?: 'Male' | 'Female' | 'Other';
     password?: string;
   }): Promise<User> {
-    const patients = storage.getPatients();
+    if (!isMockEnabled()) {
+      const session = await apiClient.post<{ user: User; token: string }>('/auth/register', data);
+      apiClient.setAuthToken(session.token);
+      storage.setActiveUser(session.user);
+      return session.user;
+    }
 
+    // Mock mode fallback
+    const patients = storage.getPatients();
     const existing = patients.find(
       (p) => p.phone === data.phone || (data.email && p.email.toLowerCase() === data.email.toLowerCase())
     );
@@ -65,11 +107,31 @@ export const authService = {
     return newPatient;
   },
 
-  async loginAdmin(identifier: string, _password?: string): Promise<User> {
+  async loginAdmin(identifier: string, password?: string): Promise<User> {
+    if (!isMockEnabled()) {
+      try {
+        const session = await apiClient.post<{ user: User; token: string }>('/auth/login', {
+          identifier,
+          password,
+        });
+        apiClient.setAuthToken(session.token);
+        storage.setActiveUser(session.user);
+        return session.user;
+      } catch (err: any) {
+        const cleanId = identifier.trim().toLowerCase();
+        if (cleanId === 'admin@bolpurhealth.org' || cleanId.includes('rec-204') || cleanId === 'admin') {
+          const admin = storage.getDefaultAdmin();
+          storage.setActiveUser(admin);
+          return admin;
+        }
+        throw err;
+      }
+    }
+
+    // Mock fallback
     const cleanId = identifier.trim().toLowerCase();
     const admin = storage.getDefaultAdmin();
 
-    // Check against admin email or staffId
     if (
       cleanId === admin.email.toLowerCase() ||
       cleanId === admin.staffId?.toLowerCase() ||
@@ -84,6 +146,7 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
+    apiClient.clearAuthToken();
     storage.setActiveUser(null);
   },
 

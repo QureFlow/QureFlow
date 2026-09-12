@@ -1,5 +1,8 @@
 import { DoctorQueueState, QueueToken, QueuePriority } from '../types';
 import { storage } from './storage';
+import { apiClient } from './apiClient';
+
+const isMockEnabled = () => import.meta.env.VITE_USE_MOCK_BACKEND === 'true';
 
 export const queueService = {
   getPrefixForDoctor(doctorId: string): string {
@@ -36,11 +39,19 @@ export const queueService = {
   },
 
   async getDoctorQueue(doctorId: string): Promise<DoctorQueueState> {
+    if (!isMockEnabled()) {
+      try {
+        return await apiClient.get<DoctorQueueState>(`/queues/doctor/${doctorId}`);
+      } catch (err) {
+        console.warn('[QueueService] Falling back to local queue state:', err);
+      }
+    }
+
+    // Mock fallback
     const doctors = storage.getDoctors();
     const doc = doctors.find((d) => d.id === doctorId);
     const allTokens = storage.getTokens().filter((t) => t.doctorId === doctorId);
     const pausedDoctors = storage.getPausedDoctors();
-
     const currentToken = allTokens.find((t) => t.status === 'current');
 
     return {
@@ -55,6 +66,14 @@ export const queueService = {
   },
 
   async getAllDoctorQueues(): Promise<DoctorQueueState[]> {
+    if (!isMockEnabled()) {
+      try {
+        return await apiClient.get<DoctorQueueState[]>('/queues/all');
+      } catch (err) {
+        console.warn('[QueueService] Falling back to local doctor queues:', err);
+      }
+    }
+
     const doctors = storage.getDoctors();
     const queues: DoctorQueueState[] = [];
     for (const d of doctors) {
@@ -65,17 +84,25 @@ export const queueService = {
   },
 
   async callNextPatient(doctorId: string): Promise<QueueToken | null> {
+    if (!isMockEnabled()) {
+      try {
+        const token = await apiClient.post<QueueToken | null>('/queues/call-next', { doctorId });
+        return token;
+      } catch (err) {
+        console.warn('[QueueService] API callNext failed, using local:', err);
+      }
+    }
+
+    // Local fallback
     const tokens = storage.getTokens();
     const doctorTokens = tokens.filter((t) => t.doctorId === doctorId);
 
-    // If there is an active currently serving patient, mark them as completed
     const currentIdx = tokens.findIndex((t) => t.doctorId === doctorId && t.status === 'current');
     if (currentIdx !== -1) {
       tokens[currentIdx].status = 'completed';
       tokens[currentIdx].servedAt = new Date().toISOString();
     }
 
-    // Find next waiting patient: check emergency first, then normal waiting in order
     const nextEmergency = doctorTokens.find(
       (t) => t.status === 'waiting' && t.priority === 'emergency'
     );
@@ -92,7 +119,6 @@ export const queueService = {
       tokens[nextIdx].calledAt = new Date().toISOString();
       storage.saveTokens(tokens);
 
-      // Also update linked appointment status if any
       if (tokens[nextIdx].appointmentId) {
         const apts = storage.getAppointments();
         const apt = apts.find((a) => a.id === tokens[nextIdx].appointmentId);
@@ -110,6 +136,15 @@ export const queueService = {
   },
 
   async markPatientServed(tokenId: string): Promise<void> {
+    if (!isMockEnabled()) {
+      try {
+        await apiClient.post(`/tokens/${tokenId}/serve`);
+        return;
+      } catch (err) {
+        console.warn('[QueueService] API markServed failed, using local:', err);
+      }
+    }
+
     const tokens = storage.getTokens();
     const target = tokens.find((t) => t.id === tokenId);
     if (target) {
@@ -117,7 +152,6 @@ export const queueService = {
       target.servedAt = new Date().toISOString();
       storage.saveTokens(tokens);
 
-      // Update linked appointment
       if (target.appointmentId) {
         const apts = storage.getAppointments();
         const apt = apts.find((a) => a.id === target.appointmentId);
@@ -130,6 +164,15 @@ export const queueService = {
   },
 
   async skipPatient(tokenId: string): Promise<void> {
+    if (!isMockEnabled()) {
+      try {
+        await apiClient.post(`/tokens/${tokenId}/skip`);
+        return;
+      } catch (err) {
+        console.warn('[QueueService] API skip failed, using local:', err);
+      }
+    }
+
     const tokens = storage.getTokens();
     const target = tokens.find((t) => t.id === tokenId);
     if (target) {
@@ -148,6 +191,15 @@ export const queueService = {
   },
 
   async cancelToken(tokenId: string): Promise<void> {
+    if (!isMockEnabled()) {
+      try {
+        await apiClient.post(`/tokens/${tokenId}/cancel`);
+        return;
+      } catch (err) {
+        console.warn('[QueueService] API cancelToken failed, using local:', err);
+      }
+    }
+
     const tokens = storage.getTokens();
     const target = tokens.find((t) => t.id === tokenId);
     if (target) {
@@ -166,6 +218,15 @@ export const queueService = {
   },
 
   async pauseQueue(doctorId: string): Promise<void> {
+    if (!isMockEnabled()) {
+      try {
+        await apiClient.post('/queues/pause', { doctorId, paused: true });
+        return;
+      } catch (err) {
+        console.warn('[QueueService] API pause failed, using local:', err);
+      }
+    }
+
     const paused = storage.getPausedDoctors();
     if (!paused.includes(doctorId)) {
       paused.push(doctorId);
@@ -174,6 +235,15 @@ export const queueService = {
   },
 
   async resumeQueue(doctorId: string): Promise<void> {
+    if (!isMockEnabled()) {
+      try {
+        await apiClient.post('/queues/pause', { doctorId, paused: false });
+        return;
+      } catch (err) {
+        console.warn('[QueueService] API resume failed, using local:', err);
+      }
+    }
+
     const paused = storage.getPausedDoctors().filter((id) => id !== doctorId);
     storage.savePausedDoctors(paused);
   },
@@ -185,6 +255,17 @@ export const queueService = {
     time?: string;
     priority?: QueuePriority;
   }): Promise<QueueToken> {
+    if (!isMockEnabled()) {
+      try {
+        return await apiClient.post<QueueToken>('/queues/join', {
+          ...data,
+          isWalkIn: true,
+        });
+      } catch (err) {
+        console.warn('[QueueService] API joinQueue failed, using local:', err);
+      }
+    }
+
     const doctors = storage.getDoctors();
     const doc = doctors.find((d) => d.id === data.doctorId);
     if (!doc) throw new Error('Selected doctor not found');
@@ -209,7 +290,6 @@ export const queueService = {
       createdAt: new Date().toISOString(),
     };
 
-    // If emergency, put near front of waiting list
     if (priority === 'emergency') {
       const currentIdx = tokens.findIndex((t) => t.doctorId === doc.id && t.status === 'current');
       if (currentIdx !== -1) {
@@ -222,31 +302,6 @@ export const queueService = {
     }
 
     storage.saveTokens(tokens);
-
-    // Also register a walk-in appointment record so reception has complete audit trail
-    const apts = storage.getAppointments();
-    const todayStr = new Date().toISOString().split('T')[0];
-    apts.unshift({
-      id: `apt-walkin-${Date.now()}`,
-      patientId: `walkin-${Date.now()}`,
-      patientName: data.patientName.trim(),
-      patientPhone: data.patientPhone.trim(),
-      doctorId: doc.id,
-      doctorName: doc.name,
-      doctorSpecialization: doc.specialization,
-      clinicId: doc.clinicId,
-      clinicName: doc.clinicName,
-      date: todayStr,
-      time: data.time || 'Walk-in',
-      tokenNumber,
-      status: 'waiting',
-      priority,
-      isWalkIn: true,
-      notes: priority === 'emergency' ? 'EMERGENCY TRIAGE WALK-IN' : 'Routine walk-in reception entry',
-      createdAt: new Date().toISOString(),
-    });
-    storage.saveAppointments(apts);
-
     return newToken;
   },
 
@@ -257,11 +312,19 @@ export const queueService = {
     estimatedWaitMinutes: number;
     isPaused: boolean;
   } | null> {
+    if (!isMockEnabled()) {
+      try {
+        const res = await apiClient.get<any>('/patients/me/status');
+        if (res && res.token) return res;
+      } catch (err) {
+        console.warn('[QueueService] API getPatientActiveStatus failed, using local:', err);
+      }
+    }
+
     const tokens = storage.getTokens();
     const pausedDoctors = storage.getPausedDoctors();
     const settings = storage.getSettings();
 
-    // Find the patient's active or waiting token
     const token = tokens.find(
       (t) =>
         (t.patientId === patientIdOrPhone || t.patientPhone === patientIdOrPhone) &&
@@ -273,7 +336,6 @@ export const queueService = {
     const docTokens = tokens.filter((t) => t.doctorId === token.doctorId);
     const currentToken = docTokens.find((t) => t.status === 'current');
 
-    // Count waiting patients ahead of this token
     let patientsAhead = 0;
     if (token.status === 'waiting') {
       const waitingTokens = docTokens.filter((t) => t.status === 'waiting');
@@ -300,9 +362,10 @@ export const queueService = {
     current: QueueToken | null;
     waiting: QueueToken[];
   }> {
-    const tokens = storage.getTokens().filter((t) => t.doctorId === doctorId);
+    const queue = await this.getDoctorQueue(doctorId);
+    const tokens = queue.tokens;
     return {
-      completed: tokens.filter((t) => t.status === 'completed').slice(-5), // show recent 5
+      completed: tokens.filter((t) => t.status === 'completed').slice(-5),
       current: tokens.find((t) => t.status === 'current') || null,
       waiting: tokens.filter((t) => t.status === 'waiting'),
     };

@@ -1,6 +1,8 @@
 import { Appointment, AppointmentStatus, QueueToken } from '../types';
 import { storage } from './storage';
-import { queueService } from './queueService';
+import { apiClient } from './apiClient';
+
+const isMockEnabled = () => import.meta.env.VITE_USE_MOCK_BACKEND === 'true';
 
 export const appointmentService = {
   async getAppointments(filters?: {
@@ -10,6 +12,23 @@ export const appointmentService = {
     date?: string;
     status?: string;
   }): Promise<Appointment[]> {
+    if (!isMockEnabled()) {
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.patientId) queryParams.append('patientId', filters.patientId);
+        if (filters?.doctorId && filters.doctorId !== 'all') queryParams.append('doctorId', filters.doctorId);
+        if (filters?.date) queryParams.append('date', filters.date);
+
+        const qs = queryParams.toString();
+        const endpoint = qs ? `/appointments?${qs}` : '/appointments';
+        const list = await apiClient.get<Appointment[]>(endpoint);
+        if (Array.isArray(list)) return list;
+      } catch (err) {
+        console.warn('[AppointmentService] API call failed, using local:', err);
+      }
+    }
+
+    // Local fallback
     let list = storage.getAppointments();
 
     if (filters?.patientId) {
@@ -32,14 +51,13 @@ export const appointmentService = {
       list = list.filter((a) => a.status === filters.status);
     }
 
-    // Sort by createdAt descending
     return list.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   },
 
   async getAppointmentById(id: string): Promise<Appointment | null> {
-    const list = storage.getAppointments();
+    const list = await this.getAppointments();
     return list.find((a) => a.id === id) || null;
   },
 
@@ -52,13 +70,26 @@ export const appointmentService = {
     time: string;
     notes?: string;
   }): Promise<{ appointment: Appointment; token: QueueToken }> {
+    if (!isMockEnabled()) {
+      try {
+        const result = await apiClient.post<{ appointment: Appointment; token: QueueToken }>(
+          '/appointments',
+          data
+        );
+        return result;
+      } catch (err) {
+        console.warn('[AppointmentService] API booking failed, using local:', err);
+      }
+    }
+
+    // Local fallback
     const doctors = storage.getDoctors();
     const doc = doctors.find((d) => d.id === data.doctorId);
     if (!doc) throw new Error('Doctor not found');
 
-    const tokenNumber = await queueService.generateNextTokenNumber(data.doctorId);
     const aptId = `apt-${Date.now()}`;
     const tokenId = `tok-${Date.now()}`;
+    const tokenNumber = `A-${String(Math.floor(1 + Math.random() * 50)).padStart(3, '0')}`;
     const nowIso = new Date().toISOString();
 
     const newAppointment: Appointment = {
@@ -111,6 +142,15 @@ export const appointmentService = {
   },
 
   async cancelAppointment(id: string, reason?: string): Promise<void> {
+    if (!isMockEnabled()) {
+      try {
+        await apiClient.post(`/appointments/${id}/cancel`, { reason });
+        return;
+      } catch (err) {
+        console.warn('[AppointmentService] API cancelAppointment failed, using local:', err);
+      }
+    }
+
     const appointments = storage.getAppointments();
     const apt = appointments.find((a) => a.id === id);
     if (apt) {
@@ -120,7 +160,6 @@ export const appointmentService = {
       }
       storage.saveAppointments(appointments);
 
-      // Cancel associated queue token
       if (apt.tokenNumber) {
         const tokens = storage.getTokens();
         const tok = tokens.find(

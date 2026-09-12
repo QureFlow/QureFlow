@@ -1,8 +1,21 @@
 import { User, Appointment, QueueToken } from '../types';
 import { storage } from './storage';
+import { apiClient } from './apiClient';
+
+const isMockEnabled = () => import.meta.env.VITE_USE_MOCK_BACKEND === 'true';
 
 export const patientService = {
   async getPatients(query?: string): Promise<User[]> {
+    if (!isMockEnabled()) {
+      try {
+        const endpoint = query ? `/patients?query=${encodeURIComponent(query)}` : '/patients';
+        const list = await apiClient.get<User[]>(endpoint);
+        if (Array.isArray(list)) return list;
+      } catch (err) {
+        console.warn('[PatientService] API getPatients failed, using local:', err);
+      }
+    }
+
     let list = storage.getPatients();
     if (query) {
       const q = query.toLowerCase();
@@ -17,6 +30,14 @@ export const patientService = {
   },
 
   async getPatientById(id: string): Promise<User | null> {
+    if (!isMockEnabled()) {
+      try {
+        return await apiClient.get<User>(`/patients/${id}`);
+      } catch (err) {
+        console.warn(`[PatientService] API getPatientById ${id} failed:`, err);
+      }
+    }
+
     const list = storage.getPatients();
     return list.find((p) => p.id === id) || null;
   },
@@ -24,15 +45,34 @@ export const patientService = {
   async getPatientHistory(
     patientId: string
   ): Promise<{ appointments: Appointment[]; tokens: QueueToken[] }> {
-    const appointments = storage
-      .getAppointments()
-      .filter((a) => a.patientId === patientId);
-    const tokens = storage.getTokens().filter((t) => t.patientId === patientId);
+    try {
+      const appointments = await apiClient.get<Appointment[]>(`/appointments?patientId=${patientId}`);
+      const tokens = storage.getTokens().filter((t) => t.patientId === patientId);
+      return { appointments: appointments || [], tokens };
+    } catch {
+      const appointments = storage
+        .getAppointments()
+        .filter((a) => a.patientId === patientId);
+      const tokens = storage.getTokens().filter((t) => t.patientId === patientId);
 
-    return { appointments, tokens };
+      return { appointments, tokens };
+    }
   },
 
   async updatePatient(id: string, updates: Partial<User>): Promise<User> {
+    if (!isMockEnabled()) {
+      try {
+        const updated = await apiClient.patch<User>(`/patients/${id}`, updates);
+        const active = storage.getActiveUser();
+        if (active && active.id === id) {
+          storage.setActiveUser(updated);
+        }
+        return updated;
+      } catch (err) {
+        console.warn(`[PatientService] API updatePatient ${id} failed:`, err);
+      }
+    }
+
     const list = storage.getPatients();
     const index = list.findIndex((p) => p.id === id);
     if (index === -1) throw new Error('Patient not found');
@@ -41,7 +81,6 @@ export const patientService = {
     list[index] = updated;
     storage.savePatients(list);
 
-    // If updating currently logged in user, refresh active session
     const active = storage.getActiveUser();
     if (active && active.id === id) {
       storage.setActiveUser(updated);

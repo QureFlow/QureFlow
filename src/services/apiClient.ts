@@ -1,0 +1,114 @@
+/**
+ * QureFlow Backend API Client
+ * Centralized HTTP Client connecting the frontend directly to the AWS DynamoDB-backed API.
+ */
+
+const getApiBaseUrl = (): string => {
+  return import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:5000/api';
+};
+
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+export const apiClient = {
+  getAuthToken(): string | null {
+    return localStorage.getItem('qureflow_token') || localStorage.getItem('queless_jwt_token');
+  },
+
+  setAuthToken(token: string) {
+    localStorage.setItem('qureflow_token', token);
+    localStorage.setItem('queless_jwt_token', token);
+  },
+
+  clearAuthToken() {
+    localStorage.removeItem('qureflow_token');
+    localStorage.removeItem('queless_jwt_token');
+  },
+
+  async request<T = any>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const baseUrl = getApiBaseUrl();
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${baseUrl}${cleanEndpoint}`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(options.headers as Record<string, string>),
+    };
+
+    const token = this.getAuthToken();
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      if (!response.ok) {
+        let errMsg = `Request failed with status ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData.error) errMsg = errData.error;
+          else if (errData.message) errMsg = errData.message;
+        } catch {
+          // Response was not JSON
+        }
+        throw new ApiError(errMsg, response.status);
+      }
+
+      // Handle 204 No Content
+      if (response.status === 204) {
+        return null as unknown as T;
+      }
+
+      return await response.json();
+    } catch (err: any) {
+      if (err instanceof ApiError) throw err;
+      throw new Error(`Network error connecting to QureFlow API: ${err.message}`);
+    }
+  },
+
+  get<T = any>(endpoint: string, headers?: Record<string, string>): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET', headers });
+  },
+
+  post<T = any>(endpoint: string, body?: any, headers?: Record<string, string>): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers,
+    });
+  },
+
+  patch<T = any>(endpoint: string, body?: any, headers?: Record<string, string>): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers,
+    });
+  },
+
+  put<T = any>(endpoint: string, body?: any, headers?: Record<string, string>): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers,
+    });
+  },
+
+  delete<T = any>(endpoint: string, headers?: Record<string, string>): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE', headers });
+  },
+};

@@ -1,5 +1,8 @@
 import { Doctor } from '../types';
 import { storage } from './storage';
+import { apiClient } from './apiClient';
+
+const isMockEnabled = () => import.meta.env.VITE_USE_MOCK_BACKEND === 'true';
 
 export const doctorService = {
   async getDoctors(filters?: {
@@ -8,6 +11,23 @@ export const doctorService = {
     query?: string;
     availableTodayOnly?: boolean;
   }): Promise<Doctor[]> {
+    if (!isMockEnabled()) {
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters?.specialization) queryParams.append('specialization', filters.specialization);
+        if (filters?.query) queryParams.append('query', filters.query);
+        if (filters?.availableTodayOnly) queryParams.append('availableTodayOnly', 'true');
+
+        const qs = queryParams.toString();
+        const endpoint = qs ? `/doctors?${qs}` : '/doctors';
+        const list = await apiClient.get<Doctor[]>(endpoint);
+        if (Array.isArray(list) && list.length > 0) return list;
+      } catch (err) {
+        console.warn('[DoctorService] API getDoctors failed, using local:', err);
+      }
+    }
+
+    // Local fallback
     let list = storage.getDoctors();
 
     if (filters?.query) {
@@ -36,11 +56,27 @@ export const doctorService = {
   },
 
   async getDoctorById(id: string): Promise<Doctor | null> {
+    if (!isMockEnabled()) {
+      try {
+        return await apiClient.get<Doctor>(`/doctors/${id}`);
+      } catch (err) {
+        console.warn(`[DoctorService] API getDoctorById ${id} failed:`, err);
+      }
+    }
+
     const list = storage.getDoctors();
     return list.find((d) => d.id === id) || null;
   },
 
   async addDoctor(data: Omit<Doctor, 'id'>): Promise<Doctor> {
+    if (!isMockEnabled()) {
+      try {
+        return await apiClient.post<Doctor>('/doctors', data);
+      } catch (err) {
+        console.warn('[DoctorService] API addDoctor failed, using local:', err);
+      }
+    }
+
     const list = storage.getDoctors();
     const newDoc: Doctor = {
       ...data,
@@ -52,6 +88,14 @@ export const doctorService = {
   },
 
   async updateDoctor(id: string, updates: Partial<Doctor>): Promise<Doctor> {
+    if (!isMockEnabled()) {
+      try {
+        return await apiClient.patch<Doctor>(`/doctors/${id}`, updates);
+      } catch (err) {
+        console.warn('[DoctorService] API updateDoctor failed, using local:', err);
+      }
+    }
+
     const list = storage.getDoctors();
     const index = list.findIndex((d) => d.id === id);
     if (index === -1) throw new Error('Doctor not found');
@@ -63,23 +107,17 @@ export const doctorService = {
   },
 
   async toggleDoctorStatus(id: string): Promise<Doctor> {
-    const list = storage.getDoctors();
-    const doc = list.find((d) => d.id === id);
+    const doc = await this.getDoctorById(id);
     if (!doc) throw new Error('Doctor not found');
 
-    doc.status = doc.status === 'active' ? 'inactive' : 'active';
-    storage.saveDoctors(list);
-    return doc;
+    const nextStatus = doc.status === 'active' ? 'inactive' : 'active';
+    return this.updateDoctor(id, { status: nextStatus });
   },
 
   async getAvailableSlots(
     doctorId: string,
     dateStr: string
   ): Promise<{ time: string; available: boolean }[]> {
-    const doc = await this.getDoctorById(doctorId);
-    if (!doc) return [];
-
-    // Base slots for the clinic shift
     const baseSlots = [
       '09:00 AM',
       '09:30 AM',
@@ -93,16 +131,29 @@ export const doctorService = {
       '01:30 PM',
     ];
 
-    // Find appointments booked for this doctor on this date
-    const appointments = storage
-      .getAppointments()
-      .filter((a) => a.doctorId === doctorId && a.date === dateStr && a.status !== 'cancelled');
+    try {
+      const appointments = await apiClient.get<any[]>(`/appointments?doctorId=${doctorId}&date=${dateStr}`);
+      const bookedTimes = new Set(
+        (appointments || [])
+          .filter((a) => a.status !== 'cancelled')
+          .map((a) => a.time)
+      );
 
-    const bookedTimes = new Set(appointments.map((a) => a.time));
+      return baseSlots.map((time) => ({
+        time,
+        available: !bookedTimes.has(time),
+      }));
+    } catch {
+      const appointments = storage
+        .getAppointments()
+        .filter((a) => a.doctorId === doctorId && a.date === dateStr && a.status !== 'cancelled');
 
-    return baseSlots.map((time) => ({
-      time,
-      available: !bookedTimes.has(time),
-    }));
+      const bookedTimes = new Set(appointments.map((a) => a.time));
+
+      return baseSlots.map((time) => ({
+        time,
+        available: !bookedTimes.has(time),
+      }));
+    }
   },
 };
