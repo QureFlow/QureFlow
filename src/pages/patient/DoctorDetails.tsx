@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQueue } from '../../context/QueueContext';
 import { doctorService } from '../../services/doctorService';
-import { Doctor } from '../../types';
+import { Doctor, SlotAvailability } from '../../types';
 import { Navbar } from '../../components/layout/Navbar';
 import { MobileNav } from '../../components/layout/MobileNav';
 import { Footer } from '../../components/layout/Footer';
@@ -26,7 +26,7 @@ export const DoctorDetails: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
-  const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
+  const [slots, setSlots] = useState<SlotAvailability[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 

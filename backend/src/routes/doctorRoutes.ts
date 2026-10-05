@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
+import { appointmentService } from '../services/appointmentService.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -42,6 +43,17 @@ router.get('/doctors/:id', async (req, res) => {
       return;
     }
     res.json(doctor);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/doctors/:id/slots', async (req, res) => {
+  try {
+    const doctorId = req.params.id as string;
+    const dateStr = (req.query.date as string) || new Date().toISOString().split('T')[0];
+    const slots = await appointmentService.getDoctorSlotAvailability(doctorId, dateStr);
+    res.json(slots);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

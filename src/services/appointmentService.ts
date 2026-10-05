@@ -22,7 +22,18 @@ export const appointmentService = {
         const qs = queryParams.toString();
         const endpoint = qs ? `/appointments?${qs}` : '/appointments';
         const list = await apiClient.get<Appointment[]>(endpoint);
-        if (Array.isArray(list)) return list;
+        if (Array.isArray(list)) {
+          if (!filters || Object.keys(filters).length === 0) {
+            storage.saveAppointments(list);
+          } else {
+            // Merge into local storage cache
+            const existing = storage.getAppointments();
+            const map = new Map(existing.map((a) => [a.id, a]));
+            list.forEach((a) => map.set(a.id, a));
+            storage.saveAppointments(Array.from(map.values()));
+          }
+          return list;
+        }
       } catch (err) {
         console.warn('[AppointmentService] API call failed, using local:', err);
       }
@@ -76,9 +87,34 @@ export const appointmentService = {
           '/appointments',
           data
         );
-        return result;
-      } catch (err) {
-        console.warn('[AppointmentService] API booking failed, using local:', err);
+        if (result && result.appointment && result.token) {
+          // Immediately sync with storage cache
+          const appointments = storage.getAppointments();
+          const existingIdx = appointments.findIndex((a) => a.id === result.appointment.id);
+          if (existingIdx >= 0) {
+            appointments[existingIdx] = result.appointment;
+          } else {
+            appointments.unshift(result.appointment);
+          }
+          storage.saveAppointments(appointments);
+
+          const tokens = storage.getTokens();
+          const existingTokenIdx = tokens.findIndex((t) => t.id === result.token.id);
+          if (existingTokenIdx >= 0) {
+            tokens[existingTokenIdx] = result.token;
+          } else {
+            tokens.push(result.token);
+          }
+          storage.saveTokens(tokens);
+
+          return result;
+        }
+      } catch (err: any) {
+        // If API returned a specific business / validation error (e.g. slot full, missing fields), propagate it!
+        if (err.status && err.status >= 400 && err.status < 500) {
+          throw err;
+        }
+        console.warn('[AppointmentService] API booking failed due to network error, using local fallback:', err);
       }
     }
 
@@ -86,6 +122,24 @@ export const appointmentService = {
     const doctors = storage.getDoctors();
     const doc = doctors.find((d) => d.id === data.doctorId);
     if (!doc) throw new Error('Doctor not found');
+
+    // Local slot capacity check via user formula: tactive * pactive + (p - 1) * tavg + buffer
+    const existingForSlot = storage
+      .getAppointments()
+      .filter((a) => a.doctorId === data.doctorId && a.date === data.date && a.time === data.time && a.status !== 'cancelled');
+    const p = existingForSlot.length;
+    if (p > 0) {
+      const tavg = doc.slotDurationMinutes || 10;
+      const tactive = tavg;
+      const buffer = 2;
+      const slotDurationMinutes = 30;
+      const waitTime = tactive * 1 + (p - 1) * tavg + buffer;
+      if (waitTime > slotDurationMinutes) {
+        throw new Error(
+          `Slot ${data.time} is full (${p} patients ahead, wait ${waitTime}m exceeds ${slotDurationMinutes}m slot duration). Please choose another slot.`
+        );
+      }
+    }
 
     const aptId = `apt-${Date.now()}`;
     const tokenId = `tok-${Date.now()}`;
@@ -145,8 +199,10 @@ export const appointmentService = {
     if (!isMockEnabled()) {
       try {
         await apiClient.post(`/appointments/${id}/cancel`, { reason });
-        return;
-      } catch (err) {
+      } catch (err: any) {
+        if (err.status && err.status >= 400 && err.status < 500) {
+          throw err;
+        }
         console.warn('[AppointmentService] API cancelAppointment failed, using local:', err);
       }
     }

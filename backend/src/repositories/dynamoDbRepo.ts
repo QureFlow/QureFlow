@@ -279,9 +279,10 @@ export class DynamoDbRepository {
   }
 
   /**
-   * Check if a patient already has an active or waiting token today
+   * Check if a patient already has an active or waiting token today (or target date)
    */
-  async getActivePatientToken(patientId: string): Promise<QueueToken | null> {
+  async getActivePatientToken(patientId: string, dateStr?: string): Promise<QueueToken | null> {
+    const activePrefix = dateStr ? `ACTIVE#${dateStr}#` : 'ACTIVE#';
     const res = await docClient.send(
       new QueryCommand({
         TableName: this.tableName,
@@ -289,7 +290,7 @@ export class DynamoDbRepository {
         KeyConditionExpression: 'GSI1PK = :patientPk AND begins_with(GSI1SK, :activePrefix)',
         ExpressionAttributeValues: {
           ':patientPk': `PATIENT#${patientId}`,
-          ':activePrefix': 'ACTIVE#',
+          ':activePrefix': activePrefix,
         },
       })
     );
@@ -306,7 +307,7 @@ export class DynamoDbRepository {
   async createToken(token: QueueToken, queueId: string, seqNum: number): Promise<QueueToken> {
     const priorityCode = token.priority === 'emergency' ? '0' : '2';
     const paddedSeq = String(seqNum).padStart(4, '0');
-    const today = new Date().toISOString().split('T')[0];
+    const queueDate = queueId.split('#')[0] || new Date().toISOString().split('T')[0];
 
     const item: Record<string, any> = {
       pk: `QUEUE#${queueId}`,
@@ -319,7 +320,7 @@ export class DynamoDbRepository {
     // Index in PatientIndex if patientId is present
     if (token.patientId) {
       item.GSI1PK = `PATIENT#${token.patientId}`;
-      item.GSI1SK = `ACTIVE#${today}#${queueId}`;
+      item.GSI1SK = `ACTIVE#${queueDate}#${queueId}`;
     }
 
     // Sparse Index in QueueWaitingIndex if status is 'waiting'
@@ -515,6 +516,7 @@ export class DynamoDbRepository {
     date?: string;
   }): Promise<Appointment[]> {
     if (filters?.patientId) {
+      const aptPrefix = filters?.date ? `APT#${filters.date}#` : 'APT#';
       const res = await docClient.send(
         new QueryCommand({
           TableName: this.tableName,
@@ -522,14 +524,19 @@ export class DynamoDbRepository {
           KeyConditionExpression: 'GSI1PK = :patientPk AND begins_with(GSI1SK, :aptPrefix)',
           ExpressionAttributeValues: {
             ':patientPk': `PATIENT#${filters.patientId}`,
-            ':aptPrefix': 'APT#',
+            ':aptPrefix': aptPrefix,
           },
         })
       );
-      return (res.Items || []) as Appointment[];
+      let list = (res.Items || []) as Appointment[];
+      if (filters?.date) {
+        list = list.filter((a) => a.date === filters.date);
+      }
+      return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
     if (filters?.doctorId && filters.doctorId !== 'all') {
+      const aptPrefix = filters?.date ? `APT#${filters.date}#` : 'APT#';
       const res = await docClient.send(
         new QueryCommand({
           TableName: this.tableName,
@@ -537,11 +544,15 @@ export class DynamoDbRepository {
           KeyConditionExpression: 'GSI2PK = :docPk AND begins_with(GSI2SK, :aptPrefix)',
           ExpressionAttributeValues: {
             ':docPk': `DOCTOR#${filters.doctorId}`,
-            ':aptPrefix': 'APT#',
+            ':aptPrefix': aptPrefix,
           },
         })
       );
-      return (res.Items || []) as Appointment[];
+      let list = (res.Items || []) as Appointment[];
+      if (filters?.date) {
+        list = list.filter((a) => a.date === filters.date);
+      }
+      return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
     // Default: scan all appointments

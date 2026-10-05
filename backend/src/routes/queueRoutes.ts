@@ -19,11 +19,9 @@ router.get('/doctor/:doctorId', async (req, res) => {
 router.get('/all', async (_req, res) => {
   try {
     const doctors = await dynamoDbRepo.getDoctors();
-    const queues = [];
-    for (const d of doctors) {
-      const q = await queueService.getDoctorQueue(d.id);
-      queues.push(q);
-    }
+    const queues = await Promise.all(
+      doctors.map((d) => queueService.getDoctorQueue(d.id))
+    );
     res.json(queues);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

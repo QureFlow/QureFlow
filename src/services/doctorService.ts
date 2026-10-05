@@ -1,4 +1,4 @@
-import { Doctor } from '../types';
+import { Doctor, SlotAvailability } from '../types';
 import { storage } from './storage';
 import { apiClient } from './apiClient';
 
@@ -117,7 +117,7 @@ export const doctorService = {
   async getAvailableSlots(
     doctorId: string,
     dateStr: string
-  ): Promise<{ time: string; available: boolean }[]> {
+  ): Promise<SlotAvailability[]> {
     const baseSlots = [
       '09:00 AM',
       '09:30 AM',
@@ -131,29 +131,62 @@ export const doctorService = {
       '01:30 PM',
     ];
 
-    try {
-      const appointments = await apiClient.get<any[]>(`/appointments?doctorId=${doctorId}&date=${dateStr}`);
-      const bookedTimes = new Set(
-        (appointments || [])
-          .filter((a) => a.status !== 'cancelled')
-          .map((a) => a.time)
-      );
-
-      return baseSlots.map((time) => ({
-        time,
-        available: !bookedTimes.has(time),
-      }));
-    } catch {
-      const appointments = storage
-        .getAppointments()
-        .filter((a) => a.doctorId === doctorId && a.date === dateStr && a.status !== 'cancelled');
-
-      const bookedTimes = new Set(appointments.map((a) => a.time));
-
-      return baseSlots.map((time) => ({
-        time,
-        available: !bookedTimes.has(time),
-      }));
+    if (!isMockEnabled()) {
+      try {
+        const slots = await apiClient.get<SlotAvailability[]>(
+          `/doctors/${doctorId}/slots?date=${dateStr}`
+        );
+        if (Array.isArray(slots) && slots.length > 0) {
+          return slots;
+        }
+      } catch (err) {
+        console.warn('[DoctorService] API slots fetch failed, using local calculation:', err);
+      }
     }
+
+    // Local / offline calculation using user formula:
+    // estimatedWaitMinutes = tactive * pactive + (p - 1) * tavg + buffer
+    const doc =
+      (await this.getDoctorById(doctorId)) ||
+      storage.getDoctors().find((d) => d.id === doctorId);
+    const appointments = storage
+      .getAppointments()
+      .filter((a) => a.doctorId === doctorId && a.date === dateStr && a.status !== 'cancelled');
+
+    const slotDurationMinutes = 30;
+    const tavg = doc?.slotDurationMinutes || 10;
+    const buffer = 2;
+
+    return baseSlots.map((time) => {
+      const bookedCount = appointments.filter((a) => a.time === time).length;
+      const p = bookedCount;
+
+      if (p === 0) {
+        return {
+          time,
+          available: true,
+          isFull: false,
+          patientsAhead: 0,
+          estimatedWaitMinutes: 0,
+          slotDurationMinutes,
+          statusText: 'Available',
+        };
+      }
+
+      const pactive = 1;
+      const tactive = tavg;
+      const estimatedWaitMinutes = Math.round(tactive * pactive + (p - 1) * tavg + buffer);
+      const isFull = estimatedWaitMinutes > slotDurationMinutes;
+
+      return {
+        time,
+        available: !isFull,
+        isFull,
+        patientsAhead: p,
+        estimatedWaitMinutes,
+        slotDurationMinutes,
+        statusText: isFull ? 'Slot Full' : `${p} ahead (~${estimatedWaitMinutes}m)`,
+      };
+    });
   },
 };

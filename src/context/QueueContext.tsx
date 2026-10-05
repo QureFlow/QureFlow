@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   QueueToken,
   Appointment,
@@ -10,6 +10,8 @@ import {
 import { storage } from '../services/storage';
 import { queueService } from '../services/queueService';
 import { appointmentService } from '../services/appointmentService';
+import { doctorService } from '../services/doctorService';
+import { clinicService } from '../services/clinicService';
 
 export interface ToastMessage {
   id: string;
@@ -97,7 +99,10 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [pausedDoctors, setPausedDoctors] = useState<string[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const refreshState = useCallback(() => {
+  const isSyncingRef = useRef(false);
+
+  // Synchronous state refresh from local cache
+  const refreshLocalState = useCallback(() => {
     storage.init();
     setTokens(storage.getTokens());
     setAppointments(storage.getAppointments());
@@ -107,21 +112,73 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPausedDoctors(storage.getPausedDoctors());
   }, []);
 
-  useEffect(() => {
-    refreshState();
+  // Safe background remote sync without event cascade loops
+  const syncRemoteData = useCallback(async () => {
+    if (import.meta.env.VITE_USE_MOCK_BACKEND === 'true' || isSyncingRef.current) return;
+    isSyncingRef.current = true;
 
+    try {
+      const [aptsRes, docsRes, clinicsRes, settingsRes, queuesRes] = await Promise.allSettled([
+        appointmentService.getAppointments(),
+        doctorService.getDoctors(),
+        clinicService.getClinics(),
+        clinicService.getSettings(),
+        queueService.getAllDoctorQueues(),
+      ]);
+
+      if (aptsRes.status === 'fulfilled' && Array.isArray(aptsRes.value)) {
+        setAppointments(aptsRes.value);
+      }
+      if (docsRes.status === 'fulfilled' && Array.isArray(docsRes.value) && docsRes.value.length > 0) {
+        setDoctors(docsRes.value);
+      }
+      if (clinicsRes.status === 'fulfilled' && Array.isArray(clinicsRes.value) && clinicsRes.value.length > 0) {
+        setClinics(clinicsRes.value);
+      }
+      if (settingsRes.status === 'fulfilled' && settingsRes.value) {
+        setSettings(settingsRes.value);
+      }
+      if (queuesRes.status === 'fulfilled' && Array.isArray(queuesRes.value)) {
+        const liveTokens = queuesRes.value.flatMap((q) => q.tokens || []);
+        if (liveTokens.length > 0) {
+          setTokens(liveTokens);
+        }
+      }
+    } catch (err) {
+      console.warn('[QueueContext] Remote sync error:', err);
+    } finally {
+      isSyncingRef.current = false;
+    }
+  }, []);
+
+  const refreshState = useCallback(() => {
+    refreshLocalState();
+    syncRemoteData();
+  }, [refreshLocalState, syncRemoteData]);
+
+  useEffect(() => {
+    refreshLocalState();
+    syncRemoteData();
+
+    // Event listener only updates local state without triggering remote API loops
     const handleSync = () => {
-      refreshState();
+      refreshLocalState();
     };
 
     window.addEventListener('queless-state-change', handleSync);
     window.addEventListener('storage', handleSync);
 
+    // Periodic gentle refresh every 15s to keep queues and tokens updated
+    const interval = setInterval(() => {
+      syncRemoteData();
+    }, 15000);
+
     return () => {
+      clearInterval(interval);
       window.removeEventListener('queless-state-change', handleSync);
       window.removeEventListener('storage', handleSync);
     };
-  }, [refreshState]);
+  }, [refreshLocalState, syncRemoteData]);
 
   const showToast = useCallback(
     (message: string, type: 'success' | 'info' | 'warning' | 'error' = 'info') => {
@@ -217,6 +274,10 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }) => {
     try {
       const token = await queueService.addWalkInPatient(data);
+      setTokens((prev) => {
+        const filtered = prev.filter((t) => t.id !== token.id);
+        return [...filtered, token];
+      });
       refreshState();
       showToast(
         `Walk-in registered! Generated Token: ${token.tokenNumber} (${token.priority.toUpperCase()})`,
@@ -241,6 +302,14 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }) => {
     try {
       const result = await appointmentService.createAppointment(data);
+      setAppointments((prev) => {
+        const filtered = prev.filter((a) => a.id !== result.appointment.id);
+        return [result.appointment, ...filtered];
+      });
+      setTokens((prev) => {
+        const filtered = prev.filter((t) => t.id !== result.token.id);
+        return [...filtered, result.token];
+      });
       refreshState();
       showToast(`Appointment confirmed! Token ${result.token.tokenNumber} allocated.`, 'success');
       return result;
@@ -254,6 +323,9 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cancelAppointment = async (id: string, reason?: string) => {
     try {
       await appointmentService.cancelAppointment(id, reason);
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: 'cancelled' } : a))
+      );
       refreshState();
       showToast('Appointment and queue token successfully cancelled', 'info');
     } catch (err: unknown) {

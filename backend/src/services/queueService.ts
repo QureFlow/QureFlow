@@ -47,9 +47,9 @@ export class QueueService {
 
     const queueId = dynamoDbRepo.getQueueId(data.doctorId, data.dateStr);
 
-    // Concurrency / Duplicate Check: Prevent duplicate active queue entry for same patient
+    // Concurrency / Duplicate Check: Prevent duplicate active queue entry for same patient on same date
     if (data.patientId) {
-      const activeToken = await dynamoDbRepo.getActivePatientToken(data.patientId);
+      const activeToken = await dynamoDbRepo.getActivePatientToken(data.patientId, data.dateStr);
       if (activeToken && activeToken.status === 'waiting') {
         throw new Error(
           `Patient already has an active waiting token (${activeToken.tokenNumber}) in a consultation queue.`
@@ -228,27 +228,49 @@ export class QueueService {
 
     if (!activeToken) return null;
 
-    const queueId = dynamoDbRepo.getQueueId(activeToken.doctorId);
+    const queueId = (activeToken as any).queueId || dynamoDbRepo.getQueueId(activeToken.doctorId);
     const waitingTokens = await dynamoDbRepo.getWaitingTokens(queueId);
     const allTokens = await dynamoDbRepo.getAllTokensForQueue(queueId);
     const currentToken = allTokens.find((t) => t.status === 'current');
 
-    let patientsAhead = 0;
+    let patientsWaitingAhead = 0;
     if (activeToken.status === 'waiting') {
       const idx = waitingTokens.findIndex((t) => t.id === activeToken!.id);
-      patientsAhead = idx >= 0 ? idx : 0;
+      patientsWaitingAhead = idx >= 0 ? idx : 0;
     }
 
-    const avgMinutes = settings.averageConsultationMinutes || 7;
-    const estimatedWaitMinutes = Math.max(
-      patientsAhead * avgMinutes,
-      activeToken.status === 'current' ? 0 : 5
-    );
+    const tavg = settings.averageConsultationMinutes || 7;
+    const buffer = settings.bufferMinutes ?? 2;
+    const pactive = currentToken ? 1 : 0;
+
+    let tactive = 0;
+    if (pactive === 1 && currentToken?.calledAt) {
+      const elapsedMinutes = Math.floor(
+        Math.max(0, Date.now() - new Date(currentToken.calledAt).getTime()) / 60000
+      );
+      tactive = Math.max(1, tavg - elapsedMinutes);
+    } else if (pactive === 1) {
+      tactive = tavg;
+    }
+
+    // p: Total patients ahead of this patient (including active consultation patient)
+    const p = pactive === 1 ? patientsWaitingAhead + 1 : patientsWaitingAhead;
+
+    let estimatedWaitMinutes = 0;
+    if (activeToken.status === 'current') {
+      estimatedWaitMinutes = 0;
+    } else if (p <= 0) {
+      estimatedWaitMinutes = 0;
+    } else {
+      // User formula: tactive * pactive + (p - 1) * tavg + buffer
+      const calculated = tactive * pactive + (p - 1) * tavg + buffer;
+      estimatedWaitMinutes = Math.max(1, Math.round(calculated));
+    }
 
     return {
       token: activeToken,
       currentServingToken: currentToken ? currentToken.tokenNumber : null,
-      patientsAhead,
+      patientsAhead: p,
       estimatedWaitMinutes,
       isPaused: pausedDoctors.includes(activeToken.doctorId),
     };

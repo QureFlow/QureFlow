@@ -87,7 +87,24 @@ export const queueService = {
     if (!isMockEnabled()) {
       try {
         const token = await apiClient.post<QueueToken | null>('/queues/call-next', { doctorId });
-        return token;
+        if (token) {
+          const tokens = storage.getTokens();
+          // Mark previous current as completed
+          const prevIdx = tokens.findIndex((t) => t.doctorId === doctorId && t.status === 'current');
+          if (prevIdx !== -1) {
+            tokens[prevIdx].status = 'completed';
+            tokens[prevIdx].servedAt = new Date().toISOString();
+          }
+          // Mark called token as current
+          const newIdx = tokens.findIndex((t) => t.id === token.id);
+          if (newIdx !== -1) {
+            tokens[newIdx] = { ...tokens[newIdx], status: 'current', calledAt: token.calledAt || new Date().toISOString() };
+          } else {
+            tokens.push(token);
+          }
+          storage.saveTokens(tokens);
+          return token;
+        }
       } catch (err) {
         console.warn('[QueueService] API callNext failed, using local:', err);
       }
@@ -139,7 +156,6 @@ export const queueService = {
     if (!isMockEnabled()) {
       try {
         await apiClient.post(`/tokens/${tokenId}/serve`);
-        return;
       } catch (err) {
         console.warn('[QueueService] API markServed failed, using local:', err);
       }
@@ -167,7 +183,6 @@ export const queueService = {
     if (!isMockEnabled()) {
       try {
         await apiClient.post(`/tokens/${tokenId}/skip`);
-        return;
       } catch (err) {
         console.warn('[QueueService] API skip failed, using local:', err);
       }
@@ -194,7 +209,6 @@ export const queueService = {
     if (!isMockEnabled()) {
       try {
         await apiClient.post(`/tokens/${tokenId}/cancel`);
-        return;
       } catch (err) {
         console.warn('[QueueService] API cancelToken failed, using local:', err);
       }
@@ -221,7 +235,6 @@ export const queueService = {
     if (!isMockEnabled()) {
       try {
         await apiClient.post('/queues/pause', { doctorId, paused: true });
-        return;
       } catch (err) {
         console.warn('[QueueService] API pause failed, using local:', err);
       }
@@ -238,7 +251,6 @@ export const queueService = {
     if (!isMockEnabled()) {
       try {
         await apiClient.post('/queues/pause', { doctorId, paused: false });
-        return;
       } catch (err) {
         console.warn('[QueueService] API resume failed, using local:', err);
       }
@@ -257,11 +269,20 @@ export const queueService = {
   }): Promise<QueueToken> {
     if (!isMockEnabled()) {
       try {
-        return await apiClient.post<QueueToken>('/queues/join', {
+        const token = await apiClient.post<QueueToken>('/queues/join', {
           ...data,
           isWalkIn: true,
         });
-      } catch (err) {
+        if (token) {
+          const tokens = storage.getTokens();
+          tokens.push(token);
+          storage.saveTokens(tokens);
+          return token;
+        }
+      } catch (err: any) {
+        if (err.status && err.status >= 400 && err.status < 500) {
+          throw err;
+        }
         console.warn('[QueueService] API joinQueue failed, using local:', err);
       }
     }
@@ -336,22 +357,45 @@ export const queueService = {
     const docTokens = tokens.filter((t) => t.doctorId === token.doctorId);
     const currentToken = docTokens.find((t) => t.status === 'current');
 
-    let patientsAhead = 0;
+    let patientsWaitingAhead = 0;
     if (token.status === 'waiting') {
       const waitingTokens = docTokens.filter((t) => t.status === 'waiting');
       const tokenIndex = waitingTokens.findIndex((t) => t.id === token.id);
-      patientsAhead = tokenIndex >= 0 ? tokenIndex : 0;
+      patientsWaitingAhead = tokenIndex >= 0 ? tokenIndex : 0;
     }
 
-    const estimatedWaitMinutes = Math.max(
-      patientsAhead * (settings.averageConsultationMinutes || 7),
-      token.status === 'current' ? 0 : 5
-    );
+    const tavg = settings.averageConsultationMinutes || 7;
+    const buffer = settings.bufferMinutes ?? 2;
+    const pactive = currentToken ? 1 : 0;
+
+    let tactive = 0;
+    if (pactive === 1 && currentToken?.calledAt) {
+      const elapsedMinutes = Math.floor(
+        Math.max(0, Date.now() - new Date(currentToken.calledAt).getTime()) / 60000
+      );
+      tactive = Math.max(1, tavg - elapsedMinutes);
+    } else if (pactive === 1) {
+      tactive = tavg;
+    }
+
+    // p: total patients ahead including the active consultation patient
+    const p = pactive === 1 ? patientsWaitingAhead + 1 : patientsWaitingAhead;
+
+    let estimatedWaitMinutes = 0;
+    if (token.status === 'current') {
+      estimatedWaitMinutes = 0;
+    } else if (p <= 0) {
+      estimatedWaitMinutes = 0;
+    } else {
+      // Formula: tactive * pactive + (p - 1) * tavg + buffer
+      const calculated = tactive * pactive + (p - 1) * tavg + buffer;
+      estimatedWaitMinutes = Math.max(1, Math.round(calculated));
+    }
 
     return {
       token,
       currentServingToken: currentToken ? currentToken.tokenNumber : null,
-      patientsAhead,
+      patientsAhead: p,
       estimatedWaitMinutes,
       isPaused: pausedDoctors.includes(token.doctorId),
     };

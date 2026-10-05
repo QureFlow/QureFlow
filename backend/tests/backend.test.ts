@@ -181,6 +181,100 @@ async function runTests() {
     const cancelledApt = await dynamoDbRepo.getAppointmentById(aptResult.appointment.id);
     assert(cancelledApt?.status === 'cancelled', 'Appointment successfully cancelled');
 
+    // ------------------------------------------------------------------------
+    // Test 8: Slot Availability, Formula Calculation & "Slot Full" Threshold
+    // Formula: tactive * pactive + (p - 1) * tavg + buffer
+    // ------------------------------------------------------------------------
+    console.log('\nTest Suite 8: Slot Waiting Time Formula & Slot Full Enforcement');
+    const slotTestDate = `2099-01-${Math.floor(10 + Math.random() * 18)}`;
+    const slotTestDoctor = 'doc-1'; // tavg = 10, slotDuration = 30, buffer = 2
+
+    // 8a. Initial slot check (0 bookings)
+    let slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
+    const initialSlot10 = slots.find((s) => s.time === '10:00 AM');
+    assert(initialSlot10?.available === true, '10:00 AM slot is initially available');
+    assert(initialSlot10?.patientsAhead === 0, '10:00 AM has 0 patients ahead initially');
+    assert(initialSlot10?.estimatedWaitMinutes === 0, '10:00 AM has 0 min estimated wait initially');
+
+    // 8b. Book 1st patient: p = 0 at booking time
+    const apt1 = await appointmentService.createAppointment({
+      patientId: `pat-slot-1-${Date.now()}`,
+      patientName: 'Slot Patient 1',
+      patientPhone: '9991110001',
+      doctorId: slotTestDoctor,
+      date: slotTestDate,
+      time: '10:00 AM',
+    });
+
+    // Verify after 1 booking: next patient sees p = 1 ahead, wait = 10*1 + (1-1)*10 + 2 = 12 mins
+    slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
+    const slot10After1 = slots.find((s) => s.time === '10:00 AM');
+    assert(slot10After1?.patientsAhead === 1, '10:00 AM shows 1 patient ahead');
+    assert(slot10After1?.estimatedWaitMinutes === 12, `Estimated wait for 2nd patient is 12m (tactive*pactive + (p-1)*tavg + buffer): actual ${slot10After1?.estimatedWaitMinutes}m`);
+    assert(slot10After1?.available === true && !slot10After1?.isFull, '10:00 AM is still available after 1 booking (12m <= 30m slot duration)');
+
+    // 8c. Book 2nd patient: next patient sees p = 2 ahead, wait = 10*1 + (2-1)*10 + 2 = 22 mins
+    const apt2 = await appointmentService.createAppointment({
+      patientId: `pat-slot-2-${Date.now()}`,
+      patientName: 'Slot Patient 2',
+      patientPhone: '9991110002',
+      doctorId: slotTestDoctor,
+      date: slotTestDate,
+      time: '10:00 AM',
+    });
+
+    slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
+    const slot10After2 = slots.find((s) => s.time === '10:00 AM');
+    assert(slot10After2?.patientsAhead === 2, '10:00 AM shows 2 patients ahead');
+    assert(slot10After2?.estimatedWaitMinutes === 22, `Estimated wait for 3rd patient is 22m: actual ${slot10After2?.estimatedWaitMinutes}m`);
+    assert(slot10After2?.available === true && !slot10After2?.isFull, '10:00 AM is still available after 2 bookings (22m <= 30m slot duration)');
+
+    // 8d. Book 3rd patient: next patient sees p = 3 ahead, wait = 10*1 + (3-1)*10 + 2 = 32 mins (> 30m)
+    const apt3 = await appointmentService.createAppointment({
+      patientId: `pat-slot-3-${Date.now()}`,
+      patientName: 'Slot Patient 3',
+      patientPhone: '9991110003',
+      doctorId: slotTestDoctor,
+      date: slotTestDate,
+      time: '10:00 AM',
+    });
+
+    // Verify slot is now FULL
+    slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
+    const slot10After3 = slots.find((s) => s.time === '10:00 AM');
+    assert(slot10After3?.patientsAhead === 3, '10:00 AM shows 3 patients ahead');
+    assert(slot10After3?.estimatedWaitMinutes === 32, `Estimated wait calculated as 32m: actual ${slot10After3?.estimatedWaitMinutes}m`);
+    assert(slot10After3?.isFull === true, 'Slot marked as FULL because wait time (32m) exceeds 30m slot duration');
+    assert(slot10After3?.available === false, 'Slot unavailable for booking when full');
+    assert(slot10After3?.statusText === 'Slot Full', 'Slot statusText is "Slot Full"');
+
+    // 8e. Attempting to book a 4th patient for full slot is rejected
+    let slotFullRejected = false;
+    try {
+      await appointmentService.createAppointment({
+        patientId: `pat-slot-4-${Date.now()}`,
+        patientName: 'Slot Patient 4',
+        patientPhone: '9991110004',
+        doctorId: slotTestDoctor,
+        date: slotTestDate,
+        time: '10:00 AM',
+      });
+    } catch (err: any) {
+      slotFullRejected = true;
+      assert(err.message.includes('full'), `Booking rejected with error message: "${err.message}"`);
+    }
+    assert(slotFullRejected, 'Booking into full slot properly rejected by backend validation');
+
+    // Clean up test slot appointments
+    await appointmentService.cancelAppointment(apt1.appointment.id, 'Test cleanup');
+    await appointmentService.cancelAppointment(apt2.appointment.id, 'Test cleanup');
+    await appointmentService.cancelAppointment(apt3.appointment.id, 'Test cleanup');
+
+    // After cancellation, slot reopens
+    slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
+    const slot10AfterCancel = slots.find((s) => s.time === '10:00 AM');
+    assert(slot10AfterCancel?.isFull === false && slot10AfterCancel?.available === true, '10:00 AM slot reopens after cancellations');
+
   } catch (err: any) {
     console.error('Unhandled test exception:', err);
     failed++;

@@ -107,6 +107,7 @@ export interface DoctorQueueState {
 
 export interface QueueSettings {
   averageConsultationMinutes: number;
+  bufferMinutes?: number;
   allowWalkIns: boolean;
   allowEmergencyPriority: boolean;
   notifyOnTwoAhead: boolean;
@@ -121,4 +122,14 @@ export interface PatientQueueStatus {
   patientsAhead: number;
   estimatedWaitMinutes: number;
   isPaused: boolean;
+}
+
+export interface SlotAvailability {
+  time: string;
+  available: boolean;
+  isFull: boolean;
+  patientsAhead: number;
+  estimatedWaitMinutes: number;
+  slotDurationMinutes: number;
+  statusText: string;
 }
