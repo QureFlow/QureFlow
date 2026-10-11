@@ -5,6 +5,7 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { Button } from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
+import { AccountConfirmationRequired, authService } from '../../services/authService';
 import { User, Phone, Mail, Calendar, ArrowRight } from 'lucide-react';
 
 export const PatientRegister: React.FC = () => {
@@ -15,12 +16,15 @@ export const PatientRegister: React.FC = () => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [dob, setDob] = useState('1995-05-15');
+  const [dob, setDob] = useState('');
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>('Male');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [confirmationIdentifier, setConfirmationIdentifier] = useState('');
+  const [code, setCode] = useState('');
+  const [verified, setVerified] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +36,10 @@ export const PatientRegister: React.FC = () => {
       setError('Please enter a valid 10-digit mobile number');
       return;
     }
-    if (password.length < 6) {
-      setError('Password should be at least 6 characters');
+    if (password.length < 12) {
+      setError(
+        'Use at least 12 characters, including uppercase, lowercase, a number, and a symbol.',
+      );
       return;
     }
     if (password !== confirmPassword) {
@@ -51,15 +57,21 @@ export const PatientRegister: React.FC = () => {
         name,
         phone,
         email: email ? email.trim() : '',
-        dob,
+        dob: dob || undefined,
         gender,
         password,
       });
 
       // Forward to original destination (e.g. /patient/doctors if user was trying to see doctors)
-      const destination = (location.state as { from?: { pathname: string } })?.from?.pathname || '/patient/dashboard';
+      const destination =
+        (location.state as { from?: { pathname: string } })?.from?.pathname || '/patient/dashboard';
       navigate(destination, { replace: true });
     } catch (err: unknown) {
+      if (err instanceof AccountConfirmationRequired) {
+        if (err.requiresCode) setConfirmationIdentifier(err.identifier);
+        else setVerified(true);
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setIsLoading(false);
@@ -84,98 +96,144 @@ export const PatientRegister: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Full Name"
-              placeholder="e.g. Suman Roy"
-              icon={<User className="w-4 h-4" />}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Mobile Number"
-                type="tel"
-                placeholder="10-digit phone number"
-                icon={<Phone className="w-4 h-4" />}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                maxLength={10}
-                required
-              />
-
-              <Input
-                label="Email Address (Optional)"
-                type="email"
-                placeholder="name@example.com"
-                icon={<Mail className="w-4 h-4" />}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+          {verified ? (
+            <div role="status" className="space-y-4 text-sm text-emerald-800">
+              <p>Your account is ready. Sign in to continue.</p>
+              <Link to="/patient/login" className="font-semibold underline">
+                Sign in
+              </Link>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Date of Birth"
-                type="date"
-                icon={<Calendar className="w-4 h-4" />}
-                value={dob}
-                onChange={(e) => setDob(e.target.value)}
-              />
-
-              <Select
-                label="Gender"
-                options={[
-                  { value: 'Male', label: 'Male' },
-                  { value: 'Female', label: 'Female' },
-                  { value: 'Other', label: 'Other' },
-                ]}
-                value={gender}
-                onChange={(e) => setGender(e.target.value as 'Male' | 'Female' | 'Other')}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Password"
-                type="password"
-                placeholder="At least 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-
-              <Input
-                label="Confirm Password"
-                type="password"
-                placeholder="Re-enter password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              By creating an account, your token updates will be securely accessible across any phone device.
-            </p>
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              className="w-full"
-              isLoading={isLoading}
-              icon={<ArrowRight className="w-4 h-4" />}
+          ) : confirmationIdentifier ? (
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                setError('');
+                try {
+                  await authService.confirmRegistration(confirmationIdentifier, code);
+                  setVerified(true);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Verification failed');
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
             >
-              Complete Registration & Sign In
-            </Button>
-          </form>
+              <p className="text-sm text-slate-600">
+                Enter the code sent to your registered contact.
+              </p>
+              <Input
+                label="Verification code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                required
+                autoComplete="one-time-code"
+              />
+              <Button type="submit" isLoading={isLoading}>
+                Verify account
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Full Name"
+                placeholder="e.g. Suman Roy"
+                icon={<User className="w-4 h-4" />}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Mobile Number"
+                  type="tel"
+                  placeholder="10-digit phone number"
+                  icon={<Phone className="w-4 h-4" />}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                  maxLength={10}
+                  required
+                />
+
+                <Input
+                  label="Email Address (Optional)"
+                  type="email"
+                  placeholder="name@example.com"
+                  icon={<Mail className="w-4 h-4" />}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Date of Birth"
+                  type="date"
+                  icon={<Calendar className="w-4 h-4" />}
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                />
+
+                <Select
+                  label="Gender"
+                  options={[
+                    { value: 'Male', label: 'Male' },
+                    { value: 'Female', label: 'Female' },
+                    { value: 'Other', label: 'Other' },
+                  ]}
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as 'Male' | 'Female' | 'Other')}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Password"
+                  type="password"
+                  placeholder="12+ characters, upper/lowercase, number & symbol"
+                  minLength={12}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+
+                <Input
+                  label="Confirm Password"
+                  type="password"
+                  placeholder="Re-enter password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                By creating an account, your token updates will be securely accessible across any
+                phone device.
+              </p>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                className="w-full"
+                isLoading={isLoading}
+                icon={<ArrowRight className="w-4 h-4" />}
+              >
+                Create Account
+              </Button>
+            </form>
+          )}
 
           <div className="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-600">
             Already have an account?{' '}
-            <Link to="/patient/login" state={location.state} className="font-semibold text-brand-700 hover:underline">
+            <Link
+              to="/patient/login"
+              state={location.state}
+              className="font-semibold text-brand-700 hover:underline"
+            >
               Sign in
             </Link>
           </div>

@@ -2,10 +2,12 @@ import {
   GetCommand,
   PutCommand,
   UpdateCommand,
-  QueryCommand,
   ScanCommand,
-  DeleteCommand,
+  QueryCommand,
+  TransactWriteCommand,
+  BatchGetCommand,
 } from '@aws-sdk/lib-dynamodb';
+import { randomUUID } from 'node:crypto';
 import { docClient, DYNAMODB_TABLE_NAME } from '../config/aws.js';
 import {
   Clinic,
@@ -14,595 +16,836 @@ import {
   QueueToken,
   Appointment,
   QueueSettings,
-  QueuePriority,
   TokenStatus,
-  DoctorQueueState,
 } from '../models/types.js';
-
+import { operationMetadata } from '../lib/context.js';
+import { clinicDate } from '../lib/time.js';
+import { phoneDigits } from '../lib/validation.js';
+import { AppError } from '../lib/errors.js';
+import { readModelItems } from '../lib/readModels.js';
+type Item = Record<string, any>;
+export const publicUser = (user: User): User => {
+  const { passwordHash, cognitoSub, sessionVersion, ...safe } = user;
+  return safe;
+};
+const clean = <T>(item: Item): T => {
+  const {
+    pk,
+    sk,
+    GSI1PK,
+    GSI1SK,
+    GSI2PK,
+    GSI2SK,
+    GSI3PK,
+    GSI3SK,
+    phoneLookup,
+    emailLookup,
+    ...data
+  } = item;
+  return data as T;
+};
 export class DynamoDbRepository {
   private tableName = DYNAMODB_TABLE_NAME;
-
-  // ==========================================================================
-  // CLINIC & SETTINGS
-  // ==========================================================================
-
+  private key(pk: string, sk = 'METADATA') {
+    return { pk, sk };
+  }
+  private async get(pk: string, sk = 'METADATA'): Promise<Item | null> {
+    return (
+      (
+        await docClient.send(
+          new GetCommand({
+            TableName: this.tableName,
+            Key: this.key(pk, sk),
+            ConsistentRead: true,
+          }),
+        )
+      ).Item || null
+    );
+  }
+  private async scan(filter: string, values: Item, names?: Item): Promise<Item[]> {
+    const items: Item[] = [];
+    let cursor: Item | undefined;
+    do {
+      const page = await docClient.send(
+        new ScanCommand({
+          TableName: this.tableName,
+          FilterExpression: filter,
+          ExpressionAttributeValues: values,
+          ExpressionAttributeNames: names,
+          ExclusiveStartKey: cursor,
+          ConsistentRead: true,
+        }),
+      );
+      items.push(...(page.Items || []));
+      cursor = page.LastEvaluatedKey;
+    } while (cursor);
+    return items;
+  }
+  private async query(pk: string, prefix: string): Promise<Item[]> {
+    const items: Item[] = [];
+    let cursor: Item | undefined;
+    do {
+      const page = await docClient.send(
+        new QueryCommand({
+          TableName: this.tableName,
+          KeyConditionExpression: prefix ? 'pk = :pk AND begins_with(sk, :prefix)' : 'pk = :pk',
+          ExpressionAttributeValues: prefix ? { ':pk': pk, ':prefix': prefix } : { ':pk': pk },
+          ExclusiveStartKey: cursor,
+          ConsistentRead: true,
+        }),
+      );
+      items.push(...(page.Items || []));
+      cursor = page.LastEvaluatedKey;
+    } while (cursor);
+    return items;
+  }
+  private put(Item: Item, extra: Item = {}) {
+    return { Put: { TableName: this.tableName, Item, ...extra } };
+  }
+  private audit(
+    entityType: string,
+    entityId: string,
+    action: string,
+    clinicId?: string,
+    details: Item = {},
+  ) {
+    const meta = operationMetadata(),
+      id = randomUUID();
+    return this.put({
+      pk: `AUDIT#${clinicId || 'SYSTEM'}`,
+      sk: `${meta.timestamp}#${id}`,
+      id,
+      entityType,
+      entityId,
+      action,
+      clinicId,
+      ...meta,
+      details,
+    });
+  }
+  private async write(items: any[]): Promise<void> {
+    try {
+      await docClient.send(
+        new TransactWriteCommand({ TransactItems: items, ClientRequestToken: randomUUID() }),
+      );
+    } catch (error: any) {
+      if (
+        error.name === 'TransactionCanceledException' ||
+        error.name === 'ConditionalCheckFailedException'
+      )
+        throw new AppError(
+          409,
+          'This record changed, the patient already has an active visit, or the slot is full. Refresh and try again.',
+          'CONFLICT',
+        );
+      throw error;
+    }
+  }
   async getClinics(): Promise<Clinic[]> {
-    const res = await docClient.send(
-      new ScanCommand({
-        TableName: this.tableName,
-        FilterExpression: 'begins_with(pk, :clinicPrefix) AND sk = :meta',
-        ExpressionAttributeValues: {
-          ':clinicPrefix': 'CLINIC#',
-          ':meta': 'METADATA',
-        },
-      })
-    );
-    return (res.Items || []) as Clinic[];
+    if (await this.get('READ_MODELS', 'V1'))
+      return (await this.query('CATALOG#CLINICS', '')).map(clean<Clinic>);
+    return (
+      await this.scan('begins_with(pk, :p) AND sk = :m', { ':p': 'CLINIC#', ':m': 'METADATA' })
+    ).map(clean<Clinic>);
   }
-
-  async getClinicById(clinicId: string): Promise<Clinic | null> {
-    const res = await docClient.send(
-      new GetCommand({
-        TableName: this.tableName,
-        Key: { pk: `CLINIC#${clinicId}`, sk: 'METADATA' },
-      })
-    );
-    return (res.Item as Clinic) || null;
+  async getClinicById(id: string): Promise<Clinic | null> {
+    const row = await this.get(`CLINIC#${id}`);
+    return row ? clean<Clinic>(row) : null;
   }
-
   async saveClinic(clinic: Clinic): Promise<Clinic> {
-    await docClient.send(
-      new PutCommand({
-        TableName: this.tableName,
-        Item: {
-          pk: `CLINIC#${clinic.id}`,
-          sk: 'METADATA',
-          ...clinic,
-        },
-      })
-    );
+    const next = { ...clinic, updatedAt: new Date().toISOString() };
+    await this.write([
+      this.put({
+        ...this.key(`CLINIC#${clinic.id}`),
+        ...next,
+      }),
+      this.audit('clinic', clinic.id, 'updated', clinic.id),
+      ...readModelItems('clinic', next).map((item) => this.put(item)),
+    ]);
     return clinic;
   }
-
-  async getSettings(): Promise<QueueSettings> {
-    const res = await docClient.send(
-      new GetCommand({
-        TableName: this.tableName,
-        Key: { pk: 'SETTINGS#GLOBAL', sk: 'METADATA' },
-      })
-    );
-    if (res.Item) {
-      return res.Item as QueueSettings;
-    }
-    // Default fallback
-    return {
-      averageConsultationMinutes: 7,
-      allowWalkIns: true,
-      allowEmergencyPriority: true,
-      notifyOnTwoAhead: true,
-      autoTokenPrefixByDoctor: true,
-      clinicName: 'Bolpur Rural Sub-Divisional Hospital',
-      contactNumber: '+91 3463 252 240',
-    };
+  async getSettings(clinicId?: string): Promise<QueueSettings> {
+    const row =
+      (clinicId ? await this.get(`SETTINGS#${clinicId}`) : null) ||
+      (await this.get('SETTINGS#GLOBAL'));
+    return row
+      ? clean<QueueSettings>(row)
+      : {
+          averageConsultationMinutes: 10,
+          bufferMinutes: 2,
+          allowWalkIns: true,
+          allowEmergencyPriority: true,
+          notifyOnTwoAhead: false,
+          autoTokenPrefixByDoctor: true,
+          clinicName: 'QureFlow Clinic',
+          contactNumber: '',
+        };
   }
-
-  async saveSettings(settings: QueueSettings): Promise<QueueSettings> {
-    await docClient.send(
-      new PutCommand({
-        TableName: this.tableName,
-        Item: {
-          pk: 'SETTINGS#GLOBAL',
-          sk: 'METADATA',
-          ...settings,
-        },
-      })
-    );
+  async saveSettings(settings: QueueSettings, clinicId?: string): Promise<QueueSettings> {
+    await this.write([
+      this.put({
+        ...this.key(`SETTINGS#${clinicId || 'GLOBAL'}`),
+        ...settings,
+        updatedAt: new Date().toISOString(),
+      }),
+      this.audit('settings', clinicId || 'global', 'updated', clinicId),
+    ]);
     return settings;
   }
-
-  // ==========================================================================
-  // DOCTORS
-  // ==========================================================================
-
   async getDoctors(): Promise<Doctor[]> {
-    const res = await docClient.send(
-      new ScanCommand({
-        TableName: this.tableName,
-        FilterExpression: 'begins_with(pk, :docPrefix) AND sk = :meta',
-        ExpressionAttributeValues: {
-          ':docPrefix': 'DOCTOR#',
-          ':meta': 'METADATA',
-        },
-      })
-    );
-    return (res.Items || []) as Doctor[];
+    if (await this.get('READ_MODELS', 'V1'))
+      return (await this.query('CATALOG#DOCTORS', '')).map(clean<Doctor>);
+    return (
+      await this.scan('begins_with(pk, :p) AND sk = :m', { ':p': 'DOCTOR#', ':m': 'METADATA' })
+    ).map(clean<Doctor>);
   }
-
-  async getDoctorById(doctorId: string): Promise<Doctor | null> {
-    const res = await docClient.send(
-      new GetCommand({
-        TableName: this.tableName,
-        Key: { pk: `DOCTOR#${doctorId}`, sk: 'METADATA' },
-      })
-    );
-    return (res.Item as Doctor) || null;
+  async getDoctorById(id: string): Promise<Doctor | null> {
+    const row = await this.get(`DOCTOR#${id}`);
+    return row ? clean<Doctor>(row) : null;
   }
-
   async saveDoctor(doctor: Doctor): Promise<Doctor> {
-    await docClient.send(
-      new PutCommand({
-        TableName: this.tableName,
-        Item: {
-          pk: `DOCTOR#${doctor.id}`,
-          sk: 'METADATA',
-          GSI2PK: `DOCTOR#${doctor.id}`,
-          GSI2SK: 'PROFILE',
-          ...doctor,
-        },
-      })
-    );
+    const next = { ...doctor, updatedAt: new Date().toISOString() };
+    await this.write([
+      this.put({
+        ...this.key(`DOCTOR#${doctor.id}`),
+        ...next,
+      }),
+      this.audit('doctor', doctor.id, 'updated', doctor.clinicId),
+      ...readModelItems('doctor', next).map((item) => this.put(item)),
+    ]);
     return doctor;
   }
-
-  // ==========================================================================
-  // USERS & PATIENTS
-  // ==========================================================================
-
   async saveUser(user: User): Promise<User> {
-    const cleanPhone = user.phone ? user.phone.replace(/[^0-9]/g, '') : '';
-    const cleanEmail = user.email ? user.email.toLowerCase().trim() : '';
-
-    await docClient.send(
-      new PutCommand({
-        TableName: this.tableName,
-        Item: {
-          pk: `USER#${user.id}`,
-          sk: 'METADATA',
-          GSI1PK: `PATIENT#${user.id}`,
-          GSI1SK: 'PROFILE',
-          phoneLookup: cleanPhone,
-          emailLookup: cleanEmail,
-          ...user,
-        },
-      })
-    );
-    return user;
-  }
-
-  async getUserById(userId: string): Promise<User | null> {
-    const res = await docClient.send(
-      new GetCommand({
-        TableName: this.tableName,
-        Key: { pk: `USER#${userId}`, sk: 'METADATA' },
-      })
-    );
-    return (res.Item as User) || null;
-  }
-
-  async findUserByIdentifier(identifier: string): Promise<User | null> {
-    const cleanId = identifier.trim().toLowerCase();
-    const cleanNumeric = identifier.replace(/[^0-9]/g, '');
-
-    // Search for user by email or phone
-    const res = await docClient.send(
-      new ScanCommand({
-        TableName: this.tableName,
-        FilterExpression:
-          'begins_with(pk, :userPrefix) AND sk = :meta AND (emailLookup = :email OR phoneLookup = :phone OR staffId = :staffId)',
-        ExpressionAttributeValues: {
-          ':userPrefix': 'USER#',
-          ':meta': 'METADATA',
-          ':email': cleanId,
-          ':phone': cleanNumeric,
-          ':staffId': identifier.toUpperCase(),
-        },
-      })
-    );
-
-    if (res.Items && res.Items.length > 0) {
-      return res.Items[0] as User;
+    const previous = await this.getUserById(user.id);
+    const phone = phoneDigits(user.phone),
+      email = user.email.trim().toLowerCase();
+    const next = {
+      ...user,
+      phone,
+      email,
+      version: (user.version || 0) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    const items: any[] = [
+      this.put(
+        { ...this.key(`USER#${user.id}`), phoneLookup: phone, emailLookup: email, ...next },
+        previous
+          ? {
+              ConditionExpression: 'attribute_not_exists(#v) OR #v = :v',
+              ExpressionAttributeNames: { '#v': 'version' },
+              ExpressionAttributeValues: { ':v': user.version || 0 },
+            }
+          : { ConditionExpression: 'attribute_not_exists(pk)' },
+      ),
+    ];
+    for (const [kind, value, old] of [
+      ['PHONE', phone, previous?.phone ? phoneDigits(previous.phone) : ''],
+      ['EMAIL', email, previous?.email?.toLowerCase() || ''],
+    ]) {
+      if (value)
+        items.push(
+          this.put(
+            { ...this.key(`IDENTITY#${kind}#${value}`), userId: user.id },
+            {
+              ConditionExpression: 'attribute_not_exists(pk) OR userId = :id',
+              ExpressionAttributeValues: { ':id': user.id },
+            },
+          ),
+        );
+      if (old && old !== value)
+        items.push({
+          Delete: {
+            TableName: this.tableName,
+            Key: this.key(`IDENTITY#${kind}#${old}`),
+            ConditionExpression: 'attribute_not_exists(pk) OR userId = :id',
+            ExpressionAttributeValues: { ':id': user.id },
+          },
+        });
     }
-    return null;
+    items.push(this.audit('user', user.id, previous ? 'updated' : 'created', user.clinicId));
+    if (user.role === 'patient') {
+      items.push(this.put({ pk: 'CATALOG#PATIENTS', sk: user.id, userId: user.id }));
+      if (user.clinicId)
+        items.push(
+          this.put({ pk: `PATIENTS#CLINIC#${user.clinicId}`, sk: user.id, userId: user.id }),
+        );
+    }
+    await this.write(items);
+    return next;
   }
-
-  async getPatients(search?: string): Promise<User[]> {
-    const res = await docClient.send(
-      new ScanCommand({
-        TableName: this.tableName,
-        FilterExpression: 'begins_with(pk, :userPrefix) AND sk = :meta AND #role = :patientRole',
-        ExpressionAttributeNames: {
-          '#role': 'role',
-        },
-        ExpressionAttributeValues: {
-          ':userPrefix': 'USER#',
-          ':meta': 'METADATA',
-          ':patientRole': 'patient',
-        },
-      })
+  async getUserById(id: string): Promise<User | null> {
+    const row = await this.get(`USER#${id}`);
+    return row ? clean<User>(row) : null;
+  }
+  async findUserByIdentifier(identifier: string): Promise<User | null> {
+    const id = identifier.trim().toLowerCase(),
+      isEmail = id.includes('@'),
+      phone = phoneDigits(id);
+    const claim =
+      isEmail || /^\d{10}$/.test(phone)
+        ? await this.get(`IDENTITY#${isEmail ? 'EMAIL' : 'PHONE'}#${isEmail ? id : phone}`)
+        : null;
+    if (claim) return this.getUserById(claim.userId);
+    const users = await this.scan('begins_with(pk, :p) AND sk = :m', {
+      ':p': 'USER#',
+      ':m': 'METADATA',
+    });
+    const found = users.find((u) =>
+      isEmail
+        ? u.email?.toLowerCase() === id
+        : /^\d{10}$/.test(phone)
+          ? phoneDigits(u.phone || '') === phone
+          : u.staffId?.toLowerCase() === id,
     );
-
-    let list = (res.Items || []) as User[];
+    return found ? clean<User>(found) : null;
+  }
+  async findUserByCognitoSub(sub: string): Promise<User | null> {
+    const users = await this.scan('begins_with(pk, :p) AND sk = :m AND cognitoSub = :sub', {
+      ':p': 'USER#',
+      ':m': 'METADATA',
+      ':sub': sub,
+    });
+    return users[0] ? clean<User>(users[0]) : null;
+  }
+  async getPatients(search?: string, clinicId?: string): Promise<User[]> {
+    if (await this.get('READ_MODELS', 'V1')) {
+      const references = await this.query(
+        clinicId ? `PATIENTS#CLINIC#${clinicId}` : 'CATALOG#PATIENTS',
+        '',
+      );
+      const users: User[] = [];
+      for (let offset = 0; offset < references.length; offset += 100) {
+        let keys = references.slice(offset, offset + 100).map((r) => this.key(`USER#${r.userId}`));
+        for (let attempt = 0; keys.length && attempt < 6; attempt++) {
+          const result = await docClient.send(
+            new BatchGetCommand({
+              RequestItems: { [this.tableName]: { Keys: keys, ConsistentRead: true } },
+            }),
+          );
+          users.push(...(result.Responses?.[this.tableName] || []).map(clean<User>));
+          keys = (result.UnprocessedKeys?.[this.tableName]?.Keys || []) as {
+            pk: string;
+            sk: string;
+          }[];
+        }
+        if (keys.length)
+          throw new AppError(503, 'Patient records could not all be loaded. Please retry.');
+      }
+      const q = search?.toLowerCase();
+      return users.filter(
+        (u) =>
+          u.role === 'patient' &&
+          (!q || `${u.name} ${u.email} ${u.phone}`.toLowerCase().includes(q)),
+      );
+    }
+    let list = (
+      await this.scan(
+        'begins_with(pk, :p) AND sk = :m AND #role = :r',
+        { ':p': 'USER#', ':m': 'METADATA', ':r': 'patient' },
+        { '#role': 'role' },
+      )
+    ).map(clean<User>);
+    if (clinicId) {
+      const seen = new Set(
+        (await this.getAppointments({ clinicId }))
+          .filter((a) => a.clinicId === clinicId)
+          .map((a) => a.patientId),
+      );
+      for (const d of (await this.getDoctors()).filter((d) => d.clinicId === clinicId))
+        for (const t of await this.getAllTokensForQueue(this.getQueueId(d.id)))
+          if (t.patientId) seen.add(t.patientId);
+      list = list.filter((u) => u.clinicId === clinicId || seen.has(u.id));
+    }
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.phone.includes(q) ||
-          p.email.toLowerCase().includes(q)
+        (u) => u.name.toLowerCase().includes(q) || u.phone.includes(q) || u.email.includes(q),
       );
     }
     return list;
   }
-
-  // ==========================================================================
-  // QUEUE & TOKEN MANAGEMENT
-  // ==========================================================================
-
-  getQueueId(doctorId: string, dateStr?: string): string {
-    const today = dateStr || new Date().toISOString().split('T')[0];
-    return `${today}#${doctorId}`;
+  getQueueId(doctorId: string, date = clinicDate()) {
+    return `${date}#${doctorId}`;
   }
-
-  private getDoctorPrefix(doctorId: string): string {
-    const prefixes: Record<string, string> = {
-      'doc-1': 'A',
-      'doc-2': 'B',
-      'doc-3': 'C',
-      'doc-4': 'R',
-      'doc-5': 'F',
-      'doc-6': 'P',
-      'doc-7': 'M',
-      'doc-8': 'D',
-      'doc-9': 'T',
-      'doc-10': 'K',
-    };
-    return prefixes[doctorId] || 'Q';
-  }
-
-  /**
-   * Concurrency-safe atomic token counter generation.
-   * Serialized in DynamoDB with ADD currentNumber :one
-   */
   async getNextTokenSequence(queueId: string): Promise<{ seq: number; paddedSeq: string }> {
     const res = await docClient.send(
       new UpdateCommand({
         TableName: this.tableName,
-        Key: { pk: `QUEUE#${queueId}`, sk: 'COUNTER' },
-        UpdateExpression: 'ADD currentNumber :inc',
-        ExpressionAttributeValues: { ':inc': 1 },
+        Key: this.key(`QUEUE#${queueId}`, 'COUNTER'),
+        UpdateExpression: 'ADD currentNumber :one',
+        ExpressionAttributeValues: { ':one': 1 },
         ReturnValues: 'UPDATED_NEW',
-      })
+      }),
     );
-    const seq = (res.Attributes?.currentNumber as number) || 1;
-    const paddedSeq = String(seq).padStart(4, '0');
-    return { seq, paddedSeq };
+    const seq = res.Attributes!.currentNumber as number;
+    return { seq, paddedSeq: String(seq).padStart(8, '0') };
   }
-
-  /**
-   * Check if a patient already has an active or waiting token today (or target date)
-   */
-  async getActivePatientToken(patientId: string, dateStr?: string): Promise<QueueToken | null> {
-    const activePrefix = dateStr ? `ACTIVE#${dateStr}#` : 'ACTIVE#';
-    const res = await docClient.send(
-      new QueryCommand({
-        TableName: this.tableName,
-        IndexName: 'PatientIndex',
-        KeyConditionExpression: 'GSI1PK = :patientPk AND begins_with(GSI1SK, :activePrefix)',
-        ExpressionAttributeValues: {
-          ':patientPk': `PATIENT#${patientId}`,
-          ':activePrefix': activePrefix,
-        },
-      })
-    );
-
-    if (res.Items && res.Items.length > 0) {
-      return res.Items[0] as QueueToken;
+  async getActivePatientToken(patientId: string, date = clinicDate()): Promise<QueueToken | null> {
+    const claim = await this.get(`PATIENT_DAY#${date}#${patientId}`, 'ACTIVE');
+    if (claim) return (await this.findTokenById(claim.tokenId))?.token || null;
+    for (const d of await this.getDoctors()) {
+      const found = (await this.getAllTokensForQueue(this.getQueueId(d.id, date))).find(
+        (t) => t.patientId === patientId && ['waiting', 'current'].includes(t.status),
+      );
+      if (found) return found;
     }
     return null;
   }
-
-  /**
-   * Insert a new token into the queue and indexes
-   */
-  async createToken(token: QueueToken, queueId: string, seqNum: number): Promise<QueueToken> {
-    const priorityCode = token.priority === 'emergency' ? '0' : '2';
-    const paddedSeq = String(seqNum).padStart(4, '0');
-    const queueDate = queueId.split('#')[0] || new Date().toISOString().split('T')[0];
-
-    const item: Record<string, any> = {
-      pk: `QUEUE#${queueId}`,
-      sk: `TOKEN#${paddedSeq}`,
-      tokenSeq: seqNum,
-      queueId,
+  async initializeSlot(
+    doctorId: string,
+    date: string,
+    time: string,
+    capacity: number,
+  ): Promise<void> {
+    const count = (await this.getAppointments({ doctorId, date })).filter(
+      (a) => a.time === time && !['cancelled', 'no_show'].includes(a.status),
+    ).length;
+    try {
+      await docClient.send(
+        new PutCommand({
+          TableName: this.tableName,
+          Item: {
+            ...this.key(`SLOT#${date}#${doctorId}#${time}`, 'COUNTER'),
+            bookedCount: count,
+            capacity,
+          },
+          ConditionExpression: 'attribute_not_exists(pk)',
+        }),
+      );
+    } catch (e: any) {
+      if (e.name !== 'ConditionalCheckFailedException') throw e;
+    }
+  }
+  async createToken(
+    token: QueueToken,
+    queueId: string,
+    seq: number,
+    appointment?: Appointment,
+    capacity?: number,
+  ): Promise<QueueToken> {
+    const queueDate = queueId.split('#')[0],
+      meta = operationMetadata();
+    const next = {
       ...token,
+      queueId,
+      queueDate,
+      tokenSeq: seq,
+      version: 1,
+      updatedAt: meta.timestamp,
+      metadata: {
+        ...token.metadata,
+        source: token.isWalkIn ? 'reception' : 'online',
+        createdBy: meta.actorId,
+        requestId: meta.requestId,
+        timeZone: 'Asia/Kolkata',
+        schemaVersion: 2,
+      },
     };
-
-    // Index in PatientIndex if patientId is present
-    if (token.patientId) {
-      item.GSI1PK = `PATIENT#${token.patientId}`;
-      item.GSI1SK = `ACTIVE#${queueDate}#${queueId}`;
-    }
-
-    // Sparse Index in QueueWaitingIndex if status is 'waiting'
-    if (token.status === 'waiting') {
-      item.GSI3PK = `QUEUE#${queueId}`;
-      item.GSI3SK = `WAITING#${priorityCode}#${paddedSeq}`;
-    }
-
-    await docClient.send(
-      new PutCommand({
-        TableName: this.tableName,
-        Item: item,
-      })
-    );
-
-    return token;
-  }
-
-  /**
-   * Query waiting tokens for a queue, ordered by priority (0=Emergency, 2=Normal) then sequence
-   */
-  async getWaitingTokens(queueId: string): Promise<QueueToken[]> {
-    const res = await docClient.send(
-      new QueryCommand({
-        TableName: this.tableName,
-        IndexName: 'QueueWaitingIndex',
-        KeyConditionExpression: 'GSI3PK = :queuePk AND begins_with(GSI3SK, :waitPrefix)',
-        ExpressionAttributeValues: {
-          ':queuePk': `QUEUE#${queueId}`,
-          ':waitPrefix': 'WAITING#',
+    const key = this.key(`QUEUE#${queueId}`, `TOKEN#${String(seq).padStart(8, '0')}`);
+    const items: any[] = [
+      this.put({ ...key, ...next }, { ConditionExpression: 'attribute_not_exists(pk)' }),
+      ...readModelItems('token', next).map((item) => this.put(item)),
+      this.put(
+        { ...this.key(`TOKEN#${token.id}`), queuePk: key.pk, queueSk: key.sk },
+        { ConditionExpression: 'attribute_not_exists(pk)' },
+      ),
+      {
+        ConditionCheck: {
+          TableName: this.tableName,
+          Key: this.key(`DOCTOR#${token.doctorId}`),
+          ConditionExpression: '#status = :active',
+          ExpressionAttributeNames: { '#status': 'status' },
+          ExpressionAttributeValues: { ':active': 'active' },
         },
-        ScanIndexForward: true, // Lexical ascending: 0 (Emergency) before 2 (Normal), then seq order!
-      })
-    );
-
-    return (res.Items || []) as QueueToken[];
-  }
-
-  /**
-   * Retrieve all tokens for a queue
-   */
-  async getAllTokensForQueue(queueId: string): Promise<QueueToken[]> {
-    const res = await docClient.send(
-      new QueryCommand({
-        TableName: this.tableName,
-        KeyConditionExpression: 'pk = :queuePk AND begins_with(sk, :tokenPrefix)',
-        ExpressionAttributeValues: {
-          ':queuePk': `QUEUE#${queueId}`,
-          ':tokenPrefix': 'TOKEN#',
+      },
+      this.audit('token', token.id, 'created', token.clinicId, {
+        status: 'waiting',
+        queueDate,
+        priority: token.priority,
+      }),
+    ];
+    if (token.patientId)
+      items.push(
+        this.put({
+          pk: `PATIENTS#CLINIC#${token.clinicId}`,
+          sk: token.patientId,
+          userId: token.patientId,
+        }),
+        this.put(
+          {
+            ...this.key(`PATIENT_DAY#${queueDate}#${token.patientId}`, 'ACTIVE'),
+            tokenId: token.id,
+          },
+          { ConditionExpression: 'attribute_not_exists(pk)' },
+        ),
+      );
+    if (appointment) {
+      const appointmentView = {
+        ...appointment,
+        tokenId: token.id,
+        version: 1,
+        updatedAt: meta.timestamp,
+        metadata: {
+          source: 'online',
+          createdBy: meta.actorId,
+          requestId: meta.requestId,
+          schemaVersion: 2,
         },
-      })
-    );
-    return (res.Items || []) as QueueToken[];
-  }
-
-  /**
-   * Find token by ID
-   */
-  async findTokenById(tokenId: string): Promise<{ token: QueueToken; pk: string; sk: string } | null> {
-    const res = await docClient.send(
-      new ScanCommand({
-        TableName: this.tableName,
-        FilterExpression: 'begins_with(pk, :queuePrefix) AND begins_with(sk, :tokenPrefix) AND id = :tokenId',
-        ExpressionAttributeValues: {
-          ':queuePrefix': 'QUEUE#',
-          ':tokenPrefix': 'TOKEN#',
-          ':tokenId': tokenId,
-        },
-      })
-    );
-
-    if (res.Items && res.Items.length > 0) {
-      const item = res.Items[0];
-      return {
-        token: item as QueueToken,
-        pk: item.pk,
-        sk: item.sk,
       };
+      items.push(...readModelItems('appointment', appointmentView).map((item) => this.put(item)));
+      items.push(
+        this.put(
+          {
+            ...this.key(`APPOINTMENT#${appointment.id}`),
+            ...appointment,
+            tokenId: token.id,
+            version: 1,
+            updatedAt: meta.timestamp,
+            metadata: {
+              source: 'online',
+              createdBy: meta.actorId,
+              requestId: meta.requestId,
+              schemaVersion: 2,
+            },
+          },
+          { ConditionExpression: 'attribute_not_exists(pk)' },
+        ),
+      );
+      items.push({
+        Update: {
+          TableName: this.tableName,
+          Key: this.key(
+            `SLOT#${appointment.date}#${appointment.doctorId}#${appointment.time}`,
+            'COUNTER',
+          ),
+          UpdateExpression: 'ADD bookedCount :one',
+          ConditionExpression: 'bookedCount < :capacity',
+          ExpressionAttributeValues: { ':one': 1, ':capacity': capacity },
+        },
+      });
+      items.push(
+        this.audit('appointment', appointment.id, 'created', appointment.clinicId, {
+          date: appointment.date,
+          time: appointment.time,
+          status: appointment.status,
+        }),
+      );
     }
-    return null;
+    await this.write(items);
+    return next;
   }
-
-  /**
-   * Update token status (e.g. current, completed, skipped, cancelled)
-   */
+  async getAllTokensForQueue(queueId: string): Promise<QueueToken[]> {
+    return (await this.query(`QUEUE#${queueId}`, 'TOKEN#'))
+      .map(clean<QueueToken>)
+      .sort(
+        (a, b) =>
+          (a.tokenSeq || Number(a.tokenNumber.split('-').pop())) -
+          (b.tokenSeq || Number(b.tokenNumber.split('-').pop())),
+      );
+  }
+  async getWaitingTokens(queueId: string): Promise<QueueToken[]> {
+    return (await this.getAllTokensForQueue(queueId))
+      .filter((t) => t.status === 'waiting')
+      .sort(
+        (a, b) =>
+          (a.priority === 'emergency' ? 0 : 1) - (b.priority === 'emergency' ? 0 : 1) ||
+          (a.tokenSeq || Number(a.tokenNumber.split('-').pop())) -
+            (b.tokenSeq || Number(b.tokenNumber.split('-').pop())),
+      );
+  }
+  async findTokenById(id: string): Promise<{ token: QueueToken; pk: string; sk: string } | null> {
+    const locator = await this.get(`TOKEN#${id}`);
+    let item = locator ? await this.get(locator.queuePk, locator.queueSk) : null;
+    if (!item)
+      item =
+        (
+          await this.scan('begins_with(pk, :p) AND begins_with(sk, :t) AND id = :id', {
+            ':p': 'QUEUE#',
+            ':t': 'TOKEN#',
+            ':id': id,
+          })
+        )[0] || null;
+    return item ? { token: clean<QueueToken>(item), pk: item.pk, sk: item.sk } : null;
+  }
   async updateTokenStatus(
     pk: string,
     sk: string,
-    newStatus: TokenStatus,
-    options?: { calledAt?: string; servedAt?: string }
+    status: TokenStatus,
+    options?: { calledAt?: string; servedAt?: string; reason?: string },
   ): Promise<QueueToken> {
-    let updateExpr = 'SET #status = :status';
-    const exprNames: Record<string, string> = { '#status': 'status' };
-    const exprValues: Record<string, any> = { ':status': newStatus };
-
-    if (options?.calledAt) {
-      updateExpr += ', calledAt = :calledAt';
-      exprValues[':calledAt'] = options.calledAt;
-    }
-    if (options?.servedAt) {
-      updateExpr += ', servedAt = :servedAt';
-      exprValues[':servedAt'] = options.servedAt;
-    }
-
-    // If no longer waiting, remove from QueueWaitingIndex
-    let removeExpr = '';
-    if (newStatus !== 'waiting') {
-      removeExpr = 'REMOVE GSI3PK, GSI3SK';
-    }
-
-    // If completed, skipped, or cancelled, remove from active PatientIndex
-    if (['completed', 'skipped', 'cancelled'].includes(newStatus)) {
-      removeExpr += removeExpr ? ', GSI1SK' : 'REMOVE GSI1SK';
-    }
-
-    const fullUpdate = removeExpr ? `${updateExpr} ${removeExpr}` : updateExpr;
-
-    const res = await docClient.send(
-      new UpdateCommand({
-        TableName: this.tableName,
-        Key: { pk, sk },
-        UpdateExpression: fullUpdate,
-        ExpressionAttributeNames: exprNames,
-        ExpressionAttributeValues: exprValues,
-        ReturnValues: 'ALL_NEW',
-      })
-    );
-
-    return res.Attributes as QueueToken;
-  }
-
-  /**
-   * Doctor Pause state
-   */
-  async getPausedDoctors(): Promise<string[]> {
-    const res = await docClient.send(
-      new GetCommand({
-        TableName: this.tableName,
-        Key: { pk: 'QUEUE_PAUSES', sk: 'ACTIVE' },
-      })
-    );
-    return (res.Item?.doctorIds as string[]) || [];
-  }
-
-  async setDoctorPause(doctorId: string, paused: boolean): Promise<boolean> {
-    const list = await this.getPausedDoctors();
-    let updated: string[];
-    if (paused) {
-      updated = list.includes(doctorId) ? list : [...list, doctorId];
-    } else {
-      updated = list.filter((id) => id !== doctorId);
-    }
-
-    await docClient.send(
-      new PutCommand({
-        TableName: this.tableName,
-        Item: {
-          pk: 'QUEUE_PAUSES',
-          sk: 'ACTIVE',
-          doctorIds: updated,
-          updatedAt: new Date().toISOString(),
+    const row = await this.get(pk, sk);
+    if (!row) throw new AppError(404, 'Token not found');
+    const old = clean<QueueToken>(row);
+    const allowed: Record<TokenStatus, TokenStatus[]> = {
+      waiting: ['current', 'skipped', 'cancelled'],
+      current: ['completed', 'skipped'],
+      completed: [],
+      skipped: [],
+      cancelled: [],
+    };
+    if (!allowed[old.status].includes(status))
+      throw new AppError(409, `Cannot change a ${old.status} token to ${status}`);
+    const meta = operationMetadata(),
+      queueDate = old.queueDate || pk.slice(6).split('#')[0];
+    const updated: Item = {
+      ...row,
+      status,
+      metadata: {
+        ...old.metadata,
+        lastUpdatedBy: meta.actorId,
+        lastRequestId: meta.requestId,
+        ...(status === 'completed' && old.calledAt
+          ? {
+              consultationMinutes: Math.max(
+                0,
+                (Date.parse(options?.servedAt || meta.timestamp) - Date.parse(old.calledAt)) /
+                  60000,
+              ),
+            }
+          : {}),
+        ...(status === 'current' && old.isWalkIn
+          ? {
+              waitMinutes: Math.max(
+                0,
+                (Date.parse(options?.calledAt || meta.timestamp) - Date.parse(old.createdAt)) /
+                  60000,
+              ),
+            }
+          : {}),
+      },
+      ...(options?.calledAt ? { calledAt: options.calledAt } : {}),
+      ...(options?.servedAt ? { servedAt: options.servedAt } : {}),
+      version: (old.version || 0) + 1,
+      updatedAt: meta.timestamp,
+    };
+    delete updated.GSI3PK;
+    delete updated.GSI3SK;
+    if (['completed', 'skipped', 'cancelled'].includes(status)) delete updated.GSI1SK;
+    const items: any[] = [
+      this.put(updated, {
+        ConditionExpression: '#status = :old AND (attribute_not_exists(#v) OR #v = :v)',
+        ExpressionAttributeNames: { '#status': 'status', '#v': 'version' },
+        ExpressionAttributeValues: { ':old': old.status, ':v': old.version || 0 },
+      }),
+      ...readModelItems('token', updated).map((item) => this.put(item)),
+      this.audit('token', old.id, 'status_changed', old.clinicId, {
+        from: old.status,
+        to: status,
+        queueDate,
+      }),
+    ];
+    if (status === 'current') {
+      items.push(
+        this.put(
+          { ...this.key(pk, 'CURRENT'), tokenId: old.id },
+          { ConditionExpression: 'attribute_not_exists(pk)' },
+        ),
+      );
+      items.push({
+        ConditionCheck: {
+          TableName: this.tableName,
+          Key: this.key(`QUEUE_STATE#${old.doctorId}`, 'ACTIVE'),
+          ConditionExpression: 'attribute_not_exists(isPaused) OR isPaused = :no',
+          ExpressionAttributeValues: { ':no': false },
         },
-      })
-    );
+      });
+    }
+    if (old.status === 'current')
+      items.push({
+        Delete: {
+          TableName: this.tableName,
+          Key: this.key(pk, 'CURRENT'),
+          ConditionExpression: 'attribute_not_exists(pk) OR tokenId = :id',
+          ExpressionAttributeValues: { ':id': old.id },
+        },
+      });
+    if (['completed', 'skipped', 'cancelled'].includes(status) && old.patientId)
+      items.push({
+        Delete: {
+          TableName: this.tableName,
+          Key: this.key(`PATIENT_DAY#${queueDate}#${old.patientId}`, 'ACTIVE'),
+          ConditionExpression: 'attribute_not_exists(pk) OR tokenId = :id',
+          ExpressionAttributeValues: { ':id': old.id },
+        },
+      });
+    if (old.appointmentId) {
+      const apt = await this.getAppointmentById(old.appointmentId);
+      if (apt) {
+        const aptStatus =
+          status === 'current' ? 'in_consultation' : status === 'skipped' ? 'no_show' : status;
+        items.push(
+          ...readModelItems('appointment', {
+            ...apt,
+            status: aptStatus,
+            version: (apt.version || 0) + 1,
+            updatedAt: meta.timestamp,
+            metadata: {
+              ...apt.metadata,
+              lastUpdatedBy: meta.actorId,
+              lastRequestId: meta.requestId,
+              ...(options?.reason ? { cancellationReason: options.reason } : {}),
+            },
+          }).map((item) => this.put(item)),
+        );
+        items.push(
+          this.put(
+            {
+              ...this.key(`APPOINTMENT#${apt.id}`),
+              ...apt,
+              status: aptStatus,
+              version: (apt.version || 0) + 1,
+              updatedAt: meta.timestamp,
+              metadata: {
+                ...apt.metadata,
+                lastUpdatedBy: meta.actorId,
+                lastRequestId: meta.requestId,
+                ...(options?.reason ? { cancellationReason: options.reason } : {}),
+              },
+            },
+            {
+              ConditionExpression: '#status = :old',
+              ExpressionAttributeNames: { '#status': 'status' },
+              ExpressionAttributeValues: { ':old': apt.status },
+            },
+          ),
+        );
+        items.push(
+          this.audit('appointment', apt.id, 'status_changed', apt.clinicId, {
+            from: apt.status,
+            to: aptStatus,
+          }),
+        );
+        if (['cancelled', 'skipped'].includes(status)) {
+          const slotKey = `SLOT#${apt.date}#${apt.doctorId}#${apt.time}`;
+          if (await this.get(slotKey, 'COUNTER'))
+            items.push({
+              Update: {
+                TableName: this.tableName,
+                Key: this.key(slotKey, 'COUNTER'),
+                UpdateExpression: 'ADD bookedCount :minus',
+                ConditionExpression: 'bookedCount > :zero',
+                ExpressionAttributeValues: { ':minus': -1, ':zero': 0 },
+              },
+            });
+        }
+      }
+    }
+    await this.write(items);
+    return clean<QueueToken>(updated);
+  }
+  async getPausedDoctors(): Promise<string[]> {
+    const states = await this.scan('begins_with(pk, :p) AND sk = :a', {
+        ':p': 'QUEUE_STATE#',
+        ':a': 'ACTIVE',
+      }),
+      legacy = await this.get('QUEUE_PAUSES', 'ACTIVE');
+    const migrated = new Set(states.map((s) => s.doctorId));
+    return [
+      ...states.filter((s) => s.isPaused).map((s) => s.doctorId),
+      ...(legacy?.doctorIds || []).filter((id: string) => !migrated.has(id)),
+    ];
+  }
+  async isDoctorPaused(doctorId: string): Promise<boolean> {
+    const state = await this.get(`QUEUE_STATE#${doctorId}`, 'ACTIVE');
+    if (state) return Boolean(state.isPaused);
+    const legacy = await this.get('QUEUE_PAUSES', 'ACTIVE');
+    return Boolean(legacy?.doctorIds?.includes(doctorId));
+  }
+  async setDoctorPause(doctorId: string, paused: boolean): Promise<boolean> {
+    const doctor = await this.getDoctorById(doctorId);
+    if (!doctor) throw new AppError(404, 'Doctor not found');
+    await this.write([
+      this.put({
+        ...this.key(`QUEUE_STATE#${doctorId}`, 'ACTIVE'),
+        doctorId,
+        isPaused: paused,
+        updatedAt: new Date().toISOString(),
+      }),
+      this.audit('queue', doctorId, paused ? 'paused' : 'resumed', doctor.clinicId),
+    ]);
     return paused;
   }
-
-  // ==========================================================================
-  // APPOINTMENTS
-  // ==========================================================================
-
   async saveAppointment(apt: Appointment): Promise<Appointment> {
     await docClient.send(
       new PutCommand({
         TableName: this.tableName,
-        Item: {
-          pk: `APPOINTMENT#${apt.id}`,
-          sk: 'METADATA',
-          GSI1PK: `PATIENT#${apt.patientId}`,
-          GSI1SK: `APT#${apt.date}#${apt.id}`,
-          GSI2PK: `DOCTOR#${apt.doctorId}`,
-          GSI2SK: `APT#${apt.date}#${apt.id}`,
-          ...apt,
-        },
-      })
+        Item: { ...this.key(`APPOINTMENT#${apt.id}`), ...apt },
+      }),
     );
     return apt;
   }
-
   async getAppointments(filters?: {
     patientId?: string;
     doctorId?: string;
     date?: string;
+    clinicId?: string;
   }): Promise<Appointment[]> {
-    if (filters?.patientId) {
-      const aptPrefix = filters?.date ? `APT#${filters.date}#` : 'APT#';
-      const res = await docClient.send(
-        new QueryCommand({
-          TableName: this.tableName,
-          IndexName: 'PatientIndex',
-          KeyConditionExpression: 'GSI1PK = :patientPk AND begins_with(GSI1SK, :aptPrefix)',
-          ExpressionAttributeValues: {
-            ':patientPk': `PATIENT#${filters.patientId}`,
-            ':aptPrefix': aptPrefix,
-          },
-        })
-      );
-      let list = (res.Items || []) as Appointment[];
-      if (filters?.date) {
-        list = list.filter((a) => a.date === filters.date);
-      }
-      return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    if (filters?.doctorId && filters.doctorId !== 'all') {
-      const aptPrefix = filters?.date ? `APT#${filters.date}#` : 'APT#';
-      const res = await docClient.send(
-        new QueryCommand({
-          TableName: this.tableName,
-          IndexName: 'DoctorQueueIndex',
-          KeyConditionExpression: 'GSI2PK = :docPk AND begins_with(GSI2SK, :aptPrefix)',
-          ExpressionAttributeValues: {
-            ':docPk': `DOCTOR#${filters.doctorId}`,
-            ':aptPrefix': aptPrefix,
-          },
-        })
-      );
-      let list = (res.Items || []) as Appointment[];
-      if (filters?.date) {
-        list = list.filter((a) => a.date === filters.date);
-      }
-      return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    // Default: scan all appointments
-    const res = await docClient.send(
-      new ScanCommand({
-        TableName: this.tableName,
-        FilterExpression: 'begins_with(pk, :aptPrefix) AND sk = :meta',
-        ExpressionAttributeValues: {
-          ':aptPrefix': 'APPOINTMENT#',
-          ':meta': 'METADATA',
-        },
-      })
-    );
-    let list = (res.Items || []) as Appointment[];
-    if (filters?.date) {
-      list = list.filter((a) => a.date === filters.date);
-    }
-    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const partition = filters?.patientId
+      ? `APPOINTMENTS#PATIENT#${filters.patientId}`
+      : filters?.doctorId && filters.doctorId !== 'all'
+        ? `APPOINTMENTS#DOCTOR#${filters.doctorId}`
+        : filters?.clinicId
+          ? `APPOINTMENTS#CLINIC#${filters.clinicId}`
+          : undefined;
+    let list =
+      partition && (await this.get('READ_MODELS', 'V1'))
+        ? (await this.query(partition, filters?.date || '')).map(clean<Appointment>)
+        : (
+            await this.scan('begins_with(pk, :p) AND sk = :m', {
+              ':p': 'APPOINTMENT#',
+              ':m': 'METADATA',
+            })
+          ).map(clean<Appointment>);
+    if (filters?.patientId) list = list.filter((a) => a.patientId === filters.patientId);
+    if (filters?.doctorId && filters.doctorId !== 'all')
+      list = list.filter((a) => a.doctorId === filters.doctorId);
+    if (filters?.date) list = list.filter((a) => a.date === filters.date);
+    if (filters?.clinicId) list = list.filter((a) => a.clinicId === filters.clinicId);
+    return list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
-
-  async getAppointmentById(aptId: string): Promise<Appointment | null> {
-    const res = await docClient.send(
-      new GetCommand({
-        TableName: this.tableName,
-        Key: { pk: `APPOINTMENT#${aptId}`, sk: 'METADATA' },
-      })
-    );
-    return (res.Item as Appointment) || null;
+  async getAppointmentById(id: string): Promise<Appointment | null> {
+    const row = await this.get(`APPOINTMENT#${id}`);
+    return row ? clean<Appointment>(row) : null;
   }
-
-  async updateAppointmentStatus(aptId: string, status: string, notes?: string): Promise<void> {
-    let updateExpr = 'SET #status = :status';
-    const exprNames: Record<string, string> = { '#status': 'status' };
-    const exprValues: Record<string, any> = { ':status': status };
-
-    if (notes) {
-      updateExpr += ', notes = :notes';
-      exprValues[':notes'] = notes;
-    }
-
-    await docClient.send(
-      new UpdateCommand({
+  async getAuditEvents(clinicId: string, limit = 100): Promise<Item[]> {
+    const res = await docClient.send(
+      new QueryCommand({
         TableName: this.tableName,
-        Key: { pk: `APPOINTMENT#${aptId}`, sk: 'METADATA' },
-        UpdateExpression: updateExpr,
-        ExpressionAttributeNames: exprNames,
-        ExpressionAttributeValues: exprValues,
-      })
+        KeyConditionExpression: 'pk = :pk',
+        ExpressionAttributeValues: { ':pk': `AUDIT#${clinicId}` },
+        ScanIndexForward: false,
+        Limit: limit,
+        ConsistentRead: true,
+      }),
     );
+    return (res.Items || []).map((i) => clean<Item>(i));
+  }
+  async getRecentTokens(clinicId: string, days = 30): Promise<QueueToken[]> {
+    const cutoff = clinicDate(new Date(Date.now() - days * 86400000));
+    if (await this.get('READ_MODELS', 'V1'))
+      return (await this.query(`VISITS#CLINIC#${clinicId}`, ''))
+        .map(clean<QueueToken>)
+        .filter((t) => (t.queueDate || t.createdAt.slice(0, 10)) >= cutoff);
+    return (
+      await this.scan('begins_with(pk, :p) AND begins_with(sk, :t) AND clinicId = :clinic', {
+        ':p': 'QUEUE#',
+        ':t': 'TOKEN#',
+        ':clinic': clinicId,
+      })
+    )
+      .map(clean<QueueToken>)
+      .filter((t) => (t.queueDate || t.createdAt.slice(0, 10)) >= cutoff);
+  }
+  async saveModelMetadata(doctorId: string, clinicId: string, model: Item): Promise<void> {
+    await this.write([
+      this.put({ ...this.key(`MODEL#${doctorId}`), doctorId, clinicId, ...model }),
+      this.audit('prediction_model', doctorId, 'trained', clinicId, {
+        method: model.method,
+        sampleCount: model.sampleCount,
+        validationCount: model.validationCount,
+        modelMae: model.modelMae,
+      }),
+    ]);
   }
 }
-
 export const dynamoDbRepo = new DynamoDbRepository();

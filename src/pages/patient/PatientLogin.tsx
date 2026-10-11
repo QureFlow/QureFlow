@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BrandLogo } from '../../components/layout/BrandLogo';
+import { AuthShell } from '../../components/layout/AuthShell';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { ForgotPasswordModal } from '../../components/common/ForgotPasswordModal';
@@ -11,8 +12,8 @@ export const PatientLogin: React.FC = () => {
   const { loginPatient } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [identifier, setIdentifier] = useState('9876543210');
-  const [password, setPassword] = useState('password123');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,9 +30,15 @@ export const PatientLogin: React.FC = () => {
       setError('');
       // BACKEND HOOK: AWS Cognito signIn({ username: identifier, password })
       await loginPatient(identifier, password);
-      
-      const destination = (location.state as { from?: { pathname: string } })?.from?.pathname || '/patient/dashboard';
-      navigate(destination, { replace: true });
+
+      const from = (
+        location.state as { from?: { pathname: string; search?: string; state?: unknown } } | null
+      )?.from;
+      const destination =
+        from?.pathname?.startsWith('/') && !from.pathname.startsWith('//')
+          ? `${from.pathname}${from.search || ''}`
+          : '/patient/dashboard';
+      navigate(destination, { replace: true, state: from?.state });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Invalid login credentials');
     } finally {
@@ -40,12 +47,12 @@ export const PatientLogin: React.FC = () => {
   };
 
   const handleUseDemo = () => {
-    setIdentifier('9876543210');
-    setPassword('password123');
+    setIdentifier('demo.patient@example.invalid');
+    setPassword('DemoPatient123!');
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <AuthShell kind="patient">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <BrandLogo className="justify-center mb-4" />
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Welcome back</h2>
@@ -55,7 +62,7 @@ export const PatientLogin: React.FC = () => {
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-white py-8 px-6 sm:px-8 rounded-lg border border-slate-200 shadow-subtle">
+        <div className="qf-panel py-8 px-6 sm:px-8">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-xs text-red-700 rounded-md">
               {error}
@@ -75,7 +82,10 @@ export const PatientLogin: React.FC = () => {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                <label
+                  htmlFor="patient-password"
+                  className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+                >
                   Password
                 </label>
                 <button
@@ -87,6 +97,7 @@ export const PatientLogin: React.FC = () => {
                 </button>
               </div>
               <Input
+                id="patient-password"
                 type="password"
                 placeholder="••••••••"
                 icon={<Lock className="w-4 h-4" />}
@@ -109,20 +120,26 @@ export const PatientLogin: React.FC = () => {
           </form>
 
           {/* Demo account quick filler */}
-          <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Demo Patient: 9876543210</span>
-            <button
-              type="button"
-              onClick={handleUseDemo}
-              className="text-brand-700 hover:underline font-semibold"
-            >
-              Fill Demo Login
-            </button>
-          </div>
+          {import.meta.env.VITE_ENABLE_DEMO_HINTS === 'true' && (
+            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span>Local demo patient</span>
+              <button
+                type="button"
+                onClick={handleUseDemo}
+                className="text-brand-700 hover:underline font-semibold"
+              >
+                Fill Demo Login
+              </button>
+            </div>
+          )}
 
           <div className="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-600">
             Don't have an account?{' '}
-            <Link to="/patient/register" state={location.state} className="font-semibold text-brand-700 hover:underline">
+            <Link
+              to="/patient/register"
+              state={location.state}
+              className="font-semibold text-brand-700 hover:underline"
+            >
               Create patient account
             </Link>
           </div>
@@ -145,6 +162,6 @@ export const PatientLogin: React.FC = () => {
         onClose={() => setIsForgotModalOpen(false)}
         initialIdentifier={identifier}
       />
-    </div>
+    </AuthShell>
   );
 };

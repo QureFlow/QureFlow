@@ -224,8 +224,14 @@ export const SETTINGS: QueueSettings = {
   contactNumber: '+91 3463 252 211',
 };
 
-async function seed() {
-  console.log('[QureFlow Seeder] Starting database seed to DynamoDB table QureFlow (eu-north-1)...');
+export async function seed() {
+  if (!process.env.DYNAMODB_ENDPOINT && process.env.ALLOW_CLOUD_SEED !== 'true')
+    throw new Error(
+      'Cloud seeding is disabled. Use the local demo, or explicitly set ALLOW_CLOUD_SEED=true for a dedicated development table.',
+    );
+  console.log(
+    '[QureFlow Seeder] Starting database seed to DynamoDB table QureFlow (eu-north-1)...',
+  );
 
   // 1. Clinics
   for (const c of CLINICS) {
@@ -278,7 +284,8 @@ async function seed() {
   console.log('[QureFlow Seeder] Successfully seeded all data into DynamoDB!');
 }
 
-seed().catch((err) => {
-  console.error('[QureFlow Seeder Error]:', err);
-  process.exit(1);
-});
+if (/(^|[\\/])seed\.(ts|js)$/.test(process.argv[1] || ''))
+  seed().catch((err) => {
+    console.error('[QureFlow Seeder Error]:', err);
+    process.exit(1);
+  });

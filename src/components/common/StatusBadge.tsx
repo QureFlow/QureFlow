@@ -1,6 +1,14 @@
 import React from 'react';
 import { AppointmentStatus, TokenStatus, QueuePriority } from '../../types';
-import { Clock, CheckCircle2, AlertCircle, XCircle, UserCheck, PauseCircle, Flame } from 'lucide-react';
+import {
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  XCircle,
+  UserCheck,
+  PauseCircle,
+  Flame,
+} from 'lucide-react';
 
 interface StatusBadgeProps {
   status: AppointmentStatus | TokenStatus | 'paused' | 'active' | 'inactive';
@@ -17,13 +25,13 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
   const sizeClasses = size === 'sm' ? 'text-[11px] px-2 py-0.5' : 'text-xs px-2.5 py-1';
 
-  if (priority === 'emergency') {
+  if (priority === 'emergency' && status === 'waiting') {
     return (
       <span
         className={`inline-flex items-center gap-1 font-semibold rounded-md bg-red-50 text-red-700 border border-red-200 ${sizeClasses} ${className}`}
       >
         <Flame className="w-3.5 h-3.5 text-red-600 animate-pulse" />
-        Emergency
+        Emergency · Waiting
       </span>
     );
   }
@@ -123,7 +131,9 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 
     default:
       return (
-        <span className={`inline-flex items-center rounded-md bg-slate-100 text-slate-700 ${sizeClasses} ${className}`}>
+        <span
+          className={`inline-flex items-center rounded-md bg-slate-100 text-slate-700 ${sizeClasses} ${className}`}
+        >
           {status}
         </span>
       );

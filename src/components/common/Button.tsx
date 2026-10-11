@@ -18,17 +18,17 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium rounded-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none';
+    'inline-flex items-center justify-center font-semibold rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
   const sizeStyles = {
-    sm: 'px-2.5 py-1.5 text-xs gap-1.5',
-    md: 'px-3.5 py-2 text-sm gap-2',
-    lg: 'px-5 py-2.5 text-base gap-2.5',
+    sm: 'px-3.5 py-2 text-xs gap-1.5',
+    md: 'px-5 py-2.5 text-sm gap-2',
+    lg: 'px-6 py-3.5 text-sm gap-2.5',
   };
 
   const variantStyles = {
     primary:
-      'bg-brand-950 text-white hover:bg-slate-800 active:bg-slate-900 focus-visible:outline-slate-900 border border-transparent shadow-subtle',
+      'bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 focus-visible:outline-brand-600 border border-transparent shadow-subtle',
     secondary:
       'bg-brand-50 text-brand-700 hover:bg-brand-100 active:bg-brand-200 border border-brand-200 focus-visible:outline-brand-600',
     outline:

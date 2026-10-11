@@ -3,25 +3,28 @@ import { QueueToken } from '../../types';
 import { StatusBadge } from '../common/StatusBadge';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
-import { Check, PhoneForwarded, SkipForward, Ban, Phone } from 'lucide-react';
+import { Check, SkipForward, Ban, Phone } from 'lucide-react';
 
 interface QueueTableProps {
   tokens: QueueToken[];
   onServe: (tokenId: string) => void;
-  onCall: (doctorId: string) => void;
   onSkip: (tokenId: string) => void;
   onCancel: (tokenId: string) => void;
-  doctorId: string;
+  nextTokenId: string | null;
 }
 
 export const QueueTable: React.FC<QueueTableProps> = ({
   tokens,
   onServe,
-  onCall,
   onSkip,
   onCancel,
-  doctorId,
+  nextTokenId,
 }) => {
+  const waitingPositions = new Map(
+    tokens
+      .filter((token) => token.status === 'waiting')
+      .map((token, index) => [token.id, index + 1]),
+  );
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     action: 'skip' | 'cancel' | 'serve';
@@ -53,7 +56,7 @@ export const QueueTable: React.FC<QueueTableProps> = ({
 
   return (
     <>
-      <div className="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-subtle">
+      <div className="overflow-x-auto qf-panel">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
@@ -127,7 +130,14 @@ export const QueueTable: React.FC<QueueTableProps> = ({
 
                     {/* Status */}
                     <td className="py-3 px-4">
-                      <StatusBadge status={token.status} priority={token.priority} size="sm" />
+                      <StatusBadge status={token.status} size="sm" />
+                      {isWaiting && (
+                        <p className="text-[11px] text-slate-500 mt-1.5">
+                          {nextTokenId === token.id
+                            ? 'Next eligible patient'
+                            : `Position ${waitingPositions.get(token.id)}`}
+                        </p>
+                      )}
                     </td>
 
                     {/* Actions */}
@@ -144,17 +154,6 @@ export const QueueTable: React.FC<QueueTableProps> = ({
                           </Button>
                         )}
 
-                        {isWaiting && (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => onCall(doctorId)}
-                            icon={<PhoneForwarded className="w-3 h-3" />}
-                          >
-                            Call Patient
-                          </Button>
-                        )}
-
                         {(isWaiting || isCurrent) && (
                           <>
                             <button
@@ -165,14 +164,16 @@ export const QueueTable: React.FC<QueueTableProps> = ({
                             >
                               <SkipForward className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => handleActionClick('cancel', token)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded border border-transparent hover:border-red-200 transition-colors"
-                              title="Cancel Token"
-                              aria-label="Cancel Token"
-                            >
-                              <Ban className="w-3.5 h-3.5" />
-                            </button>
+                            {isWaiting && (
+                              <button
+                                onClick={() => handleActionClick('cancel', token)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded border border-transparent hover:border-red-200 transition-colors"
+                                title="Cancel Token"
+                                aria-label="Cancel Token"
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </>
                         )}
                       </div>
@@ -193,8 +194,8 @@ export const QueueTable: React.FC<QueueTableProps> = ({
           confirmModal.action === 'serve'
             ? 'Complete Consultation?'
             : confirmModal.action === 'skip'
-            ? 'Skip Patient (No-show)?'
-            : 'Cancel Token?'
+              ? 'Skip Patient (No-show)?'
+              : 'Cancel Token?'
         }
         description={`Confirm status update for Token ${confirmModal.token?.tokenNumber} (${confirmModal.token?.patientName}).`}
         footer={
@@ -220,7 +221,7 @@ export const QueueTable: React.FC<QueueTableProps> = ({
           {confirmModal.action === 'serve' &&
             'This will mark the patient as treated and advance queue records.'}
           {confirmModal.action === 'skip' &&
-            'The patient will be moved to skipped status. They can be re-called if they arrive late.'}
+            'This visit will be closed as skipped / no-show. If the patient arrives later, reception must register a new visit.'}
           {confirmModal.action === 'cancel' &&
             'This token will be permanently marked cancelled and removed from active wait queues.'}
         </p>

@@ -18,12 +18,19 @@ export interface User {
   dob?: string;
   gender?: 'Male' | 'Female' | 'Other';
   staffId?: string;
+  doctorId?: string;
   clinicId?: string;
   passwordHash?: string;
+  cognitoSub?: string;
+  sessionVersion?: number;
+  updatedAt?: string;
+  version?: number;
+  metadata?: Record<string, unknown>;
   createdAt?: string;
 }
 
 export interface Clinic {
+  metadata?: Record<string, unknown>;
   id: string;
   name: string;
   address: string;
@@ -37,6 +44,13 @@ export interface Clinic {
 }
 
 export interface Doctor {
+  bio?: string;
+  languages?: string[];
+  clinicalInterests?: string[];
+  roomNumber?: string;
+  department?: string;
+  registrationId?: string;
+  metadata?: Record<string, unknown>;
   id: string;
   name: string;
   avatar?: string;
@@ -73,6 +87,12 @@ export interface QueueToken {
   createdAt: string;
   calledAt?: string;
   servedAt?: string;
+  queueId?: string;
+  queueDate?: string;
+  tokenSeq?: number;
+  version?: number;
+  updatedAt?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Appointment {
@@ -88,11 +108,15 @@ export interface Appointment {
   date: string;
   time: string;
   tokenNumber: string;
+  tokenId?: string;
   status: AppointmentStatus;
   priority: QueuePriority;
   isWalkIn: boolean;
   notes?: string;
   createdAt: string;
+  updatedAt?: string;
+  version?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DoctorQueueState {
@@ -122,6 +146,14 @@ export interface PatientQueueStatus {
   patientsAhead: number;
   estimatedWaitMinutes: number;
   isPaused: boolean;
+  prediction?: {
+    method: string;
+    sampleCount: number;
+    syntheticSamples: number;
+    validationMaeMinutes: number | null;
+    modelVersion: string;
+    isEstimate: boolean;
+  };
 }
 
 export interface SlotAvailability {

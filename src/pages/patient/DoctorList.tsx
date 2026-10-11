@@ -1,152 +1,264 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQueue } from '../../context/QueueContext';
 import { Navbar } from '../../components/layout/Navbar';
 import { MobileNav } from '../../components/layout/MobileNav';
 import { Footer } from '../../components/layout/Footer';
 import { DoctorCard } from '../../components/patient/DoctorCard';
-import { PageHeader } from '../../components/layout/PageHeader';
-import { Input } from '../../components/common/Input';
-import { Select } from '../../components/common/Select';
-import { EmptyState } from '../../components/common/EmptyState';
-import { Search, Stethoscope } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
 
 export const DoctorList: React.FC = () => {
   const { doctors, clinics } = useQueue();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpec, setSelectedSpec] = useState('all');
-  const [selectedClinic, setSelectedClinic] = useState('all');
-  const [availableTodayOnly, setAvailableTodayOnly] = useState(false);
-
-  // Extract unique specializations
-  const specializations = useMemo(() => {
-    const set = new Set(doctors.map((d) => d.specialization));
-    return Array.from(set);
-  }, [doctors]);
-
-  const filteredDoctors = useMemo(() => {
-    return doctors.filter((doc) => {
-      // Name or specialization search
-      const matchesSearch =
-        !searchQuery.trim() ||
-        doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.clinicName.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Specialization filter
-      const matchesSpec = selectedSpec === 'all' || doc.specialization === selectedSpec;
-
-      // Clinic filter
-      const matchesClinic = selectedClinic === 'all' || doc.clinicId === selectedClinic;
-
-      // Availability filter
-      const matchesAvailability = !availableTodayOnly || doc.isAvailableToday;
-
-      return matchesSearch && matchesSpec && matchesClinic && matchesAvailability;
-    });
-  }, [doctors, searchQuery, selectedSpec, selectedClinic, availableTodayOnly]);
-
-  const specOptions = [
-    { value: 'all', label: 'All Specializations' },
-    ...specializations.map((s) => ({ value: s, label: s })),
-  ];
-
-  const clinicOptions = [
-    { value: 'all', label: 'All Clinics & Hospitals' },
-    ...clinics.map((c) => ({ value: c.id, label: c.name })),
-  ];
-
-  const handleResetFilters = () => {
-    setSearchQuery('');
-    setSelectedSpec('all');
-    setSelectedClinic('all');
-    setAvailableTodayOnly(false);
-  };
-
+  const [params, setParams] = useSearchParams();
+  const specialty = params.get('specialty') || 'all';
+  const [query, setQuery] = useState('');
+  const [clinic, setClinic] = useState('all');
+  const [language, setLanguage] = useState('all');
+  const [sort, setSort] = useState('name');
+  const [today, setToday] = useState(false);
+  const [page, setPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const specialties = useMemo(
+    () => [...new Set(doctors.map((d) => d.specialization))].sort(),
+    [doctors],
+  );
+  const languages = useMemo(
+    () => [...new Set(doctors.flatMap((d) => d.languages || []))].sort(),
+    [doctors],
+  );
+  const results = useMemo(
+    () =>
+      doctors
+        .filter(
+          (d) =>
+            d.status === 'active' &&
+            [d.name, d.specialization, d.clinicName, d.bio || '', ...(d.clinicalInterests || [])]
+              .join(' ')
+              .toLowerCase()
+              .includes(query.trim().toLowerCase()) &&
+            (specialty === 'all' || specialty === d.specialization) &&
+            (clinic === 'all' || clinic === d.clinicId) &&
+            (language === 'all' || d.languages?.includes(language)) &&
+            (!today || d.isAvailableToday),
+        )
+        .sort((a, b) =>
+          sort === 'fee'
+            ? a.consultationFee - b.consultationFee
+            : sort === 'experience'
+              ? b.experienceYears - a.experienceYears
+              : a.name.localeCompare(b.name),
+        ),
+    [doctors, query, specialty, clinic, language, today, sort],
+  );
+  useEffect(() => {
+    setPage(1);
+  }, [query, specialty, clinic, language, today, sort]);
+  const pages = Math.max(1, Math.ceil(results.length / 9));
+  const field =
+    'w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 mt-2';
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-16 md:pb-0">
+    <div className="min-h-screen qf-shell pb-16 md:pb-0 flex flex-col">
       <Navbar />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <PageHeader
-          title="Find a Doctor"
-          subtitle="Search doctors and choose a convenient appointment time across regional clinics."
-        />
-
-        {/* Search & Filter Bar */}
-        <div className="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-subtle mb-8 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <Input
-                placeholder="Search by doctor name or specialization (e.g. Pediatrics, Dr. Sharma)"
-                icon={<Search className="w-4 h-4" />}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+      <main className="max-w-7xl mx-auto w-full px-5 sm:px-8 py-10 flex-1 qf-enter">
+        <div className="rounded-[28px] bg-brand-100/60 p-7 sm:p-10 mb-8 flex flex-wrap justify-between items-end gap-6">
+          <div>
+            <p className="qf-eyebrow mb-3">Find your next consultation</p>
+            <h1 className="qf-title text-4xl sm:text-5xl font-semibold text-brand-950">
+              The right care.
+              <br />A better way to get there.
+            </h1>
+            <p className="text-brand-800 mt-4 max-w-xl">
+              Explore specialties, meet your doctor, and choose a time that works for you.
+            </p>
+          </div>
+          <div className="flex gap-8 text-brand-950">
+            <div>
+              <strong className="block text-3xl">
+                {doctors.filter((d) => d.status === 'active').length}
+              </strong>
+              <span className="text-xs">doctors</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setAvailableTodayOnly(!availableTodayOnly)}
-              className={`px-3.5 py-2 text-xs font-semibold rounded-md border transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap select-none ${
-                availableTodayOnly
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  availableTodayOnly ? 'bg-emerald-600' : 'bg-slate-300'
-                }`}
-              ></span>
-              Available Today Only
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-            <Select
-              options={specOptions}
-              value={selectedSpec}
-              onChange={(e) => setSelectedSpec(e.target.value)}
-            />
-            <Select
-              options={clinicOptions}
-              value={selectedClinic}
-              onChange={(e) => setSelectedClinic(e.target.value)}
-            />
+            <div>
+              <strong className="block text-3xl">{clinics.length}</strong>
+              <span className="text-xs">care locations</span>
+            </div>
+            <ArrowUpRight className="hidden sm:block" size={34} />
           </div>
         </div>
-
-        {/* Doctor Roster Results */}
-        <div className="flex items-center justify-between mb-4 text-xs text-slate-500">
-          <p>
-            Showing <strong className="text-slate-800">{filteredDoctors.length}</strong> registered doctors
-          </p>
-          {(searchQuery || selectedSpec !== 'all' || selectedClinic !== 'all' || availableTodayOnly) && (
-            <button
-              onClick={handleResetFilters}
-              className="text-brand-700 font-semibold hover:underline"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-
-        {filteredDoctors.length === 0 ? (
-          <EmptyState
-            icon={<Stethoscope className="w-6 h-6" />}
-            title="No doctors match your search"
-            description="Try changing your search terms or selecting 'All Specializations' to see available practitioners."
-            actionLabel="Reset Filters"
-            onAction={handleResetFilters}
+        <label className="qf-panel flex items-center gap-4 p-4 mb-7">
+          <Search className="text-brand-600" size={22} />
+          <input
+            aria-label="Search doctors"
+            placeholder="Doctor, specialty, clinic or care interest…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="bg-transparent outline-none flex-1 min-w-0 text-base"
           />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredDoctors.map((doc) => (
-              <DoctorCard key={doc.id} doctor={doc} />
-            ))}
-          </div>
+          <span className="hidden sm:block rounded-full bg-brand-50 text-brand-700 px-3 py-1 text-xs">
+            {results.length} matches
+          </span>
+        </label>
+        <div className="flex lg:flex-wrap gap-2 mb-6 overflow-x-auto pb-2 max-w-full [&>button]:shrink-0 [&>button]:whitespace-nowrap">
+          <button
+            onClick={() => setParams({})}
+            className={`rounded-full px-4 py-2 text-xs font-medium ${specialty === 'all' ? 'bg-brand-950 text-white' : 'bg-white border text-slate-600'}`}
+          >
+            All specialties
+          </button>
+          {specialties.map((s) => (
+            <button
+              key={s}
+              onClick={() => setParams({ specialty: s })}
+              className={`rounded-full px-4 py-2 text-xs font-medium ${specialty === s ? 'bg-brand-950 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-brand-400'}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <button
+          aria-expanded={filtersOpen}
+          aria-controls="doctor-filters"
+          onClick={() => setFiltersOpen((open) => !open)}
+          className="lg:hidden flex items-center gap-2 rounded-full bg-white border border-slate-200 px-4 py-2.5 text-sm font-semibold mb-5"
+        >
+          <SlidersHorizontal size={17} />
+          {filtersOpen ? 'Hide filters' : 'Filters & sorting'}
+        </button>
+        <div className="grid lg:grid-cols-[220px_1fr] gap-7 items-start">
+          <aside
+            id="doctor-filters"
+            className={`qf-panel p-5 lg:sticky lg:top-24 ${filtersOpen ? 'block' : 'hidden lg:block'}`}
+          >
+            <p className="font-semibold flex items-center gap-2 text-sm mb-5">
+              <SlidersHorizontal size={17} />
+              Refine your search
+            </p>
+            <div className="grid sm:grid-cols-3 lg:grid-cols-1 gap-5">
+              <label className="text-xs font-semibold text-slate-500">
+                Care location
+                <select
+                  aria-label="Filter by clinic"
+                  value={clinic}
+                  onChange={(e) => setClinic(e.target.value)}
+                  className={field}
+                >
+                  <option value="all">All clinics</option>
+                  {clinics.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-semibold text-slate-500">
+                Language
+                <select
+                  aria-label="Filter by language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className={field}
+                >
+                  <option value="all">All languages</option>
+                  {languages.map((l) => (
+                    <option key={l}>{l}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-semibold text-slate-500">
+                Sort results
+                <select
+                  aria-label="Sort doctors"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className={field}
+                >
+                  <option value="name">Doctor name</option>
+                  <option value="experience">Most experienced</option>
+                  <option value="fee">Lowest fee first</option>
+                </select>
+              </label>
+            </div>
+            <label className="flex items-center gap-3 text-sm mt-6">
+              <input
+                type="checkbox"
+                checked={today}
+                onChange={(e) => setToday(e.target.checked)}
+                className="accent-brand-600"
+              />
+              Consulting today
+            </label>
+            <button
+              onClick={() => {
+                setParams({});
+                setClinic('all');
+                setLanguage('all');
+                setSort('name');
+                setToday(false);
+                setQuery('');
+              }}
+              className="text-xs text-brand-700 underline mt-5"
+            >
+              Reset filters
+            </button>
+            <button
+              onClick={() => setFiltersOpen(false)}
+              className="block lg:hidden mt-5 bg-brand-600 text-white rounded-full w-full py-3 text-sm font-semibold"
+            >
+              Show {results.length} doctors
+            </button>
+            <p className="text-xs text-slate-400 leading-relaxed mt-6">
+              Availability and fees come from the clinic directory. Open a profile to see
+              appointment slots.
+            </p>
+          </aside>
+          <section>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-semibold text-slate-800">
+                {results.length} doctors available to explore
+              </h2>
+              <span className="text-xs text-slate-500">
+                Page {page} / {pages}
+              </span>
+            </div>
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {results.slice((page - 1) * 9, page * 9).map((d) => (
+                <DoctorCard key={d.id} doctor={d} />
+              ))}
+            </div>
+            {!results.length && (
+              <div className="qf-panel p-12 text-center text-slate-500">
+                No doctors match these filters. Try another specialty or location.
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-4 mt-8">
+              <button
+                disabled={page <= 1}
+                aria-label="Previous doctor page"
+                onClick={() => setPage((p) => p - 1)}
+                className="p-3 rounded-full border bg-white disabled:opacity-30"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span className="text-sm text-slate-500">
+                {page} of {pages}
+              </span>
+              <button
+                disabled={page >= pages}
+                aria-label="Next doctor page"
+                onClick={() => setPage((p) => p + 1)}
+                className="p-3 rounded-full border bg-white disabled:opacity-30"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </section>
+        </div>
+        {doctors.some((d) => d.metadata?.synthetic) && (
+          <p className="text-xs text-slate-500 mt-8">
+            Demo care directory · Doctor profiles and locations are fictional testing data.
+          </p>
         )}
       </main>
-
       <Footer />
       <MobileNav />
     </div>

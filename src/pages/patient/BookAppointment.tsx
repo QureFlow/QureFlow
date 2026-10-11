@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useQueue } from '../../context/QueueContext';
+import { clinicDate } from '../../lib/time';
 import { Navbar } from '../../components/layout/Navbar';
 import { MobileNav } from '../../components/layout/MobileNav';
 import { Footer } from '../../components/layout/Footer';
@@ -29,15 +30,19 @@ export const BookAppointment: React.FC = () => {
     time?: string;
   } | null;
 
-  const doctor = doctors.find((d) => d.id === state?.doctorId) || doctors[0];
-  const date = state?.date || new Date().toISOString().split('T')[0];
-  const time = state?.time || '10:00 AM';
+  const doctor = doctors.find((d) => d.id === state?.doctorId);
+  const date = state?.date || '';
+  const time = state?.time || '';
 
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const handleConfirm = async () => {
+    if (!doctor) {
+      setError('Select a doctor and an available slot first.');
+      return;
+    }
     if (!user) {
       navigate('/patient/login');
       return;
@@ -57,9 +62,10 @@ export const BookAppointment: React.FC = () => {
       });
 
       // Navigate to token screen with the generated token
-      navigate('/patient/token', {
+      navigate(date === clinicDate() ? '/patient/token' : '/patient/appointments', {
         state: {
           tokenNumber: result.token.tokenNumber,
+          appointmentId: result.appointment.id,
           doctorId: doctor.id,
           justBooked: true,
         },
@@ -71,8 +77,24 @@ export const BookAppointment: React.FC = () => {
     }
   };
 
+  if (!doctor || !date || !time)
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <main className="max-w-2xl mx-auto p-8">
+          <h1 className="text-xl font-bold">Choose an appointment slot</h1>
+          <p className="my-3 text-sm text-slate-600">
+            Select a doctor and an available consultation slot before confirming.
+          </p>
+          <Link className="text-brand-700 font-semibold" to="/patient/doctors">
+            Find a Doctor
+          </Link>
+        </main>
+      </div>
+    );
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col qf-shell pb-16 md:pb-0">
       <Navbar />
 
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -86,7 +108,7 @@ export const BookAppointment: React.FC = () => {
           </Link>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 shadow-subtle p-6 sm:p-8">
+        <div className="qf-panel p-6 sm:p-8">
           <div className="pb-4 border-b border-slate-100 mb-6">
             <h1 className="text-xl font-bold text-slate-900">Confirm Appointment</h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -115,7 +137,9 @@ export const BookAppointment: React.FC = () => {
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   Consultation Fee
                 </span>
-                <p className="text-lg font-black text-slate-900 mt-0.5">₹{doctor.consultationFee}</p>
+                <p className="text-lg font-black text-slate-900 mt-0.5">
+                  ₹{doctor.consultationFee}
+                </p>
               </div>
             </div>
 
@@ -134,7 +158,11 @@ export const BookAppointment: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Stethoscope className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <span>OPD Consultation Room</span>
+                <span>
+                  {doctor.roomNumber
+                    ? `Consultation room ${doctor.roomNumber}`
+                    : 'OPD Consultation Room'}
+                </span>
               </div>
             </div>
           </div>
@@ -142,7 +170,9 @@ export const BookAppointment: React.FC = () => {
           {/* Patient Details */}
           <div className="space-y-4 mb-6">
             <div className="bg-white p-4 rounded-md border border-slate-200 text-xs space-y-1">
-              <span className="text-[11px] font-semibold uppercase text-slate-400">Patient Details</span>
+              <span className="text-[11px] font-semibold uppercase text-slate-400">
+                Patient Details
+              </span>
               <p className="font-bold text-slate-900">{user?.name || 'Patient'}</p>
               <p className="text-slate-500">Mobile: {user?.phone || '—'}</p>
             </div>
@@ -161,7 +191,8 @@ export const BookAppointment: React.FC = () => {
             <div className="leading-relaxed">
               <p className="font-semibold text-blue-950">Queue token generation notice:</p>
               <p className="text-blue-800 text-[11px] mt-0.5">
-                Your sequential queue token will be generated immediately upon confirmation. You can monitor live doctor consultations and wait times directly on your screen.
+                Your sequential queue token will be generated immediately upon confirmation. You can
+                monitor live doctor consultations and wait times directly on your screen.
               </p>
             </div>
           </div>

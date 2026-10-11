@@ -6,12 +6,8 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { Button } from '../../components/common/Button';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Link } from 'react-router-dom';
-import {
-  Menu,
-  Plus,
-  Power,
-  Layers,
-} from 'lucide-react';
+import { clinicDate } from '../../lib/time';
+import { Menu, Plus, Power, Layers } from 'lucide-react';
 
 export const AdminDoctors: React.FC = () => {
   const { doctors, tokens, appointments, refreshState, showToast } = useQueue();
@@ -23,7 +19,7 @@ export const AdminDoctors: React.FC = () => {
       refreshState();
       showToast(
         `Doctor status updated to ${currentStatus === 'active' ? 'Inactive' : 'Active'}`,
-        'info'
+        'info',
       );
     } catch {
       showToast('Failed to update doctor status', 'error');
@@ -31,11 +27,11 @@ export const AdminDoctors: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col lg:flex-row">
+    <div className="min-h-screen qf-shell flex flex-col lg:flex-row">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        <div className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
+        <div className="h-20 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -56,7 +52,7 @@ export const AdminDoctors: React.FC = () => {
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
           <PageHeader
-            title="Doctor Management"
+            title="Meet your care team."
             subtitle="Configure consulting schedules, availability status, and consultation room allocations."
             actions={
               <Link to="/admin/doctors/add">
@@ -67,7 +63,7 @@ export const AdminDoctors: React.FC = () => {
             }
           />
 
-          <div className="bg-white rounded-lg border border-slate-200 shadow-subtle overflow-hidden">
+          <div className="qf-panel overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
@@ -82,9 +78,14 @@ export const AdminDoctors: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {doctors.map((doc) => {
-                    const todayAptsCount = appointments.filter((a) => a.doctorId === doc.id).length;
+                    const todayAptsCount = appointments.filter(
+                      (a) =>
+                        a.doctorId === doc.id &&
+                        a.date === clinicDate() &&
+                        !['cancelled', 'no_show'].includes(a.status),
+                    ).length;
                     const waitingCount = tokens.filter(
-                      (t) => t.doctorId === doc.id && t.status === 'waiting'
+                      (t) => t.doctorId === doc.id && t.status === 'waiting',
                     ).length;
 
                     return (
@@ -97,11 +98,17 @@ export const AdminDoctors: React.FC = () => {
                           <div className="text-[10px] text-slate-500 mt-0.5">
                             {doc.qualifications} • {doc.experienceYears} yrs exp
                           </div>
+                          <div className="text-[11px] text-slate-500 mt-2">
+                            Room {doc.roomNumber || 'unassigned'} ·{' '}
+                            {doc.languages?.join(', ') || 'Languages not set'}
+                          </div>
                         </td>
 
                         <td className="py-3.5 px-4">
                           <span className="text-slate-800 font-medium">{doc.clinicName}</span>
-                          <div className="text-[11px] text-slate-500">Fee: ₹{doc.consultationFee}</div>
+                          <div className="text-[11px] text-slate-500">
+                            Fee: ₹{doc.consultationFee}
+                          </div>
                         </td>
 
                         <td className="py-3.5 px-4">
@@ -115,7 +122,7 @@ export const AdminDoctors: React.FC = () => {
 
                         <td className="py-3.5 px-4">
                           <div className="font-semibold text-slate-800">
-                            {todayAptsCount} booked today
+                            {todayAptsCount} appointments today
                           </div>
                           <div className="text-[11px] text-amber-700 font-medium">
                             {waitingCount} waiting now
@@ -129,7 +136,11 @@ export const AdminDoctors: React.FC = () => {
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Link to={`/admin/queue?doctor=${doc.id}`}>
-                              <Button variant="outline" size="sm" icon={<Layers className="w-3 h-3" />}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                icon={<Layers className="w-3 h-3" />}
+                              >
                                 Queue
                               </Button>
                             </Link>
@@ -141,7 +152,9 @@ export const AdminDoctors: React.FC = () => {
                                   ? 'bg-slate-50 text-slate-600 hover:bg-red-50 hover:text-red-700 border-slate-200'
                                   : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                               }`}
-                              title={doc.status === 'active' ? 'Deactivate Doctor' : 'Activate Doctor'}
+                              title={
+                                doc.status === 'active' ? 'Deactivate Doctor' : 'Activate Doctor'
+                              }
                             >
                               <Power className="w-3.5 h-3.5" />
                             </button>

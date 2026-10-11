@@ -5,9 +5,12 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:demo": "tsx watch src/demoServer.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "tsx src/seed.ts",
+    "verify:aws": "tsx src/verifyAws.ts",
+    "verify:demo": "tsx src/demo/verifyDataset.ts",
     "test": "tsx tests/backend.test.ts"
   },
   "keywords": [
@@ -22,12 +25,17 @@
     "@aws-sdk/client-cognito-identity-provider": "^3.1131.0",
     "@aws-sdk/client-dynamodb": "^3.714.0",
     "@aws-sdk/lib-dynamodb": "^3.714.0",
+    "aws-jwt-verify": "^5.2.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "uuid": "^11.0.3"
+    "serverless-http": "^4.0.0",
+    "uuid": "^11.0.3",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

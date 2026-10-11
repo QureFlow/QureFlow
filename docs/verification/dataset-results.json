@@ -1,0 +1,116 @@
+{
+  "executedAt": "2026-10-11T07:49:14.627Z",
+  "database": "Amazon DynamoDB Local",
+  "table": "QureFlowDemo",
+  "readOnly": true,
+  "passed": true,
+  "clinics": 6,
+  "doctors": 48,
+  "specialties": 12,
+  "patientProfiles": 737,
+  "appointments": 5043,
+  "visits": 5654,
+  "addedVisits": 5040,
+  "metadataSchemaVersion": 3,
+  "clinicDirectory": [
+    {
+      "clinicId": "clinic-1",
+      "patients": 137,
+      "appointments": 843
+    },
+    {
+      "clinicId": "clinic-2",
+      "patients": 136,
+      "appointments": 840
+    },
+    {
+      "clinicId": "clinic-3",
+      "patients": 136,
+      "appointments": 840
+    },
+    {
+      "clinicId": "clinic-4",
+      "patients": 120,
+      "appointments": 840
+    },
+    {
+      "clinicId": "clinic-5",
+      "patients": 120,
+      "appointments": 840
+    },
+    {
+      "clinicId": "clinic-6",
+      "patients": 120,
+      "appointments": 840
+    }
+  ],
+  "models": [
+    {
+      "doctorId": "doc-1",
+      "method": "ridge_regression",
+      "sampleCount": 148,
+      "syntheticCount": 148,
+      "validationMaeMinutes": 0.6309504475436608
+    },
+    {
+      "doctorId": "doc-10",
+      "method": "ridge_regression",
+      "sampleCount": 148,
+      "syntheticCount": 148,
+      "validationMaeMinutes": 1.0859661717322096
+    },
+    {
+      "doctorId": "doc-11",
+      "method": "ridge_regression",
+      "sampleCount": 88,
+      "syntheticCount": 88,
+      "validationMaeMinutes": 0.7114499278879984
+    },
+    {
+      "doctorId": "doc-12",
+      "method": "ridge_regression",
+      "sampleCount": 88,
+      "syntheticCount": 88,
+      "validationMaeMinutes": 0.6796136905375706
+    },
+    {
+      "doctorId": "doc-13",
+      "method": "ridge_regression",
+      "sampleCount": 88,
+      "syntheticCount": 88,
+      "validationMaeMinutes": 0.7109261303388951
+    },
+    {
+      "doctorId": "doc-2",
+      "method": "ridge_regression",
+      "sampleCount": 148,
+      "syntheticCount": 148,
+      "validationMaeMinutes": 0.6202424791304533
+    },
+    {
+      "doctorId": "doc-3",
+      "method": "ridge_regression",
+      "sampleCount": 148,
+      "syntheticCount": 148,
+      "validationMaeMinutes": 0.7965089524878909
+    },
+    {
+      "doctorId": "doc-4",
+      "method": "ridge_regression",
+      "sampleCount": 148,
+      "syntheticCount": 148,
+      "validationMaeMinutes": 1.0859661717322096
+    }
+  ],
+  "assertions": [
+    "Directory size and profile metadata",
+    "Eight doctors per facility",
+    "5,040 linked generated visits and appointments",
+    "Status, clinic, date and patient consistency",
+    "Valid consultation timestamps",
+    "One active visit per patient per day",
+    "One current consultation per doctor queue",
+    "Clinic scoped patient and appointment queries",
+    "Operational model training with sufficient observations"
+  ]
+}

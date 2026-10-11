@@ -1,129 +1,46 @@
-# QueueLess Rural — Backend Integration Guide (AWS Cognito & DynamoDB)
+# AWS integration
 
-Welcome! This frontend is fully built, styled, route-guarded, and validated. It is production-ready for healthcare OPD clinics.
+The React application calls the Express API. Only the backend accesses DynamoDB and Cognito. Browser route guards help navigation; every sensitive API route independently verifies authentication and permissions.
 
-This document outlines everything you need to connect **AWS Cognito** (Authentication) and **Amazon DynamoDB** (Database).
-
----
-
-## 1. Quick Start Architecture
-
-```
-[ Frontend: React + TypeScript + Tailwind ]
-                    |
-      +-------------+-------------+
-      |                           |
-[ AWS Cognito ]           [ Amazon DynamoDB ]
-- Patient User Pool       - Patients Table
-- Staff User Pool / Group - Staff Table
-- SMS OTP Verification    - Doctors Table
-- JWT Tokens (ID/Access)  - Appointments Table
-                          - Live Queues Table
+```text
+React browser → Express API (or API Gateway → Lambda → Express)
+                           ├─ Amazon Cognito access-token verification
+                           └─ Amazon DynamoDB single-table repository
 ```
 
-The frontend uses an abstraction layer located in:
-- `src/config/awsConfig.ts`: Central AWS credentials and resource IDs
-- `src/services/awsCognitoAuth.ts`: Cognito authentication hooks
-- `src/services/dynamoDbService.ts`: DynamoDB schemas, queries, and mutations
-- `src/services/authService.ts`: Local mock fallback for seamless testing
+## Configuration
 
----
+Backend variables are documented in `backend/.env.example`. Set the region, DynamoDB table name, Cognito pool ID, app client ID, optional backend-only client secret, strong local-session signing secret, and exact allowed frontend origins. Leave `DYNAMODB_ENDPOINT` unset for AWS. Use the AWS SDK credential chain or a workload IAM role.
 
-## 2. AWS Cognito Setup
+Set `AUTH_PROVIDER=cognito` for explicit AWS authentication. Missing required Cognito configuration fails instead of silently enabling local authentication. `AUTH_PROVIDER=local` is used only by the explicit isolated demo/test entry points. Legacy staff profiles with password hashes can still authenticate locally; replacing those profiles with managed Cognito staff identities is a release task.
 
-### 2.1 User Pool Configuration
-1. Create a Cognito User Pool in **AWS Region `ap-south-1`** (Mumbai) or your chosen region.
-2. **Sign-in attributes**:
-   - Enable **Phone number** and **Email address**.
-3. **Required standard attributes**:
-   - `name` (Full Name)
-   - `phone_number`
-   - `email`
-4. **Custom attributes**:
-   - `custom:role` (String, mutable: `patient` | `admin` | `staff`)
-   - `custom:gender` (String: `Male` | `Female` | `Other`)
-   - `custom:dob` (String: `YYYY-MM-DD`)
+Frontend `VITE_API_GATEWAY_URL=/api` supports the Vite proxy and unified Express deployment. For a separate API origin, use the actual HTTPS base URL **including its `/api` prefix** and allow that frontend origin in `CORS_ORIGINS`. Rebuild after changing frontend environment variables. `VITE_ENABLE_DEMO_HINTS` must be false for AWS builds.
 
-### 2.2 Cognito User Groups
-Create two User Groups in the User Pool:
-- `Patients`: Default group for public patient sign-ups.
-- `Admins` / `HospitalStaff`: Privileged group for reception staff and hospital administrators.
+The DynamoDB table requires string partition key `pk` and string sort key `sk`. Core queue correctness uses strong primary-table reads, conditional writes, and transactions; the new implementation does not require the legacy GSIs. Before introducing this schema into an existing populated table, reconcile legacy records and establish claims and counters described in `docs/RELEASE_READINESS.md`.
 
-### 2.3 Critical Security Rule (Staff Registration)
-> **IMPORTANT**: Public self-registration is allowed **ONLY for Patients**.
-> Staff / Admin self-registration is permanently disabled in the UI.
-> Staff accounts must be created using the AWS CLI or Cognito Admin API:
-> ```bash
-> aws cognito-idp admin-create-user \
->   --user-pool-id <YOUR_USER_POOL_ID> \
->   --username "admin@bolpurhealth.org" \
->   --user-attributes Name="name",Value="Bishakha Roy" Name="email",Value="admin@bolpurhealth.org" Name="custom:role",Value="admin" \
->   --temporary-password "TemporaryPass123!"
-> 
-> aws cognito-idp admin-add-user-to-group \
->   --user-pool-id <YOUR_USER_POOL_ID> \
->   --username "admin@bolpurhealth.org" \
->   --group-name "Admins"
-> ```
+The backend role needs table-scoped `GetItem`, `BatchGetItem`, `Query`, `Scan`, `PutItem`, `UpdateItem`, `DeleteItem`, and `ConditionCheckItem` permissions. DynamoDB transactions use the underlying item-operation permissions; their condition checks require `dynamodb:ConditionCheckItem`. See [AWS transaction IAM documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis-iam.html). Local demo tooling additionally creates its dedicated local table and writes synthetic batches. Do not grant deployed application roles table creation/deletion rights for demo tooling. The expanded local dataset explicitly enables backfilled read models; do not create the `READ_MODELS/V1` activation marker in AWS until catalog, appointment, clinic visit and patient membership backfills have been reconciled.
 
----
+## API surface
 
-## 3. Amazon DynamoDB Table Schemas
+All paths below start with `/api`. Sensitive routes require `Authorization: Bearer <access token>`.
 
-Create the following 5 tables in DynamoDB (On-Demand billing recommended):
+| Area | Routes | Access |
+| --- | --- | --- |
+| Authentication | `POST /auth/login`, `/auth/register`, `/auth/confirm-registration`, `/auth/forgot-password`, `/auth/confirm-forgot-password`; `GET /auth/me` | Public flows; verified session for `/me` |
+| Directories | `GET /clinics`, `/doctors`, `/doctors/:id`, `/doctors/:id/slots?date=YYYY-MM-DD` | Public |
+| Clinic configuration | `PATCH /clinics/:id`; `GET /settings`; `PUT /settings` | Assigned staff; admin-only edits |
+| Doctor administration | `POST /doctors`; `PATCH /doctors/:id` | Assigned clinic administrator |
+| Patients | `GET /patients`, `/patients/:id`, `/patients/me/status`; `PATCH /patients/:id` | Self or assigned staff; doctor patient scope |
+| Appointments | `GET /appointments`; `POST /appointments`; `POST /appointments/:id/cancel` | Patient ownership or assigned staff; self-booking only |
+| Queues | `GET /queues/all`, `/queues/doctor/:doctorId`; `POST /queues/join`, `/queues/call-next`, `/queues/pause` | Redacted patient view; assigned staff actions |
+| Token transitions | `POST /tokens/:id/serve`, `/skip`, `/cancel` | Assigned staff; patients may cancel their own waiting token |
+| Analytics | `GET /analytics`; `POST /analytics/models/refresh` | Assigned admin/health worker; admin-only model refresh |
+| Liveness | `GET /health` | Public; does not verify downstream database connectivity |
 
-### Table 1: `QueueLess_Patients`
-- **Partition Key (PK)**: `patientId` (String) — Cognito `sub` or phone number
-- **Attributes**: `name`, `phone`, `email`, `dob`, `gender`, `registeredAt`
+Registration always creates a patient role. Cognito registration returns a pending confirmation state; the UI requests the real Cognito code before sign-in. Access tokens validate their signature, issuer, expiry, token use, and app-client ID with `aws-jwt-verify`, following [AWS token-verification guidance](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-verifying-a-jwt.html). Local recovery cannot reset accounts using a fabricated OTP. Appointment names and phone numbers come from the verified patient profile. Unknown API routes return JSON 404, rather than the frontend HTML.
 
-### Table 2: `QueueLess_Staff`
-- **Partition Key (PK)**: `staffId` (String) — e.g. `REC-204`
-- **Attributes**: `name`, `email`, `role`, `clinicId`, `shift`
+## Deployment verification
 
-### Table 3: `QueueLess_Doctors`
-- **Partition Key (PK)**: `doctorId` (String) — e.g. `doc-1`
-- **Global Secondary Index (GSI)**: `specialty-index` (PK: `specialty`, SK: `name`)
-- **Attributes**: `name`, `specialty`, `qualifications`, `experienceYears`, `opdRoom`, `dailyTokenLimit`, `consultationFee`, `availableDays`
+Build locally with `npm run build`. For a server deployment, `npm start` serves frontend assets and API on `PORT`. For Lambda, package the compiled backend and runtime dependencies, configure `backend/dist/lambda.handler`, and route API Gateway requests to it. Frontend static hosting is a separate deployment concern for Lambda.
 
-### Table 4: `QueueLess_Appointments`
-- **Partition Key (PK)**: `appointmentId` (String) — UUID
-- **GSI 1**: `patientId-appointmentDate-index` (PK: `patientId`, SK: `appointmentDate`)
-- **GSI 2**: `doctorId-appointmentDate-index` (PK: `doctorId`, SK: `appointmentDate`)
-- **Attributes**: `patientId`, `patientName`, `patientPhone`, `doctorId`, `doctorName`, `clinicId`, `appointmentDate`, `timeSlot`, `status`, `tokenNumber`
-
-### Table 5: `QueueLess_Queues`
-- **Partition Key (PK)**: `queueDate_doctorId` (String) — e.g. `2026-09-12#doc-1`
-- **Sort Key (SK)**: `tokenNumber` (Number) — e.g. `1`, `2`, `3`
-- **Attributes**: `tokenId`, `appointmentId`, `patientName`, `status` (`waiting` | `in-consultation` | `completed` | `skipped`), `estimatedWaitMins`, `calledAt`
-
----
-
-## 4. Environment Configuration
-
-Copy `.env.example` to `.env` in the project root:
-
-```ini
-VITE_AWS_REGION=ap-south-1
-VITE_COGNITO_USER_POOL_ID=ap-south-1_xxxxxxxxx
-VITE_COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
-VITE_DYNAMO_PATIENTS_TABLE=QueueLess_Patients
-VITE_DYNAMO_STAFF_TABLE=QueueLess_Staff
-VITE_DYNAMO_DOCTORS_TABLE=QueueLess_Doctors
-VITE_DYNAMO_CLINICS_TABLE=QueueLess_Clinics
-VITE_DYNAMO_APPOINTMENTS_TABLE=QueueLess_Appointments
-VITE_DYNAMO_QUEUES_TABLE=QueueLess_Queues
-VITE_API_GATEWAY_URL=https://<api-id>.execute-api.ap-south-1.amazonaws.com/prod
-VITE_USE_MOCK_BACKEND=false
-```
-
----
-
-## 5. Connecting Frontend to AWS
-
-In `src/context/AuthContext.tsx`:
-Replace the mock calls with `awsCognitoAuth.signInPatient` and `awsCognitoAuth.signUpPatient`.
-
-All routes (`/patient/doctors`, `/patient/book`, `/patient/token`, `/admin/*`) are already strictly protected by `<PatientRoute>` and `<AdminRoute>`.
-Unauthenticated users cannot see doctor listings or patient dashboards until authenticated.
-Staff registration is disabled on the frontend.
-Logout cleanly wipes local session tokens and redirects strictly to `/`.
+The included integration suite verifies the adapter locally. It does not validate your deployed Gateway paths, Cognito pool settings, provider delivery, IAM policies, networking, or AWS throttling. Perform those checks on a dedicated AWS staging table with synthetic accounts before moving to production.

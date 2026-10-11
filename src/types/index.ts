@@ -1,6 +1,9 @@
-export type UserRole = 'patient' | 'admin';
+export type UserRole = 'patient' | 'admin' | 'health_worker' | 'doctor';
 
 export interface User {
+  metadata?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
   id: string;
   name: string;
   phone: string;
@@ -10,9 +13,11 @@ export interface User {
   gender?: 'Male' | 'Female' | 'Other';
   staffId?: string;
   clinicId?: string;
+  doctorId?: string;
 }
 
 export interface Clinic {
+  metadata?: Record<string, unknown>;
   id: string;
   name: string;
   address: string;
@@ -26,6 +31,13 @@ export interface Clinic {
 }
 
 export interface Doctor {
+  bio?: string;
+  languages?: string[];
+  clinicalInterests?: string[];
+  roomNumber?: string;
+  department?: string;
+  registrationId?: string;
+  metadata?: Record<string, unknown>;
   id: string;
   name: string;
   avatar?: string;
@@ -56,6 +68,8 @@ export type TokenStatus = 'waiting' | 'current' | 'completed' | 'skipped' | 'can
 export type QueuePriority = 'normal' | 'emergency';
 
 export interface Appointment {
+  tokenId?: string;
+  metadata?: Record<string, unknown>;
   id: string;
   patientId: string;
   patientName: string;
@@ -93,6 +107,8 @@ export interface QueueToken {
   createdAt: string;
   calledAt?: string;
   servedAt?: string;
+  queueDate?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DoctorQueueState {
@@ -103,6 +119,21 @@ export interface DoctorQueueState {
   currentTokenNumber: string | null;
   isPaused: boolean;
   tokens: QueueToken[];
+}
+export interface PatientQueueStatus {
+  token: QueueToken;
+  currentServingToken: string | null;
+  patientsAhead: number;
+  estimatedWaitMinutes: number;
+  isPaused: boolean;
+  prediction?: {
+    method: string;
+    sampleCount: number;
+    syntheticSamples: number;
+    validationMaeMinutes: number | null;
+    modelVersion: string;
+    isEstimate: boolean;
+  };
 }
 
 export interface QueueSettings {

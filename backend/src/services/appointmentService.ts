@@ -1,72 +1,53 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
 import { queueService } from './queueService.js';
 import { Appointment, QueueToken, SlotAvailability } from '../models/types.js';
-
-export const BASE_CONSULTATION_SLOTS = [
-  '09:00 AM',
-  '09:30 AM',
-  '10:00 AM',
-  '10:30 AM',
-  '11:00 AM',
-  '11:30 AM',
-  '12:00 PM',
-  '12:30 PM',
-  '01:00 PM',
-  '01:30 PM',
-];
-
+import { clockMinutes, clinicDate, clinicNowMinutes, timeLabel, weekday } from '../lib/time.js';
+import { AppError } from '../lib/errors.js';
+import { bookingDateSchema, parse } from '../lib/validation.js';
 export class AppointmentService {
-  /**
-   * Calculate slot availability and wait time using the formula:
-   * estimatedWaitMinutes = tactive * pactive + (p - 1) * tavg + buffer
-   * If estimatedWaitMinutes > slotDurationMinutes then slot is FULL.
-   */
-  async getDoctorSlotAvailability(doctorId: string, dateStr: string): Promise<SlotAvailability[]> {
+  async getDoctorSlotAvailability(doctorId: string, date: string): Promise<SlotAvailability[]> {
+    parse(bookingDateSchema, date);
     const doc = await dynamoDbRepo.getDoctorById(doctorId);
-    const appointments = await dynamoDbRepo.getAppointments({ doctorId, date: dateStr });
-    const activeAppointments = appointments.filter((a) => a.status !== 'cancelled');
-
-    // Slot duration between consultation intervals: standard 30 minutes
-    const slotDurationMinutes = 30;
-    const tavg = doc?.slotDurationMinutes || 10;
-    const buffer = 2; // Buffer time between consultations
-
-    return BASE_CONSULTATION_SLOTS.map((time) => {
-      // p: number of patients already booked for this specific time slot
-      const bookedCount = activeAppointments.filter((a) => a.time === time).length;
-      const p = bookedCount;
-
-      if (p === 0) {
-        return {
-          time,
-          available: true,
-          isFull: false,
-          patientsAhead: 0,
-          estimatedWaitMinutes: 0,
-          slotDurationMinutes,
-          statusText: 'Available',
-        };
-      }
-
-      // Formula: tactive * pactive + (p - 1) * tavg + buffer
-      const pactive = 1;
-      const tactive = tavg;
-      const estimatedWaitMinutes = Math.round(tactive * pactive + (p - 1) * tavg + buffer);
-      const isFull = estimatedWaitMinutes > slotDurationMinutes;
-
-      return {
+    if (!doc) throw new AppError(404, 'Doctor not found');
+    const appointments = (await dynamoDbRepo.getAppointments({ doctorId, date })).filter(
+      (a) => !['cancelled', 'no_show'].includes(a.status),
+    );
+    const settings = await dynamoDbRepo.getSettings(doc.clinicId),
+      slots: SlotAvailability[] = [];
+    const start = clockMinutes(doc.startTime),
+      end = clockMinutes(doc.endTime),
+      consultation = doc.slotDurationMinutes,
+      buffer = settings.bufferMinutes ?? 2;
+    const windowMinutes = Math.max(30, Math.ceil((consultation + buffer) / 30) * 30);
+    for (let minute = start; minute < end; minute += windowMinutes) {
+      const time = timeLabel(minute),
+        duration = Math.min(windowMinutes, end - minute),
+        capacity = Math.max(0, Math.floor(duration / (consultation + buffer)));
+      const count = appointments.filter((a) => a.time === time).length;
+      const closed =
+        doc.status !== 'active' ||
+        !doc.consultationDays.includes(weekday(date)) ||
+        (date === clinicDate() && minute <= clinicNowMinutes());
+      const full = count >= capacity;
+      slots.push({
         time,
-        available: !isFull,
-        isFull,
-        patientsAhead: p,
-        estimatedWaitMinutes,
-        slotDurationMinutes,
-        statusText: isFull ? 'Slot Full' : `${p} ahead (~${estimatedWaitMinutes}m)`,
-      };
-    });
+        available: !closed && !full,
+        isFull: full,
+        patientsAhead: count,
+        estimatedWaitMinutes: count * (consultation + buffer),
+        slotDurationMinutes: duration,
+        statusText: closed
+          ? 'Unavailable'
+          : full
+            ? 'Slot Full'
+            : count
+              ? `${count} booked`
+              : 'Available',
+      });
+    }
+    return slots;
   }
-
   async createAppointment(data: {
     patientId: string;
     patientName: string;
@@ -76,38 +57,24 @@ export class AppointmentService {
     time: string;
     notes?: string;
   }): Promise<{ appointment: Appointment; token: QueueToken }> {
+    parse(bookingDateSchema, data.date);
     const doc = await dynamoDbRepo.getDoctorById(data.doctorId);
-    if (!doc) {
-      throw new Error(`Doctor with ID ${data.doctorId} not found`);
-    }
-
-    // Validate slot capacity and waiting time
-    const slotAvailability = await this.getDoctorSlotAvailability(data.doctorId, data.date);
-    const targetSlot = slotAvailability.find((s) => s.time === data.time);
-    if (targetSlot && targetSlot.isFull) {
-      throw new Error(
-        `Time slot ${data.time} on ${data.date} is full (${targetSlot.patientsAhead} patients ahead, estimated wait ${targetSlot.estimatedWaitMinutes}m exceeds ${targetSlot.slotDurationMinutes}m slot duration). Please choose another slot.`
+    if (!doc) throw new AppError(404, 'Doctor not found');
+    const slot = (await this.getDoctorSlotAvailability(data.doctorId, data.date)).find(
+      (s) => s.time === data.time,
+    );
+    if (!slot || !slot.available)
+      throw new AppError(409, 'This slot is full or unavailable. Choose an available time.');
+    const settings = await dynamoDbRepo.getSettings(doc.clinicId),
+      capacity = Math.max(
+        0,
+        Math.floor(
+          slot.slotDurationMinutes / (doc.slotDurationMinutes + (settings.bufferMinutes ?? 2)),
+        ),
       );
-    }
-
-    const aptId = `apt-${Date.now()}-${uuidv4().substring(0, 6)}`;
-    const nowIso = new Date().toISOString();
-
-    // Automatically allocate token via QueueService
-    const token = await queueService.joinQueue({
-      doctorId: doc.id,
-      patientId: data.patientId,
-      patientName: data.patientName,
-      patientPhone: data.patientPhone,
-      priority: 'normal',
-      isWalkIn: false,
-      scheduledTime: data.time,
-      appointmentId: aptId,
-      dateStr: data.date,
-    });
-
-    const newAppointment: Appointment = {
-      id: aptId,
+    await dynamoDbRepo.initializeSlot(doc.id, data.date, data.time, capacity);
+    const appointment: Appointment = {
+      id: `apt-${randomUUID()}`,
       patientId: data.patientId,
       patientName: data.patientName,
       patientPhone: data.patientPhone,
@@ -118,44 +85,44 @@ export class AppointmentService {
       clinicName: doc.clinicName,
       date: data.date,
       time: data.time,
-      tokenNumber: token.tokenNumber,
-      status: 'waiting',
+      tokenNumber: '',
+      status: data.date === clinicDate() ? 'waiting' : 'booked',
       priority: 'normal',
       isWalkIn: false,
       notes: data.notes || '',
-      createdAt: nowIso,
+      createdAt: new Date().toISOString(),
     };
-
-    await dynamoDbRepo.saveAppointment(newAppointment);
-
-    return { appointment: newAppointment, token };
+    const token = await queueService.joinQueue(
+      { ...data, appointmentId: appointment.id, scheduledTime: data.time, dateStr: data.date },
+      appointment,
+      capacity,
+    );
+    return { appointment: (await dynamoDbRepo.getAppointmentById(appointment.id))!, token };
   }
-
   async getAppointments(filters?: {
     patientId?: string;
     doctorId?: string;
     date?: string;
-  }): Promise<Appointment[]> {
+    clinicId?: string;
+  }) {
     return dynamoDbRepo.getAppointments(filters);
   }
-
-  async cancelAppointment(aptId: string, reason?: string): Promise<void> {
-    const apt = await dynamoDbRepo.getAppointmentById(aptId);
-    if (!apt) throw new Error(`Appointment with ID ${aptId} not found`);
-
-    const note = reason ? `Cancelled: ${reason}` : 'Cancelled by patient';
-    await dynamoDbRepo.updateAppointmentStatus(aptId, 'cancelled', note);
-
-    // Cancel matching token in today's queue
-    if (apt.tokenNumber) {
-      const queueId = dynamoDbRepo.getQueueId(apt.doctorId, apt.date);
-      const tokens = await dynamoDbRepo.getAllTokensForQueue(queueId);
-      const matching = tokens.find((t) => t.tokenNumber === apt.tokenNumber);
-      if (matching) {
-        await queueService.cancelToken(matching.id);
-      }
-    }
+  async cancelAppointment(id: string, reason?: string): Promise<void> {
+    const apt = await dynamoDbRepo.getAppointmentById(id);
+    if (!apt) throw new AppError(404, 'Appointment not found');
+    const tokens = apt.tokenId
+      ? [(await dynamoDbRepo.findTokenById(apt.tokenId))?.token].filter((t): t is QueueToken =>
+          Boolean(t),
+        )
+      : await dynamoDbRepo.getAllTokensForQueue(dynamoDbRepo.getQueueId(apt.doctorId, apt.date));
+    const token =
+      tokens.find((t) => t.appointmentId === id) ||
+      tokens.find(
+        (t) =>
+          !t.appointmentId && t.patientId === apt.patientId && t.tokenNumber === apt.tokenNumber,
+      );
+    if (!token) throw new AppError(409, 'Appointment token is missing. Contact the clinic.');
+    await queueService.cancelToken(token.id, reason);
   }
 }
-
 export const appointmentService = new AppointmentService();

@@ -1,0 +1,54 @@
+{
+  "executedAt": "2026-10-11T07:02:02.896Z",
+  "database": "Amazon DynamoDB Local",
+  "fixtureTable": "QureFlowDemo",
+  "syntheticDataOnly": true,
+  "cases": [
+    {
+      "name": "Staff authentication and scoped analytics",
+      "passed": true
+    },
+    {
+      "name": "Call-next and current consultation display",
+      "passed": true
+    },
+    {
+      "name": "Consultation completion",
+      "passed": true
+    },
+    {
+      "name": "Reception walk-in persisted and visible to patient",
+      "passed": true
+    },
+    {
+      "name": "Model refresh and synthetic history disclosure",
+      "passed": true
+    },
+    {
+      "name": "Patient authentication and mobile ticket",
+      "passed": true
+    },
+    {
+      "name": "Mobile ticket has no horizontal overflow at 390x844",
+      "passed": true
+    },
+    {
+      "name": "Future booking survives reload",
+      "passed": true
+    },
+    {
+      "name": "Cancellation survives reload and disappears from upcoming visits",
+      "passed": true
+    },
+    {
+      "name": "Fresh analytics reload has no new browser console errors",
+      "passed": true
+    }
+  ],
+  "screenshots": [
+    "01-analytics-desktop.jpg",
+    "02-queue-consultation.jpg",
+    "03-patient-mobile.jpg",
+    "04-appointment-cancelled.jpg"
+  ]
+}

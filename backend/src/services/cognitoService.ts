@@ -50,7 +50,12 @@ export function getSecretHash(username: string): string | undefined {
 
 export const cognitoService = {
   isConfigured(): boolean {
-    return Boolean(userPoolId && clientId && !userPoolId.includes('xxxx'));
+    if (process.env.AUTH_PROVIDER === 'cognito' && (!userPoolId || !clientId))
+      throw new Error('Cognito mode requires a user pool and app client.');
+    return (
+      process.env.AUTH_PROVIDER !== 'local' &&
+      Boolean(userPoolId && clientId && !userPoolId.includes('xxxx'))
+    );
   },
 
   async signUp(data: {
@@ -89,8 +94,7 @@ export const cognitoService = {
       userAttributes.push({ Name: 'email', Value: trimmedEmail });
     }
 
-    const birthdateValue = data.dob && data.dob.trim().length > 0 ? data.dob.trim() : '1990-01-01';
-    userAttributes.push({ Name: 'birthdate', Value: birthdateValue });
+    if (data.dob) userAttributes.push({ Name: 'birthdate', Value: data.dob });
 
     if (data.gender && data.gender.trim().length > 0) {
       userAttributes.push({ Name: 'gender', Value: data.gender.toLowerCase().trim() });
@@ -100,7 +104,7 @@ export const cognitoService = {
       ClientId: clientId,
       SecretHash: secretHash,
       Username: cognitoUsername,
-      Password: data.password || 'TemporaryPass123!',
+      Password: data.password,
       UserAttributes: userAttributes,
     });
 
@@ -113,7 +117,9 @@ export const cognitoService = {
     }
 
     const cleanId = username.trim();
-    const cognitoUsername = cleanId.includes('@') ? cleanId.toLowerCase() : normalizePhoneNumber(cleanId);
+    const cognitoUsername = cleanId.includes('@')
+      ? cleanId.toLowerCase()
+      : normalizePhoneNumber(cleanId);
     const secretHash = getSecretHash(cognitoUsername);
 
     const authParams: Record<string, string> = {
@@ -140,7 +146,9 @@ export const cognitoService = {
     }
 
     const cleanId = username.trim();
-    const cognitoUsername = cleanId.includes('@') ? cleanId.toLowerCase() : normalizePhoneNumber(cleanId);
+    const cognitoUsername = cleanId.includes('@')
+      ? cleanId.toLowerCase()
+      : normalizePhoneNumber(cleanId);
     const secretHash = getSecretHash(cognitoUsername);
 
     const command = new ConfirmSignUpCommand({
@@ -159,7 +167,9 @@ export const cognitoService = {
     }
 
     const cleanId = username.trim();
-    const cognitoUsername = cleanId.includes('@') ? cleanId.toLowerCase() : normalizePhoneNumber(cleanId);
+    const cognitoUsername = cleanId.includes('@')
+      ? cleanId.toLowerCase()
+      : normalizePhoneNumber(cleanId);
     const secretHash = getSecretHash(cognitoUsername);
 
     const command = new ForgotPasswordCommand({
@@ -178,7 +188,9 @@ export const cognitoService = {
     }
 
     const cleanId = username.trim();
-    const cognitoUsername = cleanId.includes('@') ? cleanId.toLowerCase() : normalizePhoneNumber(cleanId);
+    const cognitoUsername = cleanId.includes('@')
+      ? cleanId.toLowerCase()
+      : normalizePhoneNumber(cleanId);
     const secretHash = getSecretHash(cognitoUsername);
 
     const command = new ConfirmForgotPasswordCommand({

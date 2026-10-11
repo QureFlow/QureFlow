@@ -10,12 +10,16 @@ import { AppointmentCard } from '../../components/patient/AppointmentCard';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Calendar, Plus } from 'lucide-react';
 
 export const PatientAppointments: React.FC = () => {
   const { user } = useAuth();
   const { appointments, cancelAppointment } = useQueue();
+  const location = useLocation();
+  const bookingState = location.state as { justBooked?: boolean; appointmentId?: string } | null;
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming');
   const [cancelModal, setCancelModal] = useState<{
@@ -31,9 +35,7 @@ export const PatientAppointments: React.FC = () => {
   // Filter appointments belonging to this patient
   const patientAppointments = useMemo(() => {
     if (!user) return [];
-    return appointments.filter(
-      (a) => a.patientId === user.id || a.patientPhone === user.phone
-    );
+    return appointments.filter((a) => a.patientId === user.id);
   }, [appointments, user]);
 
   const filteredAppointments = useMemo(() => {
@@ -52,24 +54,43 @@ export const PatientAppointments: React.FC = () => {
   }, [patientAppointments, activeTab]);
 
   const handleOpenCancel = (apt: Appointment) => {
+    setCancelError('');
     setCancelModal({
       isOpen: true,
       appointment: apt,
-      reason: 'Schedule change / Resolved at home',
+      reason: 'Patient requested cancellation',
     });
   };
 
   const handleConfirmCancel = async () => {
     if (!cancelModal.appointment) return;
-    await cancelAppointment(cancelModal.appointment.id, cancelModal.reason);
-    setCancelModal({ isOpen: false, appointment: null, reason: '' });
+    setIsCancelling(true);
+    setCancelError('');
+    try {
+      await cancelAppointment(cancelModal.appointment.id, cancelModal.reason);
+      setCancelModal({ isOpen: false, appointment: null, reason: '' });
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : 'Cancellation failed. Please try again.');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col qf-shell pb-16 md:pb-0">
       <Navbar />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {bookingState?.justBooked &&
+          patientAppointments.some(
+            (a) =>
+              a.id === bookingState.appointmentId &&
+              ['booked', 'waiting', 'in_consultation'].includes(a.status),
+          ) && (
+            <p role="status" className="p-3 mb-4 bg-emerald-50 text-emerald-800 rounded text-sm">
+              Appointment confirmed. Your token is allocated for the appointment date.
+            </p>
+          )}
         <PageHeader
           title="My Appointments"
           subtitle="Review and track your OPD consultations, tokens, and medical visit history."
@@ -95,7 +116,8 @@ export const PatientAppointments: React.FC = () => {
             Upcoming (
             {
               patientAppointments.filter(
-                (a) => a.status === 'booked' || a.status === 'waiting' || a.status === 'in_consultation'
+                (a) =>
+                  a.status === 'booked' || a.status === 'waiting' || a.status === 'in_consultation',
               ).length
             }
             )
@@ -109,8 +131,7 @@ export const PatientAppointments: React.FC = () => {
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            Completed (
-            {patientAppointments.filter((a) => a.status === 'completed').length})
+            Completed ({patientAppointments.filter((a) => a.status === 'completed').length})
           </button>
 
           <button
@@ -123,9 +144,8 @@ export const PatientAppointments: React.FC = () => {
           >
             Cancelled & No-Show (
             {
-              patientAppointments.filter(
-                (a) => a.status === 'cancelled' || a.status === 'no_show'
-              ).length
+              patientAppointments.filter((a) => a.status === 'cancelled' || a.status === 'no_show')
+                .length
             }
             )
           </button>
@@ -153,11 +173,7 @@ export const PatientAppointments: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredAppointments.map((apt) => (
-              <AppointmentCard
-                key={apt.id}
-                appointment={apt}
-                onCancelRequest={handleOpenCancel}
-              />
+              <AppointmentCard key={apt.id} appointment={apt} onCancelRequest={handleOpenCancel} />
             ))}
           </div>
         )}
@@ -177,23 +193,33 @@ export const PatientAppointments: React.FC = () => {
               >
                 Keep Appointment
               </Button>
-              <Button variant="danger" size="sm" onClick={handleConfirmCancel}>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleConfirmCancel}
+                isLoading={isCancelling}
+              >
                 Confirm Cancellation
               </Button>
             </>
           }
         >
           <div className="space-y-3 text-xs text-slate-600">
+            {cancelError && (
+              <p role="alert" className="text-red-700">
+                {cancelError}
+              </p>
+            )}
             <p>
-              Cancelling appointment for{' '}
-              <strong>{cancelModal.appointment?.doctorName}</strong> on{' '}
+              Cancelling appointment for <strong>{cancelModal.appointment?.doctorName}</strong> on{' '}
               <strong>
                 {cancelModal.appointment?.date} at {cancelModal.appointment?.time}
               </strong>
               .
             </p>
             <p className="text-slate-500">
-              Your token <strong>{cancelModal.appointment?.tokenNumber}</strong> will be released and removed from the active doctor queue.
+              Your token <strong>{cancelModal.appointment?.tokenNumber}</strong> will be released
+              and removed from the active doctor queue.
             </p>
           </div>
         </Modal>

@@ -54,8 +54,10 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       setError('Please enter the verification code received on your phone or email.');
       return;
     }
-    if (newPassword.length < 6) {
-      setError('New password must be at least 6 characters.');
+    if (newPassword.length < 12) {
+      setError(
+        'Use at least 12 characters, including uppercase, lowercase, a number, and a symbol.',
+      );
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -99,7 +101,9 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
         <button
           onClick={resetModal}
           className={`absolute top-4 right-4 p-1 rounded-lg transition-colors ${
-            isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+            isDark
+              ? 'text-slate-400 hover:text-white hover:bg-slate-800'
+              : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
           }`}
         >
           <X className="w-5 h-5" />
@@ -156,7 +160,9 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
               </div>
               <div>
                 <h3 className="text-lg font-bold">Set New Password</h3>
-                <p className="text-xs text-slate-500">Enter verification code and your new password</p>
+                <p className="text-xs text-slate-500">
+                  Enter verification code and your new password
+                </p>
               </div>
             </div>
 
@@ -177,20 +183,21 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 <Input
                   label="Verification Code (OTP)"
                   type="text"
-                  placeholder="6-digit code (or 123456 in dev)"
+                  placeholder="Code from your registered contact"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   required
                 />
                 <p className="mt-1 text-[11px] text-slate-500">
-                  Tip: If cellular carriers delay international SMS, sandbox code <span className="font-mono font-semibold text-blue-600">123456</span> is accepted.
+                  Codes expire. Request a new code if your previous code no longer works.
                 </p>
               </div>
 
               <Input
                 label="New Password"
                 type="password"
-                placeholder="At least 6 characters"
+                placeholder="12+ characters, upper/lowercase, number & symbol"
+                minLength={12}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -236,7 +243,8 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
             </div>
             <h3 className="text-lg font-bold mb-1">Password Reset Complete!</h3>
             <p className="text-xs text-slate-500 mb-5">
-              Your password has been updated in AWS Cognito. You can now sign in with your new credentials.
+              Your password has been updated in AWS Cognito. You can now sign in with your new
+              credentials.
             </p>
             <Button
               type="button"

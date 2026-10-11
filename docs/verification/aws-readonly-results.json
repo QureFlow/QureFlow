@@ -1,0 +1,42 @@
+{
+  "executedAt": "2026-10-11T07:05:10.488Z",
+  "readOnly": true,
+  "cloudWritesPerformed": false,
+  "region": "eu-north-1",
+  "authenticationFlowsExecuted": false,
+  "checks": [
+    {
+      "name": "Configured DynamoDB table is active with expected primary keys",
+      "passed": true,
+      "details": {
+        "tableStatus": "ACTIVE",
+        "billingMode": "PAY_PER_REQUEST",
+        "keySchema": [
+          {
+            "AttributeName": "pk",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "sk",
+            "KeyType": "RANGE"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Configured AWS clinic and doctor directories are readable",
+      "passed": true,
+      "details": {
+        "clinicCount": 3,
+        "doctorCount": 10
+      }
+    },
+    {
+      "name": "Cognito app-client configuration read",
+      "passed": false,
+      "details": {
+        "errorType": "AccessDeniedException"
+      }
+    }
+  ]
+}

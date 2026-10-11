@@ -33,7 +33,7 @@ export const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }
     );
   }
 
-  if (!user || user.role !== 'admin') {
+  if (!user || !['admin', 'doctor', 'health_worker'].includes(user.role)) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 

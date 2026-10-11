@@ -1,0 +1,25 @@
+{
+  "executedAt": "2026-10-11T07:05:45.1092271Z",
+  "buildExitCode": 0,
+  "buildOutput": "\r\n> qureflow@1.0.0 build\r\n> tsc && vite build && npm run build --prefix backend\r\n\r\nvite v6.4.3 building for production...\r\ntransforming...\r\n✓ 1942 modules transformed.\r\nrendering chunks...\r\ncomputing gzip size...\r\ndist/index.html                   1.09 kB │ gzip:   0.61 kB\r\ndist/assets/index-BqV_D28Q.css   56.17 kB │ gzip:  10.52 kB\r\ndist/assets/index-bJ8NDjFC.js   409.57 kB │ gzip: 111.85 kB\r\n✓ built in 3.29s\r\n\r\n> qureflow-backend@1.0.0 build\r\n> tsc\r\n\r\n",
+  "frontendAuditExitCode": 0,
+  "frontendVulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "backendAuditExitCode": 0,
+  "backendVulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "auditExecutedAt": "2026-10-11T07:05:45.1092271Z",
+  "buildExecutedAt": "2026-10-11T07:51:36.0686454Z"
+}

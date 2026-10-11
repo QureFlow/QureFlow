@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BrandLogo } from '../../components/layout/BrandLogo';
+import { AuthShell } from '../../components/layout/AuthShell';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { ForgotPasswordModal } from '../../components/common/ForgotPasswordModal';
@@ -10,8 +11,8 @@ import { Shield, Lock, ArrowRight, UserCheck } from 'lucide-react';
 export const AdminLogin: React.FC = () => {
   const { loginAdmin } = useAuth();
   const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState('admin@bolpurhealth.org');
-  const [password, setPassword] = useState('admin123');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -40,64 +41,77 @@ export const AdminLogin: React.FC = () => {
   };
 
   const handleUseDemo = () => {
-    setIdentifier('admin@bolpurhealth.org');
-    setPassword('admin123');
+    setIdentifier('demo.staff@example.invalid');
+    setPassword('DemoClinic123!');
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-100">
+    <AuthShell kind="staff">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <BrandLogo isWhite className="justify-center mb-4" />
-        <h2 className="text-2xl font-bold tracking-tight text-white">Clinic Administration</h2>
-        <p className="mt-1 text-xs text-slate-400">
+        <BrandLogo className="justify-center mb-4" />
+        <h2 className="qf-title text-3xl font-semibold text-slate-900">
+          Welcome to your workspace.
+        </h2>
+        <p className="mt-3 text-sm text-slate-500">
           Sign in to manage doctors, appointments, patients and queues.
         </p>
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-slate-950 py-8 px-6 sm:px-8 rounded-lg border border-slate-800 shadow-elevated">
+        <div className="qf-panel py-8 px-6 sm:px-8">
           {error && (
-            <div className="mb-4 p-3 bg-red-950/60 border border-red-800 text-xs text-red-300 rounded-md">
+            <div
+              role="alert"
+              className="mb-4 p-3 bg-red-50 border border-red-200 text-xs text-red-800 rounded-md"
+            >
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="staff-identifier"
+                className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5"
+              >
                 Email / Staff ID
               </label>
               <Input
+                id="staff-identifier"
                 type="text"
                 placeholder="e.g. REC-204 or staff email"
                 icon={<Shield className="w-4 h-4 text-slate-400" />}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
                 required
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label
+                  htmlFor="staff-password"
+                  className="block text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                >
                   Staff Password
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsForgotModalOpen(true)}
-                  className="text-xs text-blue-400 hover:text-blue-300 font-medium cursor-pointer transition-colors"
+                  className="text-xs text-brand-700 hover:text-brand-900 font-medium cursor-pointer transition-colors"
                 >
                   Forgot password?
                 </button>
               </div>
               <Input
+                id="staff-password"
                 type="password"
                 placeholder="••••••••"
                 icon={<Lock className="w-4 h-4 text-slate-400" />}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
                 required
               />
             </div>
@@ -106,7 +120,7 @@ export const AdminLogin: React.FC = () => {
               type="submit"
               variant="primary"
               size="md"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white border-transparent"
+              className="w-full"
               isLoading={isLoading}
               icon={<ArrowRight className="w-4 h-4" />}
             >
@@ -115,20 +129,23 @@ export const AdminLogin: React.FC = () => {
           </form>
 
           {/* Demo account quick filler */}
-          <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-            <span>Demo Staff: REC-204 (Bishakha Roy)</span>
-            <button
-              type="button"
-              onClick={handleUseDemo}
-              className="text-blue-400 hover:underline font-semibold"
-            >
-              Fill Demo Login
-            </button>
-          </div>
+          {import.meta.env.VITE_ENABLE_DEMO_HINTS === 'true' && (
+            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span>Local demo clinic administrator</span>
+              <button
+                type="button"
+                onClick={handleUseDemo}
+                className="text-brand-700 hover:underline font-semibold"
+              >
+                Fill Demo Login
+              </button>
+            </div>
+          )}
 
           {/* Explicit Administrative Security Note */}
-          <div className="mt-4 p-3 bg-slate-900 border border-slate-800 rounded-md text-[11px] text-slate-400 leading-relaxed">
-            <span className="font-semibold text-slate-300">Staff Account Policy:</span> Self-registration is disabled. Staff accounts are provisioned exclusively by Hospital IT Administration.
+          <div className="mt-4 p-3 bg-brand-50 rounded-xl text-[11px] text-slate-500 leading-relaxed">
+            <span className="font-semibold text-brand-800">Staff accounts:</span> Self-registration
+            is disabled. Staff accounts are provisioned exclusively by Hospital IT Administration.
           </div>
         </div>
 
@@ -136,7 +153,7 @@ export const AdminLogin: React.FC = () => {
         <div className="mt-6 text-center">
           <Link
             to="/patient/login"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-brand-700 transition-colors"
           >
             <UserCheck className="w-3.5 h-3.5 text-slate-400" />
             <span>Are you a patient? Sign in here</span>
@@ -148,8 +165,7 @@ export const AdminLogin: React.FC = () => {
         isOpen={isForgotModalOpen}
         onClose={() => setIsForgotModalOpen(false)}
         initialIdentifier={identifier}
-        theme="dark"
       />
-    </div>
+    </AuthShell>
   );
 };

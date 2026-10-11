@@ -17,8 +17,6 @@ interface AuthContextType {
   }) => Promise<void>;
   loginAdmin: (identifier: string, password?: string) => Promise<void>;
   logout: () => Promise<void>;
-  quickLoginPatient: () => void;
-  quickLoginAdmin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,10 +27,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Initial load
-    storage.init();
-    const current = storage.getActiveUser();
-    setUser(current);
-    setIsLoading(false);
+    let cancelled = false;
+    authService.getCurrentUser().then((current) => {
+      if (!cancelled) {
+        setUser(current);
+        setIsLoading(false);
+      }
+    });
 
     // Sync when user changes anywhere
     const handleSync = (e: Event) => {
@@ -43,7 +44,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     window.addEventListener('queless-state-change', handleSync);
-    return () => window.removeEventListener('queless-state-change', handleSync);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('queless-state-change', handleSync);
+    };
   }, []);
 
   const loginPatient = async (identifier: string, password?: string) => {
@@ -73,16 +77,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
-  const quickLoginPatient = () => {
-    const p = authService.quickDemoPatient();
-    setUser(p);
-  };
-
-  const quickLoginAdmin = () => {
-    const a = authService.quickDemoAdmin();
-    setUser(a);
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -92,8 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerPatient,
         loginAdmin,
         logout,
-        quickLoginPatient,
-        quickLoginAdmin,
       }}
     >
       {children}

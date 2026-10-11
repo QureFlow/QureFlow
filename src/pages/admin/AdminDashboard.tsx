@@ -1,260 +1,277 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Activity,
+  ArrowRight,
+  CalendarDays,
+  CheckCircle2,
+  Menu,
+  Plus,
+  Stethoscope,
+  Users,
+} from 'lucide-react';
 import { useQueue } from '../../context/QueueContext';
 import { useAuth } from '../../context/AuthContext';
 import { Sidebar } from '../../components/layout/Sidebar';
-import { PageHeader } from '../../components/layout/PageHeader';
 import { StatCard } from '../../components/common/StatCard';
 import { Button } from '../../components/common/Button';
 import { WalkInModal } from '../../components/admin/WalkInModal';
-import { Link } from 'react-router-dom';
-import {
-  Calendar,
-  Clock,
-  CheckCircle2,
-  Stethoscope,
-  UserPlus,
-  ArrowRight,
-  Menu,
-  PauseCircle,
-  PlayCircle,
-  PhoneForwarded,
-} from 'lucide-react';
-
-export const AdminDashboard: React.FC = () => {
+import { clinicDate } from '../../lib/time';
+export const AdminDashboard = () => {
   const { user } = useAuth();
-  const { tokens, appointments, doctors, pausedDoctors, callNextPatient, toggleQueuePause } =
-    useQueue();
-
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isWalkInOpen, setIsWalkInOpen] = useState(false);
-  const [selectedDoctorForWalkIn, setSelectedDoctorForWalkIn] = useState<string | undefined>(undefined);
-
-  // Derive meaningful stats
-  const totalAppointmentsToday = appointments.length;
-  const waitingTokensCount = tokens.filter((t) => t.status === 'waiting').length;
-  const servedTokensCount = tokens.filter((t) => t.status === 'completed').length;
-  const activeDoctorsCount = doctors.filter((d) => d.status === 'active' && d.isAvailableToday).length;
-
-  const handleOpenWalkIn = (docId?: string) => {
-    setSelectedDoctorForWalkIn(docId);
-    setIsWalkInOpen(true);
-  };
-
+  const { tokens, appointments, doctors, clinics, pausedDoctors, lastSyncedAt } = useQueue();
+  const [sidebar, setSidebar] = useState(false),
+    [walkin, setWalkin] = useState(false);
+  const clinic = clinics.find((c) => c.id === user?.clinicId),
+    roster = doctors.filter(
+      (d) => d.clinicId === user?.clinicId && (user?.role !== 'doctor' || d.id === user.doctorId),
+    );
+  const waiting = tokens.filter((t) => t.status === 'waiting'),
+    current = tokens.filter((t) => t.status === 'current'),
+    completed = tokens.filter((t) => t.status === 'completed');
+  const dayAppointments = appointments.filter((a) => a.date === clinicDate()),
+    upcoming = appointments
+      .filter((a) => a.date > clinicDate() && ['booked', 'waiting'].includes(a.status))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 5);
+  const firstName = user?.name?.startsWith('Demo ') ? 'team' : user?.name?.split(' ')[0] || 'team';
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col lg:flex-row">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-
-      {/* Main Content Area */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        {/* Top Operational Bar */}
-        <div className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
+    <div className="qf-shell min-h-screen lg:flex">
+      <Sidebar isOpen={sidebar} onClose={() => setSidebar(false)} />
+      <div className="flex-1 lg:pl-64 min-w-0">
+        <header className="h-20 px-5 sm:px-8 flex items-center justify-between bg-white/75 border-b border-[#e2e8f0] sticky top-0 z-20 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              className="lg:hidden"
               aria-label="Open navigation sidebar"
+              onClick={() => setSidebar(true)}
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="leading-tight">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                Reception Operations Console
-              </span>
-              <p className="text-xs font-bold text-slate-800 hidden sm:block">
-                Bolpur Community Health Centre • OPD Ward 1
+            <span className="text-sm font-semibold text-brand-950">Clinic overview</span>
+            <span className="hidden sm:inline text-[10px] border-l pl-3 text-slate-400">
+              {clinic?.name}
+            </span>
+          </div>
+          <div className="flex gap-3 items-center">
+            <span className="hidden md:inline-flex items-center gap-2 text-xs text-slate-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+              Clinic records
+            </span>
+            {user?.role !== 'doctor' && (
+              <Button size="sm" onClick={() => setWalkin(true)} icon={<Plus className="w-4 h-4" />}>
+                Add Walk-in Patient
+              </Button>
+            )}
+          </div>
+        </header>
+        <main className="max-w-[1440px] mx-auto p-5 sm:p-8 space-y-7 qf-enter">
+          <div className="flex flex-wrap justify-between gap-4 items-end">
+            <div>
+              <p className="qf-eyebrow">
+                {new Intl.DateTimeFormat('en-IN', {
+                  timeZone: 'Asia/Kolkata',
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                }).format(new Date())}
+              </p>
+              <h1 className="qf-title text-3xl sm:text-4xl mt-3">Clinic overview</h1>
+              <p className="text-sm text-slate-500 mt-3">
+                Welcome back, {firstName}. Here’s what’s happening at your clinic.
               </p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => handleOpenWalkIn()}
-              icon={<UserPlus className="w-3.5 h-3.5" />}
+            <Link
+              to="/admin/analytics"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-brand-700 border border-[#e2e8f0] rounded-lg bg-white px-4 py-2.5"
             >
-              Add Walk-in Patient
-            </Button>
+              View insights <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-        </div>
-
-        {/* Dashboard Body */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
-          <PageHeader
-            title={`Good morning, ${user?.name || 'Staff'}`}
-            subtitle="Today's live OPD operational summary and doctor queue flow status."
-            badge={
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                Live Reception Desk
-              </span>
-            }
-          />
-
-          {/* Today's Overview Stat Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {clinic?.metadata?.synthetic === true && (
+            <p className="text-[11px] text-[#64748b]">
+              Synthetic demo workspace · Patient records and operational history are generated for
+              demonstration.
+            </p>
+          )}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <StatCard
-              label="Appointments Today"
-              value={totalAppointmentsToday}
-              subtext="Online & Walk-ins booked"
-              icon={<Calendar className="w-5 h-5" />}
+              label="Waiting now"
+              value={waiting.length}
+              subtext="Across your consulting rooms"
+              icon={<Users className="w-5 h-5" />}
+              highlight
             />
             <StatCard
-              label="Patients Waiting"
-              value={waitingTokensCount}
-              subtext="In OPD waiting lounge"
-              icon={<Clock className="w-5 h-5" />}
-              highlight={waitingTokensCount > 0}
-            />
-            <StatCard
-              label="Patients Served"
-              value={servedTokensCount}
-              subtext="Completed consultations"
-              icon={<CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-            />
-            <StatCard
-              label="Doctors Active"
-              value={activeDoctorsCount}
-              subtext="In consultation chambers"
+              label="In consultation"
+              value={current.length}
+              subtext={`${roster.length} doctors in your roster`}
               icon={<Stethoscope className="w-5 h-5" />}
             />
+            <StatCard
+              label="Completed today"
+              value={completed.length}
+              subtext="Consultations marked served"
+              icon={<CheckCircle2 className="w-5 h-5" />}
+            />
+            <StatCard
+              label="Bookings today"
+              value={dayAppointments.length}
+              subtext="Scheduled and reception visits"
+              icon={<CalendarDays className="w-5 h-5" />}
+            />
           </div>
-
-          {/* Current Queue Section */}
-          <div className="bg-white rounded-lg border border-slate-200 shadow-subtle overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50">
-              <div>
-                <h2 className="text-sm font-bold text-slate-900">Current Doctor Queues</h2>
-                <p className="text-xs text-slate-500">
-                  Live state of tokens across all consulting doctors today
-                </p>
+          <div className="grid xl:grid-cols-[1.8fr_1fr] gap-6">
+            <section className="qf-panel p-5 sm:p-6">
+              <div className="flex justify-between items-center gap-3 mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-brand-950 tracking-tight">
+                    Consultation floor
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Your doctors, their queues, one clear view.
+                  </p>
+                </div>
+                <Link to="/admin/queue" className="text-brand-600 text-xs font-semibold">
+                  Manage queues ↗
+                </Link>
               </div>
-              <Link to="/admin/queue">
-                <Button variant="outline" size="sm" icon={<ArrowRight className="w-3.5 h-3.5" />}>
-                  Open Full Queue Manager
-                </Button>
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="py-3 px-4">Doctor & Department</th>
-                    <th className="py-3 px-4">Currently Serving</th>
-                    <th className="py-3 px-4">Waiting Count</th>
-                    <th className="py-3 px-4">Queue Status</th>
-                    <th className="py-3 px-4 text-right">Quick Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {doctors
-                    .filter((d) => d.status === 'active')
-                    .slice(0, 6)
-                    .map((doc) => {
-                      const docTokens = tokens.filter((t) => t.doctorId === doc.id);
-                      const currentToken = docTokens.find((t) => t.status === 'current');
-                      const waitingCount = docTokens.filter((t) => t.status === 'waiting').length;
-                      const isPaused = pausedDoctors.includes(doc.id);
-
-                      return (
-                        <tr key={doc.id} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3.5 px-4">
-                            <div className="font-bold text-slate-900">{doc.name}</div>
-                            <div className="text-[11px] text-brand-700 font-medium">{doc.specialization}</div>
-                            <div className="text-[10px] text-slate-400">{doc.clinicName}</div>
-                          </td>
-
-                          <td className="py-3.5 px-4">
-                            {currentToken ? (
-                              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-800 px-2.5 py-1 rounded border border-blue-200 font-bold">
-                                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-                                <span className="font-mono text-sm">{currentToken.tokenNumber}</span>
-                                <span className="font-normal text-[11px] text-slate-600 hidden sm:inline truncate max-w-[120px]">
-                                  ({currentToken.patientName})
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 italic">None</span>
-                            )}
-                          </td>
-
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                              <span className="text-sm">{waitingCount}</span>
-                              <span className="text-[11px] text-slate-500 font-normal">in queue</span>
-                            </div>
-                          </td>
-
-                          <td className="py-3.5 px-4">
-                            {isPaused ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-medium text-[11px]">
-                                <PauseCircle className="w-3 h-3 text-amber-600" />
-                                Paused
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium text-[11px]">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                                Active
-                              </span>
-                            )}
-                          </td>
-
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {/* Quick Call Next */}
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => callNextPatient(doc.id)}
-                                disabled={waitingCount === 0 || isPaused}
-                                icon={<PhoneForwarded className="w-3 h-3" />}
-                                title="Call next waiting patient"
-                              >
-                                Call
-                              </Button>
-
-                              {/* Pause/Resume Queue */}
-                              <button
-                                onClick={() => toggleQueuePause(doc.id)}
-                                className={`p-1.5 rounded border transition-colors ${
-                                  isPaused
-                                    ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
-                                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                                }`}
-                                title={isPaused ? 'Resume queue' : 'Pause queue'}
-                                aria-label={isPaused ? 'Resume queue' : 'Pause queue'}
-                              >
-                                {isPaused ? (
-                                  <PlayCircle className="w-3.5 h-3.5 text-emerald-700" />
-                                ) : (
-                                  <PauseCircle className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-
-                              <Link to={`/admin/queue?doctor=${doc.id}`}>
-                                <Button variant="outline" size="sm">
-                                  Manage
-                                </Button>
-                              </Link>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {roster.map((doc) => {
+                  const rows = tokens.filter((t) => t.doctorId === doc.id),
+                    now = rows.find((t) => t.status === 'current'),
+                    count = rows.filter((t) => t.status === 'waiting').length,
+                    paused = pausedDoctors.includes(doc.id);
+                  return (
+                    <Link
+                      to={`/admin/queue?doctor=${doc.id}`}
+                      key={doc.id}
+                      className="p-4 rounded-2xl border border-[#e2e8f0] hover:border-brand-300 transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#f1f5f9] text-brand-700 font-semibold text-xs">
+                          {doc.name
+                            .replace(/^Dr\.\s*/, '')
+                            .split(' ')
+                            .slice(0, 2)
+                            .map((n) => n[0])
+                            .join('')}
+                        </span>
+                        <span
+                          className={`text-[9px] px-2 py-1 rounded-full ${paused ? 'bg-amber-50 text-amber-700' : now ? 'bg-brand-50 text-brand-700' : 'bg-slate-50 text-slate-500'}`}
+                        >
+                          {paused ? 'Paused' : now ? 'In consultation' : 'Queue open'}
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-brand-950 mt-3">{doc.name}</p>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        {doc.specialization}
+                        {doc.roomNumber ? ` · Room ${doc.roomNumber}` : ''}
+                      </p>
+                      <div className="mt-4 pt-3 border-t border-[#e2e8f0] flex justify-between text-xs">
+                        <span className="text-slate-400">
+                          Serving{' '}
+                          <strong className="text-brand-800 ml-1 font-mono">
+                            {now?.tokenNumber || '—'}
+                          </strong>
+                        </span>
+                        <span className="text-slate-500">
+                          <strong className="text-brand-950">{count}</strong> waiting
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+            <div className="space-y-5">
+              <section className="bg-[#f1f5f9] rounded-xl p-6">
+                <div className="flex items-center justify-between">
+                  <p className="qf-eyebrow">Flow snapshot</p>
+                  <Activity className="w-4 h-4 text-brand-600" />
+                </div>
+                <p className="text-3xl font-semibold text-brand-950 mt-5">
+                  {tokens.length}
+                  <span className="text-sm font-normal text-slate-500 ml-2">visits today</span>
+                </p>
+                <div className="h-2 rounded-full overflow-hidden flex bg-[#e2e8f0] mt-5">
+                  {[
+                    ['bg-brand-600', completed.length],
+                    ['bg-[#60a5fa]', current.length],
+                    ['bg-[#bfdbfe]', waiting.length],
+                  ].map(([color, count]) => (
+                    <div
+                      key={String(color)}
+                      className={String(color)}
+                      style={{
+                        width: `${tokens.length ? (Number(count) / tokens.length) * 100 : 0}%`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="flex justify-between gap-2 text-[10px] text-slate-500 mt-3">
+                  <span>Completed {completed.length}</span>
+                  <span>Consulting {current.length}</span>
+                  <span>Waiting {waiting.length}</span>
+                </div>
+                <Link
+                  to="/admin/analytics"
+                  className="mt-6 inline-flex items-center gap-2 text-xs font-semibold text-brand-800"
+                >
+                  Explore consultation trends <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </section>
+              <section className="qf-panel p-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="font-semibold text-brand-950">Coming up</h2>
+                  <CalendarDays className="w-4 h-4 text-slate-400" />
+                </div>
+                <p className="text-xs text-slate-400 mt-1">Future scheduled appointments</p>
+                <div className="mt-4 divide-y divide-[#e2e8f0]">
+                  {upcoming.map((a) => (
+                    <div key={a.id} className="py-3 flex gap-3 items-center">
+                      <div className="bg-[#f1f5f9] rounded-xl px-3 py-2 text-center">
+                        <p className="text-base font-semibold text-brand-800">{a.date.slice(8)}</p>
+                        <p className="text-[9px] text-slate-500">
+                          {new Intl.DateTimeFormat('en-IN', {
+                            month: 'short',
+                            timeZone: 'Asia/Kolkata',
+                          }).format(new Date(`${a.date}T12:00:00+05:30`))}
+                        </p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-brand-950 truncate">
+                          {a.patientName}
+                        </p>
+                        <p className="text-[10px] text-slate-500 mt-1 truncate">
+                          {a.doctorName} · {a.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {!upcoming.length && (
+                    <p className="text-xs text-slate-500 py-5">No upcoming bookings yet.</p>
+                  )}
+                </div>
+                <Link
+                  to="/admin/appointments"
+                  className="block text-xs font-semibold text-brand-700 mt-3"
+                >
+                  All appointments ↗
+                </Link>
+              </section>
             </div>
           </div>
+          <p className="text-[10px] text-slate-400">
+            {lastSyncedAt
+              ? `Last synced ${new Date(lastSyncedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`
+              : 'Connecting to clinic records…'}{' '}
+            · Times shown in Asia/Kolkata
+          </p>
         </main>
       </div>
-
-      {/* Walk-in Registration Modal */}
-      <WalkInModal
-        isOpen={isWalkInOpen}
-        onClose={() => setIsWalkInOpen(false)}
-        defaultDoctorId={selectedDoctorForWalkIn}
-      />
+      <WalkInModal isOpen={walkin} onClose={() => setWalkin(false)} />
     </div>
   );
 };

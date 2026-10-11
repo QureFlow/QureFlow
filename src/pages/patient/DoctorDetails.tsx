@@ -1,3 +1,4 @@
+import { clinicDate } from '../../lib/time';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQueue } from '../../context/QueueContext';
@@ -9,13 +10,7 @@ import { Footer } from '../../components/layout/Footer';
 import { TimeSlotPicker } from '../../components/patient/TimeSlotPicker';
 import { Button } from '../../components/common/Button';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  ChevronLeft,
-  ArrowRight,
-} from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronLeft, ArrowRight } from 'lucide-react';
 
 export const DoctorDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,12 +18,11 @@ export const DoctorDetails: React.FC = () => {
   const { doctors } = useQueue();
 
   const [doctor, setDoctor] = useState<Doctor | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(clinicDate());
   const [slots, setSlots] = useState<SlotAvailability[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [slotError, setSlotError] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -39,18 +33,40 @@ export const DoctorDetails: React.FC = () => {
   }, [id, doctors]);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchSlots = async () => {
-      if (!doctor || !selectedDate) return;
+      if (!doctor || !selectedDate) {
+        setSlots([]);
+        setSelectedSlot(null);
+        return;
+      }
       setIsLoadingSlots(true);
+      setSelectedSlot(null);
+      setSlotError('');
+      setSlots([]);
       try {
         const available = await doctorService.getAvailableSlots(doctor.id, selectedDate);
-        setSlots(available);
+        if (!cancelled) setSlots(available);
+      } catch (err) {
+        if (!cancelled)
+          setSlotError(err instanceof Error ? err.message : 'Could not load available slots.');
       } finally {
-        setIsLoadingSlots(false);
+        if (!cancelled) setIsLoadingSlots(false);
       }
     };
     fetchSlots();
-  }, [doctor, selectedDate]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    doctor?.id,
+    doctor?.startTime,
+    doctor?.endTime,
+    doctor?.slotDurationMinutes,
+    doctor?.status,
+    doctor?.consultationDays.join(','),
+    selectedDate,
+  ]);
 
   if (!doctor) {
     return (
@@ -73,10 +89,10 @@ export const DoctorDetails: React.FC = () => {
   const availableDates = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
-    const dateStr = d.toISOString().split('T')[0];
-    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayNum = d.getDate();
-    const month = d.toLocaleDateString('en-US', { month: 'short' });
+    const dateStr = clinicDate(d);
+    const dayName = d.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short' });
+    const dayNum = d.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', day: 'numeric' });
+    const month = d.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', month: 'short' });
     return { dateStr, dayName, dayNum, month, isToday: i === 0 };
   });
 
@@ -92,7 +108,7 @@ export const DoctorDetails: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col qf-shell pb-16 md:pb-0">
       <Navbar />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -107,8 +123,13 @@ export const DoctorDetails: React.FC = () => {
           </Link>
         </div>
 
+        {slotError && (
+          <p role="alert" className="p-3 bg-red-50 text-red-800 rounded text-sm">
+            {slotError}
+          </p>
+        )}
         {/* Doctor Profile Banner */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6 sm:p-8 shadow-subtle mb-8">
+        <div className="qf-panel p-6 sm:p-8 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-100">
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-full bg-brand-50 border border-brand-200 text-brand-900 flex items-center justify-center font-bold text-xl select-none flex-shrink-0">
@@ -120,7 +141,9 @@ export const DoctorDetails: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{doctor.name}</h1>
+                  <h1 className="qf-title text-2xl sm:text-4xl font-semibold text-slate-900">
+                    {doctor.name}
+                  </h1>
                   <StatusBadge status={doctor.isAvailableToday ? 'active' : 'inactive'} size="sm" />
                 </div>
                 <p className="text-sm font-semibold text-brand-700">{doctor.specialization}</p>
@@ -129,12 +152,43 @@ export const DoctorDetails: React.FC = () => {
             </div>
 
             <div className="sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Consultation Fee</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                Consultation Fee
+              </p>
               <p className="text-2xl font-black text-slate-900">₹{doctor.consultationFee}</p>
-              <span className="text-[11px] text-slate-500">Government OPD Rate</span>
+              <span className="text-[11px] text-slate-500">Set by the clinic</span>
             </div>
           </div>
 
+          {doctor.bio && (
+            <p className="mt-6 text-sm text-slate-600 leading-relaxed max-w-3xl">{doctor.bio}</p>
+          )}
+          <div className="flex flex-wrap gap-2 mt-5">
+            {doctor.languages?.map((language) => (
+              <span
+                key={language}
+                className="rounded-full bg-brand-50 px-3 py-1.5 text-xs text-brand-800"
+              >
+                {language}
+              </span>
+            ))}
+            {doctor.roomNumber && (
+              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-600">
+                Room {doctor.roomNumber}
+              </span>
+            )}
+          </div>
+          {!!doctor.clinicalInterests?.length && (
+            <div className="mt-5">
+              <p className="qf-eyebrow mb-2">Clinical interests</p>
+              <p className="text-sm text-slate-600">{doctor.clinicalInterests.join(' · ')}</p>
+            </div>
+          )}
+          {doctor.metadata?.synthetic === true && (
+            <p className="mt-5 text-xs text-amber-800">
+              Fictional demo profile · {doctor.registrationId} is a demonstration reference.
+            </p>
+          )}
           {/* Practice Details Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 text-xs text-slate-600">
             <div className="flex items-start gap-2.5">
@@ -166,14 +220,14 @@ export const DoctorDetails: React.FC = () => {
         </div>
 
         {/* Date Selector */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-subtle mb-8">
+        <div className="qf-panel p-6 sm:p-8 mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Choose Appointment Date</h2>
               <p className="text-xs text-slate-500">Select an upcoming OPD date</p>
             </div>
             <span className="text-xs font-medium text-brand-700 bg-brand-50 px-2.5 py-1 rounded">
-              7-Day Booking Horizon
+              Next 7 days
             </span>
           </div>
 
@@ -198,7 +252,9 @@ export const DoctorDetails: React.FC = () => {
                   <span className="block text-lg font-bold my-0.5">{item.dayNum}</span>
                   <span className="block text-[10px] opacity-75">{item.month}</span>
                   {item.isToday && (
-                    <span className={`block text-[9px] font-bold mt-1 px-1 rounded ${isSelected ? 'bg-white/20' : 'text-brand-700'}`}>
+                    <span
+                      className={`block text-[9px] font-bold mt-1 px-1 rounded ${isSelected ? 'bg-white/20' : 'text-brand-700'}`}
+                    >
                       Today
                     </span>
                   )}
@@ -207,6 +263,18 @@ export const DoctorDetails: React.FC = () => {
             })}
           </div>
 
+          <label className="block text-xs text-slate-500 mt-5">
+            Or choose another date within 90 days
+            <input
+              aria-label="Choose appointment date"
+              type="date"
+              value={selectedDate}
+              min={clinicDate()}
+              max={clinicDate(new Date(Date.now() + 90 * 86400000))}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="block mt-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-800 bg-white"
+            />
+          </label>
           <div className="mt-8 pt-6 border-t border-slate-100">
             {/* Time Slots */}
             <TimeSlotPicker

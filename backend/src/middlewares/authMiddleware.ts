@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService.js';
 import { UserRole } from '../models/types.js';
+import { requestContext } from '../lib/context.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -11,14 +12,15 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     clinicId?: string;
     staffId?: string;
+    doctorId?: string;
   };
 }
 
-export const authenticateToken = (
+export const authenticateToken = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
-): void => {
+  next: NextFunction,
+): Promise<void> => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Unauthorized: Missing or invalid Bearer token' });
@@ -26,14 +28,25 @@ export const authenticateToken = (
   }
 
   const token = authHeader.split(' ')[1];
-  const payload = authService.verifyToken(token);
+  const payload = await authService.verifyToken(token);
 
   if (!payload) {
     res.status(401).json({ error: 'Unauthorized: Token is invalid or expired' });
     return;
   }
 
-  req.user = payload;
+  req.user = {
+    sub: payload.id,
+    role: payload.role,
+    name: payload.name,
+    phone: payload.phone,
+    email: payload.email,
+    clinicId: payload.clinicId,
+    staffId: payload.staffId,
+    doctorId: payload.doctorId,
+  };
+  const context = requestContext.getStore();
+  if (context) context.actorId = payload.id;
   next();
 };
 

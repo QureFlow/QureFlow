@@ -1,246 +1,280 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useQueue } from '../../context/QueueContext';
 import { queueService } from '../../services/queueService';
 import { appointmentService } from '../../services/appointmentService';
-import { Appointment, QueueToken } from '../../types';
+import { Appointment, PatientQueueStatus } from '../../types';
+import { clinicDate } from '../../lib/time';
 import { Navbar } from '../../components/layout/Navbar';
-import { MobileNav } from '../../components/layout/MobileNav';
 import { Footer } from '../../components/layout/Footer';
-import { TokenCard } from '../../components/patient/TokenCard';
-import { PageHeader } from '../../components/layout/PageHeader';
+import { MobileNav } from '../../components/layout/MobileNav';
+import { DoctorCard } from '../../components/patient/DoctorCard';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { Button } from '../../components/common/Button';
-import { Link } from 'react-router-dom';
-import {
-  Search,
-  Calendar,
-  Ticket,
-  ChevronRight,
-  Clock,
-  MapPin,
-  Stethoscope,
-} from 'lucide-react';
+import { Calendar, ArrowUpRight, Clock, MapPin, Search, Ticket, Users } from 'lucide-react';
 
 export const PatientDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { tokens, appointments } = useQueue();
-
-  const [activeTokenData, setActiveTokenData] = useState<{
-    token: QueueToken;
-    currentServingToken: string | null;
-    patientsAhead: number;
-    estimatedWaitMinutes: number;
-    isPaused: boolean;
-  } | null>(null);
-
-  const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
-
-  // Derive time-of-day greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
+  const { tokens, appointments, doctors, clinics } = useQueue();
+  const [active, setActive] = useState<PatientQueueStatus | null>(null);
+  const [upcoming, setUpcoming] = useState<Appointment[]>([]);
+  const [error, setError] = useState('');
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    const loadDashboardData = async () => {
+    let cancelled = false;
+    const load = async () => {
       if (!user) return;
-
-      // Load active token for this patient (by id or phone)
-      const tokenResult = await queueService.getPatientActiveToken(user.id);
-      if (!tokenResult && user.phone) {
-        const byPhone = await queueService.getPatientActiveToken(user.phone);
-        setActiveTokenData(byPhone);
-      } else {
-        setActiveTokenData(tokenResult);
+      try {
+        const [queue, visits] = await Promise.all([
+          queueService.getPatientActiveToken(user.id),
+          appointmentService.getAppointments({ patientId: user.id }),
+        ]);
+        if (cancelled) return;
+        setActive(queue);
+        setUpcoming(
+          visits
+            .filter(
+              (a) =>
+                a.date >= clinicDate() &&
+                ['booked', 'waiting', 'in_consultation'].includes(a.status),
+            )
+            .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)),
+        );
+        setError('');
+      } catch (e) {
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : 'Unable to refresh your appointments.');
+      } finally {
+        if (!cancelled) setLoaded(true);
       }
-
-      // Load upcoming appointment
-      const userApts = await appointmentService.getAppointments({
-        patientId: user.id,
-      });
-
-      const upcoming = userApts.find(
-        (a) => a.status === 'booked' || a.status === 'waiting'
-      );
-      setNextAppointment(upcoming || null);
     };
-
-    loadDashboardData();
-  }, [user, tokens, appointments]);
-
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, tokens, appointments]);
+  const next = upcoming[0];
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-16 md:pb-0">
+    <div className="min-h-screen qf-shell pb-16 md:pb-0 flex flex-col">
       <Navbar />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <PageHeader
-          title={`${getGreeting()}, ${user?.name || 'Patient'}`}
-          subtitle="Find a doctor or check your upcoming appointment and active queue status."
-        />
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Column (2 cols) */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* 1. Active Token Card */}
-            <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Live Queue Token
-                </h2>
-                {activeTokenData && (
-                  <span className="text-xs text-brand-700 font-medium">Real-time update</span>
-                )}
-              </div>
-              <TokenCard tokenData={activeTokenData} />
+      <main className="max-w-7xl mx-auto w-full px-5 sm:px-8 py-10 flex-1 space-y-8 qf-enter">
+        <div className="flex flex-wrap items-end justify-between gap-5">
+          <div>
+            <p className="qf-eyebrow mb-3">Your care, at a glance</p>
+            <h1 className="qf-title text-4xl sm:text-5xl font-semibold text-slate-900">
+              Hello, {user?.name.split(' ')[0] || 'there'}.
+            </h1>
+            <p className="text-slate-500 mt-3">
+              A little less waiting. A little more time for you.
+            </p>
+          </div>
+          <Link
+            to="/patient/doctors"
+            className="rounded-full bg-brand-600 text-white px-6 py-3 flex gap-3 items-center text-sm font-semibold"
+          >
+            <Search size={17} />
+            Find a Doctor
+            <ArrowUpRight size={17} />
+          </Link>
+        </div>
+        {error && (
+          <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-700 text-sm">
+            {error}
+          </p>
+        )}
+        <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
+          <section className="rounded-[28px] bg-brand-950 text-white p-7 sm:p-9 qf-grid-paper relative overflow-hidden">
+            <div className="flex justify-between items-center">
+              <p className="text-[11px] tracking-[.18em] uppercase text-brand-200 font-semibold">
+                Your queue companion
+              </p>
+              <Ticket className="text-brand-300" />
             </div>
-
-            {/* 2. Upcoming Appointment */}
-            <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-subtle">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Upcoming Appointment
-                </h2>
-                <Link
-                  to="/patient/appointments"
-                  className="text-xs text-brand-700 font-semibold hover:underline flex items-center gap-1"
-                >
-                  All bookings <ChevronRight className="w-3 h-3" />
-                </Link>
-              </div>
-
-              {nextAppointment ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-slate-900">{nextAppointment.doctorName}</h3>
-                      <StatusBadge status={nextAppointment.status} size="sm" />
-                    </div>
-                    <p className="text-xs text-brand-700 font-medium">{nextAppointment.doctorSpecialization}</p>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      {nextAppointment.clinicName}
+            {!loaded ? (
+              <p className="py-14 text-brand-100">Checking your queue…</p>
+            ) : active ? (
+              <>
+                <div className="flex flex-wrap items-end justify-between gap-6 mt-8">
+                  <div>
+                    <p className="text-brand-200 text-sm">
+                      {active.token.status === 'current'
+                        ? 'It’s your turn'
+                        : active.isPaused
+                          ? 'Queue temporarily paused'
+                          : 'You’re in the queue'}
                     </p>
-                    <div className="flex items-center gap-3 pt-1 text-xs text-slate-700">
-                      <span className="flex items-center gap-1 font-medium">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        {nextAppointment.date}
-                      </span>
-                      <span className="flex items-center gap-1 font-medium">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        {nextAppointment.time}
-                      </span>
-                    </div>
+                    <h2 className="text-6xl sm:text-7xl font-semibold tracking-tight mt-3">
+                      {active.token.tokenNumber}
+                    </h2>
+                    <p className="mt-4 text-brand-100 text-sm">{active.token.doctorName}</p>
+                    <p className="text-brand-300 text-xs mt-1">
+                      {clinics.find((c) => c.id === active.token.clinicId)?.name ||
+                        active.token.clinicName}
+                    </p>
                   </div>
-
-                  <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-2">
-                    {nextAppointment.tokenNumber && (
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-400 uppercase font-semibold">Allocated Token</span>
-                        <p className="font-mono font-extrabold text-slate-900 text-lg">
-                          {nextAppointment.tokenNumber}
-                        </p>
-                      </div>
-                    )}
-                    <Link to="/patient/appointments">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                    </Link>
+                  <div className="rounded-2xl bg-white/10 p-5 min-w-36">
+                    <Clock className="text-brand-200 mb-2" size={20} />
+                    <strong className="text-3xl block">
+                      {active.token.status === 'current'
+                        ? 'Now'
+                        : `~${active.estimatedWaitMinutes} min`}
+                    </strong>
+                    <span className="text-xs text-brand-200">
+                      {active.isPaused ? 'Estimate may change' : 'Estimated waiting time'}
+                    </span>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-xs text-slate-500 mb-3">You have no upcoming appointments scheduled.</p>
-                  <Link to="/patient/doctors">
-                    <Button variant="primary" size="sm">
-                      Schedule an Appointment
-                    </Button>
+                <div className="mt-8 pt-5 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-sm text-brand-100 flex items-center gap-2">
+                    <Users size={16} />
+                    {active.patientsAhead} people ahead · Serving{' '}
+                    {active.currentServingToken || '—'}
+                  </span>
+                  <Link
+                    to="/patient/token"
+                    className="text-xs font-semibold flex gap-2 items-center"
+                  >
+                    Track my token
+                    <ArrowUpRight size={16} />
                   </Link>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Side Column: Quick Actions & OPD Info */}
-          <div className="space-y-6">
-            {/* Quick Actions (Compact) */}
-            <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-subtle">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-3">
-                Quick Actions
-              </h2>
-              <div className="space-y-2">
+                {active.prediction && (
+                  <p className="text-[11px] text-brand-300 mt-4">
+                    Estimate based on {active.prediction.sampleCount} consultation samples
+                    {active.prediction.syntheticSamples > 0
+                      ? ' (includes synthetic demo history)'
+                      : ''}
+                    . Actual waiting time can change.
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <h2 className="qf-title text-white text-4xl font-semibold mt-9 max-w-sm">
+                  Your next visit starts here.
+                </h2>
+                <p className="text-brand-200 text-sm mt-4 max-w-sm leading-relaxed">
+                  You have no active queue token. Choose a doctor and book a consultation to follow
+                  your place in the queue.
+                </p>
                 <Link
                   to="/patient/doctors"
-                  className="flex items-center justify-between p-3 rounded-md border border-slate-200 hover:border-brand-600 hover:bg-slate-50 transition-colors group"
+                  className="inline-flex gap-3 items-center rounded-full bg-brand-100 text-brand-950 px-5 py-3 text-sm font-semibold mt-7"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded bg-brand-50 text-brand-700">
-                      <Search className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-900">Find a Doctor</p>
-                      <p className="text-[11px] text-slate-500">Search by specialty or clinic</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-700" />
+                  Explore doctors
+                  <ArrowUpRight size={17} />
                 </Link>
-
+              </>
+            )}
+          </section>
+          <section className="qf-panel p-7 sm:p-8">
+            <div className="flex justify-between items-center mb-7">
+              <p className="qf-eyebrow">Coming up next</p>
+              <Calendar className="text-brand-700" size={22} />
+            </div>
+            {next ? (
+              <>
+                <StatusBadge status={next.status} size="sm" />
+                <h2 className="text-2xl font-semibold text-slate-900 mt-4">{next.doctorName}</h2>
+                <p className="text-brand-700 text-sm mt-2">{next.doctorSpecialization}</p>
+                <p className="flex gap-2 items-center text-sm text-slate-500 mt-5">
+                  <MapPin size={17} />
+                  {next.clinicName}
+                </p>
+                <div className="grid grid-cols-2 rounded-2xl bg-brand-50 p-4 gap-3 mt-5">
+                  <div>
+                    <p className="text-xs text-slate-500">Appointment date</p>
+                    <p className="font-semibold text-sm mt-2">{next.date}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Arrival slot</p>
+                    <p className="font-semibold text-sm mt-2">{next.time}</p>
+                  </div>
+                </div>
                 <Link
                   to="/patient/appointments"
-                  className="flex items-center justify-between p-3 rounded-md border border-slate-200 hover:border-brand-600 hover:bg-slate-50 transition-colors group"
+                  className="flex items-center justify-between text-sm font-semibold text-brand-700 mt-6"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded bg-slate-100 text-slate-700">
-                      <Calendar className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-900">My Appointments</p>
-                      <p className="text-[11px] text-slate-500">Upcoming and past visits</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-700" />
+                  Manage appointments
+                  <ArrowUpRight size={18} />
                 </Link>
-
+              </>
+            ) : (
+              <div className="py-5">
+                <h2 className="text-2xl font-semibold text-slate-900">A clear calendar.</h2>
+                <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+                  {loaded
+                    ? 'No upcoming appointments. Browse the care directory whenever you’re ready.'
+                    : 'Loading your appointments…'}
+                </p>
                 <Link
-                  to="/patient/token"
-                  className="flex items-center justify-between p-3 rounded-md border border-slate-200 hover:border-brand-600 hover:bg-slate-50 transition-colors group"
+                  to="/patient/appointments"
+                  className="inline-flex gap-2 text-brand-700 font-semibold text-sm mt-6"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded bg-amber-50 text-amber-700">
-                      <Ticket className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-900">Active Token Tracker</p>
-                      <p className="text-[11px] text-slate-500">Live consultation room progress</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-700" />
+                  View appointment history
+                  <ArrowUpRight size={18} />
                 </Link>
               </div>
-            </div>
-
-            {/* Clinic OPD Notice */}
-            <div className="bg-slate-900 text-white rounded-lg p-5 border border-slate-800">
-              <div className="flex items-center gap-2 text-xs font-semibold text-brand-300 uppercase tracking-wider mb-2">
-                <Stethoscope className="w-4 h-4" />
-                <span>Primary Care Advisory</span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Emergency trauma, pregnancy triage, or acute asthma emergencies are attended immediately without queue wait at the 24/7 casualty counter.
-              </p>
-              <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-                <span>Emergency: 102 / 108</span>
-                <span>OPD: 9:00 AM - 2:00 PM</span>
-              </div>
-            </div>
-          </div>
+            )}
+          </section>
         </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {[
+            {
+              label: 'Explore care',
+              text: `${doctors.length} doctors across the care directory`,
+              path: '/patient/doctors',
+              Icon: Search,
+            },
+            {
+              label: 'My appointments',
+              text: `${upcoming.length} upcoming visits · history and bookings`,
+              path: '/patient/appointments',
+              Icon: Calendar,
+            },
+            {
+              label: 'Live token tracker',
+              text: 'Your place in the queue, in one view',
+              path: '/patient/token',
+              Icon: Ticket,
+            },
+          ].map(({ label, text, path, Icon }) => (
+            <Link
+              key={path}
+              to={path}
+              className="qf-panel p-5 flex items-center gap-4 hover:border-brand-300 transition"
+            >
+              <div className="rounded-xl bg-brand-50 p-3 text-brand-700">
+                <Icon size={21} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold">{label}</h3>
+                <p className="text-xs text-slate-500 mt-1">{text}</p>
+              </div>
+              <ArrowUpRight size={18} className="text-slate-400" />
+            </Link>
+          ))}
+        </div>
+        <section>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="qf-eyebrow mb-2">Meet the care team</p>
+              <h2 className="text-2xl font-semibold text-slate-900">Care close to you.</h2>
+            </div>
+            <Link to="/patient/doctors" className="text-sm font-semibold text-brand-700">
+              View all doctors →
+            </Link>
+          </div>
+          <div className="grid md:grid-cols-3 gap-5">
+            {doctors
+              .filter((d) => d.status === 'active')
+              .slice(0, 3)
+              .map((d) => (
+                <DoctorCard key={d.id} doctor={d} />
+              ))}
+          </div>
+        </section>
       </main>
-
       <Footer />
       <MobileNav />
     </div>

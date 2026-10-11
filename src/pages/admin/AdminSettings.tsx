@@ -1,20 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQueue } from '../../context/QueueContext';
 import { clinicService } from '../../services/clinicService';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
-import {
-  Menu,
-  Sliders,
-  Bell,
-  Check,
-  RotateCcw,
-} from 'lucide-react';
+import { Menu, Sliders, Bell, Check } from 'lucide-react';
 
 export const AdminSettings: React.FC = () => {
-  const { settings, refreshState, resetToDefaults, showToast } = useQueue();
+  const { settings, refreshState, showToast } = useQueue();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [avgTime, setAvgTime] = useState(settings.averageConsultationMinutes.toString());
@@ -26,6 +20,14 @@ export const AdminSettings: React.FC = () => {
 
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => {
+    setAvgTime(String(settings.averageConsultationMinutes));
+    setAllowWalkIns(settings.allowWalkIns);
+    setAllowEmergency(settings.allowEmergencyPriority);
+    setNotifyTwoAhead(false);
+    setClinicName(settings.clinicName);
+    setContactNumber(settings.contactNumber);
+  }, [settings]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +105,7 @@ export const AdminSettings: React.FC = () => {
                   label="Facility Dispatch Name"
                   value={clinicName}
                   onChange={(e) => setClinicName(e.target.value)}
-                  helperText="Printed on digital slips and SMS dispatch headers."
+                  helperText="Displayed in clinic queue settings."
                 />
               </div>
 
@@ -118,7 +120,8 @@ export const AdminSettings: React.FC = () => {
                   <div>
                     <p className="font-semibold text-slate-800">Allow Reception Walk-ins</p>
                     <p className="text-[11px] text-slate-500">
-                      Permits receptionist to manually generate tokens for patients without prior online booking.
+                      Permits receptionist to manually generate tokens for patients without prior
+                      online booking.
                     </p>
                   </div>
                 </label>
@@ -131,7 +134,9 @@ export const AdminSettings: React.FC = () => {
                     className="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                   />
                   <div>
-                    <p className="font-semibold text-slate-800">Allow Emergency / Urgent Priority Triage</p>
+                    <p className="font-semibold text-slate-800">
+                      Allow Emergency / Urgent Priority Triage
+                    </p>
                     <p className="text-[11px] text-slate-500">
                       Allows staff to triage acute cases to the immediate top of the waiting queue.
                     </p>
@@ -152,13 +157,14 @@ export const AdminSettings: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={notifyTwoAhead}
+                    disabled
                     onChange={(e) => setNotifyTwoAhead(e.target.checked)}
                     className="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                   />
                   <div>
                     <p className="font-semibold text-slate-800">SMS "Two Patients Ahead" Prompt</p>
                     <p className="text-[11px] text-slate-500">
-                      Dispatches an automated SMS alert to patients when only 2 tokens remain before their turn.
+                      SMS delivery is not configured. Track queue updates in the patient portal.
                     </p>
                   </div>
                 </label>
@@ -171,26 +177,6 @@ export const AdminSettings: React.FC = () => {
                   onChange={(e) => setContactNumber(e.target.value)}
                 />
               </div>
-            </div>
-
-            {/* Section 3: Reset Demo Sandbox */}
-            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-subtle space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
-                <RotateCcw className="w-4 h-4 text-slate-500" />
-                Prototype Demonstration Sandbox
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                If you have called or completed several tokens and want to restore the clean initial demo state with original Indian doctors and appointments, you can reset all local mock storage.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={resetToDefaults}
-                icon={<RotateCcw className="w-3.5 h-3.5" />}
-              >
-                Reset Demo Data
-              </Button>
             </div>
 
             {/* Save Buttons */}

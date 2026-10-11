@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { clinicDate } from '../../lib/time';
+import { Modal } from '../../components/common/Modal';
+import { Appointment } from '../../types';
 import { useQueue } from '../../context/QueueContext';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { PageHeader } from '../../components/layout/PageHeader';
@@ -6,11 +9,7 @@ import { Input } from '../../components/common/Input';
 import { Select } from '../../components/common/Select';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Button } from '../../components/common/Button';
-import {
-  Menu,
-  Search,
-  Phone,
-} from 'lucide-react';
+import { Menu, Search, Phone } from 'lucide-react';
 
 export const AdminAppointments: React.FC = () => {
   const { appointments, doctors, cancelAppointment } = useQueue();
@@ -19,23 +18,45 @@ export const AdminAppointments: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [doctorFilter, setDoctorFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState(clinicDate());
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Appointment | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, doctorFilter, statusFilter, dateFilter]);
+  const confirmCancellation = async () => {
+    if (!selected) return;
+    setCancelling(true);
+    setCancelError('');
+    try {
+      await cancelAppointment(selected.id, 'Cancelled by Clinic Reception');
+      setSelected(null);
+    } catch (e) {
+      setCancelError(e instanceof Error ? e.message : 'Cancellation failed.');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const filteredAppointments = useMemo(() => {
-    return appointments.filter((apt) => {
-      const matchesSearch =
-        !searchQuery.trim() ||
-        apt.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        apt.patientPhone.includes(searchQuery) ||
-        apt.tokenNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        apt.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
+    return appointments
+      .filter((apt) => {
+        const matchesSearch =
+          !searchQuery.trim() ||
+          apt.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          apt.patientPhone.includes(searchQuery) ||
+          apt.tokenNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          apt.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesDoctor = doctorFilter === 'all' || apt.doctorId === doctorFilter;
-      const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
-      const matchesDate = !dateFilter || apt.date === dateFilter;
+        const matchesDoctor = doctorFilter === 'all' || apt.doctorId === doctorFilter;
+        const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
+        const matchesDate = !dateFilter || apt.date === dateFilter;
 
-      return matchesSearch && matchesDoctor && matchesStatus && matchesDate;
-    });
+        return matchesSearch && matchesDoctor && matchesStatus && matchesDate;
+      })
+      .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
   }, [appointments, searchQuery, doctorFilter, statusFilter, dateFilter]);
 
   const doctorOptions = [
@@ -61,11 +82,11 @@ export const AdminAppointments: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col lg:flex-row">
+    <div className="min-h-screen qf-shell flex flex-col lg:flex-row">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        <div className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
+        <div className="h-20 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -80,12 +101,12 @@ export const AdminAppointments: React.FC = () => {
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
           <PageHeader
-            title="Appointment Management"
+            title="Every visit, connected."
             subtitle="Search, verify, and inspect all patient OPD appointments and digital tokens."
           />
 
           {/* Search & Filters */}
-          <div className="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-subtle space-y-4">
+          <div className="qf-panel p-4 sm:p-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="md:col-span-2">
                 <Input
@@ -118,6 +139,7 @@ export const AdminAppointments: React.FC = () => {
                 <span>Filter date:</span>
                 <input
                   type="date"
+                  aria-label="Appointment date filter"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
                   className="px-2 py-1 rounded border border-slate-200 text-xs bg-slate-50 text-slate-800"
@@ -136,10 +158,11 @@ export const AdminAppointments: React.FC = () => {
           </div>
 
           {/* Table */}
-          <div className="bg-white rounded-lg border border-slate-200 shadow-subtle overflow-hidden">
+          <div className="qf-panel overflow-hidden">
             <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500">
               <span>
-                Found <strong className="text-slate-800">{filteredAppointments.length}</strong> appointments
+                Found <strong className="text-slate-800">{filteredAppointments.length}</strong>{' '}
+                appointments
               </span>
             </div>
 
@@ -163,7 +186,7 @@ export const AdminAppointments: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    filteredAppointments.map((apt) => (
+                    filteredAppointments.slice((page - 1) * 20, page * 20).map((apt) => (
                       <tr key={apt.id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-3 px-4">
                           <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
@@ -209,7 +232,10 @@ export const AdminAppointments: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => cancelAppointment(apt.id, 'Cancelled by Clinic Reception')}
+                              onClick={() => {
+                                setSelected(apt);
+                                setCancelError('');
+                              }}
                               className="text-red-600 hover:bg-red-50 text-[11px]"
                             >
                               Cancel
@@ -224,9 +250,63 @@ export const AdminAppointments: React.FC = () => {
                 </tbody>
               </table>
             </div>
+            <div className="p-4 border-t border-slate-100 flex gap-3 items-center justify-between text-xs text-slate-500">
+              <span>
+                Page {page} of {Math.max(1, Math.ceil(filteredAppointments.length / 20))}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page * 20 >= filteredAppointments.length}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
           </div>
         </main>
       </div>
+      <Modal
+        isOpen={!!selected}
+        onClose={() => {
+          if (!cancelling) setSelected(null);
+        }}
+        title="Cancel this appointment?"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setSelected(null)} disabled={cancelling}>
+              Keep appointment
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => void confirmCancellation()}
+              isLoading={cancelling}
+            >
+              Confirm cancellation
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">
+          {selected?.patientName} · {selected?.doctorName} · {selected?.date} at {selected?.time}.
+          Cancellation closes the linked queue token and releases the appointment slot.
+        </p>
+        {cancelError && (
+          <p role="alert" className="text-sm text-red-700 mt-4">
+            {cancelError}
+          </p>
+        )}
+      </Modal>
     </div>
   );
 };

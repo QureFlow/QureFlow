@@ -24,7 +24,9 @@ export const QueueTimeline: React.FC<QueueTimelineProps> = ({
       <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
         <div>
           <h3 className="text-sm font-bold text-slate-900">Queue Order & Progress</h3>
-          <p className="text-xs text-slate-500">Continuous progression of patient consultations today</p>
+          <p className="text-xs text-slate-500">
+            Continuous progression of patient consultations today
+          </p>
         </div>
         {isPaused ? (
           <span className="text-xs font-semibold px-2.5 py-1 rounded bg-amber-100 text-amber-900 border border-amber-300">
@@ -33,7 +35,7 @@ export const QueueTimeline: React.FC<QueueTimelineProps> = ({
         ) : (
           <span className="text-xs font-semibold px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Live OPD Flow
+            Queue open
           </span>
         )}
       </div>
@@ -95,7 +97,12 @@ export const QueueTimeline: React.FC<QueueTimelineProps> = ({
                     </div>
                     <p className="text-xs text-slate-500">
                       Scheduled: {current.scheduledTime} • Called at:{' '}
-                      {current.calledAt ? new Date(current.calledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                      {current.calledAt
+                        ? new Date(current.calledAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : 'Just now'}
                     </p>
                   </div>
                 </div>
@@ -137,11 +144,14 @@ export const QueueTimeline: React.FC<QueueTimelineProps> = ({
                   >
                     <div className="flex items-center gap-3">
                       <span className="w-5 text-[11px] font-bold text-slate-400">#{idx + 1}</span>
-                      <span className={`font-bold ${isPatient ? 'text-brand-950 text-sm' : 'text-slate-800'}`}>
+                      <span
+                        className={`font-bold ${isPatient ? 'text-brand-950 text-sm' : 'text-slate-800'}`}
+                      >
                         {t.tokenNumber}
                       </span>
                       <span className="text-slate-600 truncate max-w-[120px] sm:max-w-xs">
-                        {t.patientName} {isPatient && <strong className="text-brand-700">(You)</strong>}
+                        {t.patientName}{' '}
+                        {isPatient && <strong className="text-brand-700">(You)</strong>}
                       </span>
                       {t.priority === 'emergency' && (
                         <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-700 bg-red-100 border border-red-200 px-1.5 py-0.5 rounded">
@@ -162,9 +172,9 @@ export const QueueTimeline: React.FC<QueueTimelineProps> = ({
       </div>
 
       {/* Arrival notice footer */}
-      <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 bg-slate-50 -mx-5 -mb-5 sm:-mx-6 sm:-mb-6 p-4 rounded-b-lg">
+      <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-2 sm:items-center justify-between text-xs text-slate-500 bg-slate-50 -mx-5 -mb-5 sm:-mx-6 sm:-mb-6 p-4 rounded-b-lg">
         <span>Please arrive at the clinic waiting hall before your token is called.</span>
-        <span className="font-semibold text-slate-700">Room 102 • OPD Wing</span>
+        <span className="font-semibold text-slate-700">Reception desk • OPD Wing</span>
       </div>
     </div>
   );

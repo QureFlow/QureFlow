@@ -4,7 +4,7 @@
  */
 
 const getApiBaseUrl = (): string => {
-  return import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:5000/api';
+  return import.meta.env.VITE_API_GATEWAY_URL || '/api';
 };
 
 export class ApiError extends Error {
@@ -18,23 +18,20 @@ export class ApiError extends Error {
 
 export const apiClient = {
   getAuthToken(): string | null {
-    return localStorage.getItem('qureflow_token') || localStorage.getItem('queless_jwt_token');
+    return sessionStorage.getItem('qureflow_token');
   },
 
   setAuthToken(token: string) {
-    localStorage.setItem('qureflow_token', token);
-    localStorage.setItem('queless_jwt_token', token);
+    sessionStorage.setItem('qureflow_token', token);
   },
 
   clearAuthToken() {
     localStorage.removeItem('qureflow_token');
     localStorage.removeItem('queless_jwt_token');
+    sessionStorage.removeItem('qureflow_token');
   },
 
-  async request<T = any>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  async request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const baseUrl = getApiBaseUrl();
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const url = `${baseUrl}${cleanEndpoint}`;
@@ -54,9 +51,17 @@ export const apiClient = {
       const response = await fetch(url, {
         ...options,
         headers,
+        signal: options.signal || AbortSignal.timeout(20000),
       });
 
       if (!response.ok) {
+        if (response.status === 401 && !endpoint.startsWith('/auth/')) {
+          this.clearAuthToken();
+          sessionStorage.removeItem('queless_active_user');
+          window.dispatchEvent(
+            new CustomEvent('queless-state-change', { detail: { type: 'USER' } }),
+          );
+        }
         let errMsg = `Request failed with status ${response.status}`;
         try {
           const errData = await response.json();

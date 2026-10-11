@@ -1,19 +1,69 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@config "../tailwind.config.js";
 
 @layer base {
   :root {
-    --brand-navy: #0c2340;
+    --brand-navy: #0f2038;
     --brand-blue: #2563eb;
-    --bg-canvas: #f8fafc;
+    --bg-canvas: #f6f8fb;
   }
 
   body {
-    background-color: #f8fafc;
+    background-color: var(--bg-canvas);
     color: #0f172a;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.qf-shell {
+  background: var(--bg-canvas);
+}
+.qf-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px #0f172a06;
+}
+.qf-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.qf-title {
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+.qf-divider {
+  border-color: #e2e8f0;
+}
+.qf-grid-paper {
+  background-image:
+    linear-gradient(#ffffff05 1px, transparent 1px),
+    linear-gradient(90deg, #ffffff05 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.qf-enter {
+  animation: qf-appear 0.45s ease-out both;
+}
+@keyframes qf-appear {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

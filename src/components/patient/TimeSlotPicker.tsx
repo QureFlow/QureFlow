@@ -19,7 +19,9 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
     return (
       <div className="p-8 text-center bg-slate-50 rounded-lg border border-slate-200">
         <div className="w-5 h-5 border-2 border-brand-950 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-        <p className="text-xs text-slate-500">Checking live slot availability & queue waiting times...</p>
+        <p className="text-xs text-slate-500">
+          Checking live slot availability & queue waiting times...
+        </p>
       </div>
     );
   }
@@ -34,13 +36,13 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-3">
         <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
           <Clock className="w-3.5 h-3.5 text-slate-500" />
           <span>Select Consultation Slot</span>
         </div>
         <span className="text-[11px] text-slate-500">
-          Max window: 30 mins/slot • Real-time queue wait
+          Windows follow the doctor's consultation length and clinic buffer
         </span>
       </div>
 
@@ -60,18 +62,20 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
                 isSelected
                   ? 'bg-brand-950 text-white border-brand-950 ring-2 ring-brand-700/30 shadow-sm'
                   : !slotFull
-                  ? 'bg-white text-slate-800 border-slate-200 hover:border-brand-600 hover:bg-slate-50/80 shadow-xs'
-                  : 'bg-slate-100/90 text-slate-400 border-slate-200 cursor-not-allowed opacity-80'
+                    ? 'bg-white text-slate-800 border-slate-200 hover:border-brand-600 hover:bg-slate-50/80 shadow-xs'
+                    : 'bg-slate-100/90 text-slate-400 border-slate-200 cursor-not-allowed opacity-80'
               }`}
             >
-              <span className={`font-bold ${isSelected ? 'text-white' : slotFull ? 'text-slate-400' : 'text-slate-900'}`}>
+              <span
+                className={`font-bold ${isSelected ? 'text-white' : slotFull ? 'text-slate-400' : 'text-slate-900'}`}
+              >
                 {time}
               </span>
 
               {slotFull ? (
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
                   <AlertOctagon className="w-2.5 h-2.5 text-rose-600" />
-                  Slot Full
+                  {slot.statusText}
                 </span>
               ) : patientsAhead > 0 ? (
                 <span
@@ -82,7 +86,8 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
                   }`}
                 >
                   <Users className="w-2.5 h-2.5" />
-                  {patientsAhead} {patientsAhead === 1 ? 'person' : 'people'} ahead (~{estimatedWaitMinutes}m)
+                  {patientsAhead} {patientsAhead === 1 ? 'person' : 'people'} ahead (~
+                  {estimatedWaitMinutes}m)
                 </span>
               ) : (
                 <span

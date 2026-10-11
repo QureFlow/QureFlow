@@ -1,0 +1,105 @@
+{
+  "executedAt": "2026-10-11T07:54:56.1913531Z",
+  "database": "Amazon DynamoDB Local",
+  "fixtureTable": "QureFlowDemo",
+  "syntheticDataOnly": true,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "cases": [
+    {
+      "name": "Homepage displays database totals: 48 doctors, 6 facilities, 12 specialties",
+      "passed": true
+    },
+    {
+      "name": "Staff authentication displays eight assigned clinic doctors and persisted queue metrics",
+      "passed": true
+    },
+    {
+      "name": "Patient directory reads 137 clinic profiles, without hardcoded patient records",
+      "passed": true
+    },
+    {
+      "name": "Search by DEMO-000001 opens record metadata and seven linked appointments",
+      "passed": true
+    },
+    {
+      "name": "Patient pagination advances to page 2 of 12",
+      "passed": true
+    },
+    {
+      "name": "Queue pause and resume persist; call-next stays disabled during pause and active consultation",
+      "passed": true
+    },
+    {
+      "name": "Completed emergency token A-008 displays Completed as its status",
+      "passed": true
+    },
+    {
+      "name": "Appointment workspace defaults to today and pagination advances to page 2 of 3",
+      "passed": true
+    },
+    {
+      "name": "Anonymous visitors can browse the expanded care directory",
+      "passed": true
+    },
+    {
+      "name": "Specialty, clinic and language filters plus fee sorting isolate the expected doctor",
+      "passed": true
+    },
+    {
+      "name": "Doctor profiles expose bio, languages, room, care interests and synthetic credential reference",
+      "passed": true
+    },
+    {
+      "name": "Anonymous slot selection survives patient sign-in with doctor, date and time preserved",
+      "passed": true,
+      "date": "2026-10-15",
+      "doctorId": "doc-3",
+      "time": "09:00 AM"
+    },
+    {
+      "name": "Future booking is confirmed, survives reload, and appears on the new patient dashboard",
+      "passed": true,
+      "token": "C-001"
+    },
+    {
+      "name": "Patient dashboard has no horizontal page overflow at 390x844",
+      "passed": true
+    },
+    {
+      "name": "Mobile directory has no horizontal page overflow and its filter drawer narrows results",
+      "passed": true
+    },
+    {
+      "name": "Calendar selection beyond the first week loads available slots",
+      "passed": true,
+      "date": "2026-11-11"
+    },
+    {
+      "name": "Slot selection remains visible across directory polling and backend compilation",
+      "passed": true,
+      "date": "2026-10-16",
+      "time": "09:00 AM"
+    }
+  ],
+  "screenshots": [
+    "05-redesigned-homepage.jpg",
+    "06-redesigned-staff-dashboard.jpg",
+    "07-patient-record-metadata.jpg",
+    "08-redesigned-queue.jpg",
+    "09-expanded-doctor-directory.jpg",
+    "10-redesigned-patient-dashboard.jpg",
+    "11-redesigned-patient-mobile.jpg",
+    "12-doctor-directory-mobile.jpg"
+  ],
+  "notes": "Executed against the running local application. Earlier verification artifacts separately record consultation completion, walk-in creation and cancellation. Live AWS authentication and mutations were not exercised.",
+  "freshHomepageConsoleErrors": 0
+}

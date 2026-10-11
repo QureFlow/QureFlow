@@ -1,17 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import {
-  QueueToken,
-  Appointment,
-  Doctor,
-  Clinic,
-  QueueSettings,
-  QueuePriority,
-} from '../types';
-import { storage } from '../services/storage';
+import { QueueToken, Appointment, Doctor, Clinic, QueueSettings, QueuePriority } from '../types';
 import { queueService } from '../services/queueService';
 import { appointmentService } from '../services/appointmentService';
 import { doctorService } from '../services/doctorService';
 import { clinicService } from '../services/clinicService';
+import { useAuth } from './AuthContext';
 
 export interface ToastMessage {
   id: string;
@@ -52,21 +45,24 @@ interface QueueContextType {
     notes?: string;
   }) => Promise<{ appointment: Appointment; token: QueueToken }>;
   cancelAppointment: (id: string, reason?: string) => Promise<void>;
-  resetToDefaults: () => void;
+  connectionError: string | null;
+  lastSyncedAt: string | null;
 }
 
 const QueueContext = createContext<QueueContextType | undefined>(undefined);
 
 const playClinicChimeAndAnnounce = (announcement: string) => {
   try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (AudioCtx) {
       const ctx = new AudioCtx();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(659.25, ctx.currentTime); // E5
-      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.2); // A5
+      osc.frequency.setValueAtTime(880.0, ctx.currentTime + 0.2); // A5
       gain.gain.setValueAtTime(0.15, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
       osc.connect(gain);
@@ -91,78 +87,109 @@ const playClinicChimeAndAnnounce = (announcement: string) => {
 };
 
 export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isLoading } = useAuth();
   const [tokens, setTokens] = useState<QueueToken[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
-  const [settings, setSettings] = useState<QueueSettings>(storage.getSettings());
+  const [settings, setSettings] = useState<QueueSettings>({
+    averageConsultationMinutes: 10,
+    bufferMinutes: 2,
+    allowWalkIns: true,
+    allowEmergencyPriority: true,
+    notifyOnTwoAhead: false,
+    autoTokenPrefixByDoctor: true,
+    clinicName: '',
+    contactNumber: '',
+  });
   const [pausedDoctors, setPausedDoctors] = useState<string[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const currentUserRef = useRef(user?.id);
+  currentUserRef.current = user?.id;
 
-  const isSyncingRef = useRef(false);
-
-  // Synchronous state refresh from local cache
-  const refreshLocalState = useCallback(() => {
-    storage.init();
-    setTokens(storage.getTokens());
-    setAppointments(storage.getAppointments());
-    setDoctors(storage.getDoctors());
-    setClinics(storage.getClinics());
-    setSettings(storage.getSettings());
-    setPausedDoctors(storage.getPausedDoctors());
-  }, []);
+  const isSyncingRef = useRef<string | null>(null);
 
   // Safe background remote sync without event cascade loops
   const syncRemoteData = useCallback(async () => {
-    if (import.meta.env.VITE_USE_MOCK_BACKEND === 'true' || isSyncingRef.current) return;
-    isSyncingRef.current = true;
+    const sessionKey = user?.id || 'public';
+    if (isLoading || isSyncingRef.current === sessionKey) return;
+    isSyncingRef.current = sessionKey;
+    const sessionId = user?.id;
 
     try {
       const [aptsRes, docsRes, clinicsRes, settingsRes, queuesRes] = await Promise.allSettled([
-        appointmentService.getAppointments(),
+        user ? appointmentService.getAppointments() : Promise.resolve([]),
         doctorService.getDoctors(),
         clinicService.getClinics(),
-        clinicService.getSettings(),
-        queueService.getAllDoctorQueues(),
+        user ? clinicService.getSettings() : Promise.resolve(null),
+        user ? queueService.getAllDoctorQueues() : Promise.resolve([]),
       ]);
+      if (currentUserRef.current !== sessionId) return;
+      const failures = [aptsRes, docsRes, clinicsRes, settingsRes, queuesRes].filter(
+        (r) => r.status === 'rejected',
+      );
+      setConnectionError(
+        failures.length
+          ? 'Some records could not be refreshed. Displayed data may be out of date.'
+          : null,
+      );
+      if (!failures.length) setLastSyncedAt(new Date().toISOString());
 
       if (aptsRes.status === 'fulfilled' && Array.isArray(aptsRes.value)) {
         setAppointments(aptsRes.value);
       }
-      if (docsRes.status === 'fulfilled' && Array.isArray(docsRes.value) && docsRes.value.length > 0) {
-        setDoctors(docsRes.value);
+      if (docsRes.status === 'fulfilled' && Array.isArray(docsRes.value)) {
+        setDoctors(
+          user && user.role !== 'patient'
+            ? docsRes.value.filter(
+                (d) =>
+                  d.clinicId === user.clinicId &&
+                  (user.role !== 'doctor' || d.id === user.doctorId),
+              )
+            : docsRes.value,
+        );
       }
-      if (clinicsRes.status === 'fulfilled' && Array.isArray(clinicsRes.value) && clinicsRes.value.length > 0) {
-        setClinics(clinicsRes.value);
+      if (clinicsRes.status === 'fulfilled' && Array.isArray(clinicsRes.value)) {
+        setClinics(
+          user && user.role !== 'patient'
+            ? clinicsRes.value.filter((c) => c.id === user.clinicId)
+            : clinicsRes.value,
+        );
       }
       if (settingsRes.status === 'fulfilled' && settingsRes.value) {
         setSettings(settingsRes.value);
       }
       if (queuesRes.status === 'fulfilled' && Array.isArray(queuesRes.value)) {
         const liveTokens = queuesRes.value.flatMap((q) => q.tokens || []);
-        if (liveTokens.length > 0) {
-          setTokens(liveTokens);
-        }
+        setTokens(liveTokens);
+        setPausedDoctors(queuesRes.value.filter((q) => q.isPaused).map((q) => q.doctorId));
       }
     } catch (err) {
       console.warn('[QueueContext] Remote sync error:', err);
     } finally {
-      isSyncingRef.current = false;
+      if (isSyncingRef.current === sessionKey) isSyncingRef.current = null;
     }
-  }, []);
+  }, [user?.id, isLoading]);
 
   const refreshState = useCallback(() => {
-    refreshLocalState();
     syncRemoteData();
-  }, [refreshLocalState, syncRemoteData]);
+  }, [syncRemoteData]);
 
   useEffect(() => {
-    refreshLocalState();
+    setTokens([]);
+    setAppointments([]);
+    setPausedDoctors([]);
+    setDoctors([]);
+    setClinics([]);
+    setLastSyncedAt(null);
+    setConnectionError(null);
     syncRemoteData();
 
-    // Event listener only updates local state without triggering remote API loops
+    // Requests already in flight for this session are coalesced.
     const handleSync = () => {
-      refreshLocalState();
+      syncRemoteData();
     };
 
     window.addEventListener('queless-state-change', handleSync);
@@ -178,7 +205,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       window.removeEventListener('queless-state-change', handleSync);
       window.removeEventListener('storage', handleSync);
     };
-  }, [refreshLocalState, syncRemoteData]);
+  }, [syncRemoteData]);
 
   const showToast = useCallback(
     (message: string, type: 'success' | 'info' | 'warning' | 'error' = 'info') => {
@@ -189,7 +216,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setToasts((prev) => prev.filter((t) => t.id !== id));
       }, 4000);
     },
-    []
+    [],
   );
 
   const removeToast = useCallback((id: string) => {
@@ -202,12 +229,9 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       refreshState();
       if (token) {
         playClinicChimeAndAnnounce(
-          `Token ${token.tokenNumber}, please proceed to Consultation Room 102 for ${token.doctorName}.`
+          `Token ${token.tokenNumber}, please proceed to the reception desk for ${token.doctorName}.`,
         );
-        showToast(
-          `Token ${token.tokenNumber} (${token.patientName}) called for consultation (Room 102)`,
-          'success'
-        );
+        showToast(`Token ${token.tokenNumber} called for consultation`, 'success');
       } else {
         showToast('No more waiting patients in this queue', 'info');
       }
@@ -254,15 +278,23 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleQueuePause = async (doctorId: string) => {
     const isPaused = pausedDoctors.includes(doctorId);
-    if (isPaused) {
-      await queueService.resumeQueue(doctorId);
-      showToast('Queue resumed', 'info');
-    } else {
-      await queueService.pauseQueue(doctorId);
-      showToast('Queue temporarily paused', 'warning');
+    try {
+      if (isPaused) {
+        await queueService.resumeQueue(doctorId);
+        showToast('Queue resumed', 'info');
+      } else {
+        await queueService.pauseQueue(doctorId);
+        showToast('Queue temporarily paused', 'warning');
+      }
+      refreshState();
+      return !isPaused;
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : 'The queue state could not be changed.',
+        'error',
+      );
+      return isPaused;
     }
-    refreshState();
-    return !isPaused;
   };
 
   const addWalkIn = async (data: {
@@ -281,7 +313,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       refreshState();
       showToast(
         `Walk-in registered! Generated Token: ${token.tokenNumber} (${token.priority.toUpperCase()})`,
-        'success'
+        'success',
       );
       return token;
     } catch (err: unknown) {
@@ -323,9 +355,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cancelAppointment = async (id: string, reason?: string) => {
     try {
       await appointmentService.cancelAppointment(id, reason);
-      setAppointments((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status: 'cancelled' } : a))
-      );
+      setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'cancelled' } : a)));
       refreshState();
       showToast('Appointment and queue token successfully cancelled', 'info');
     } catch (err: unknown) {
@@ -333,12 +363,6 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showToast(msg, 'error');
       throw err;
     }
-  };
-
-  const resetToDefaults = () => {
-    storage.resetAll();
-    refreshState();
-    showToast('Reset to original sample healthcare data', 'info');
   };
 
   return (
@@ -362,7 +386,8 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addWalkIn,
         bookAppointment,
         cancelAppointment,
-        resetToDefaults,
+        connectionError,
+        lastSyncedAt,
       }}
     >
       {children}

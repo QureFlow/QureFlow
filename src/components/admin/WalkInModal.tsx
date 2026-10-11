@@ -13,15 +13,11 @@ interface WalkInModalProps {
   defaultDoctorId?: string;
 }
 
-export const WalkInModal: React.FC<WalkInModalProps> = ({
-  isOpen,
-  onClose,
-  defaultDoctorId,
-}) => {
+export const WalkInModal: React.FC<WalkInModalProps> = ({ isOpen, onClose, defaultDoctorId }) => {
   const { doctors, addWalkIn } = useQueue();
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
-  const [doctorId, setDoctorId] = useState(defaultDoctorId || (doctors[0]?.id || ''));
+  const [doctorId, setDoctorId] = useState(defaultDoctorId || doctors[0]?.id || '');
   const [priority, setPriority] = useState<QueuePriority>('normal');
   const [time, setTime] = useState('Immediate Walk-in');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,7 +105,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
         />
 
         <Input
-          label="Mobile Number (for SMS & Token updates)"
+          label="Patient mobile number"
           placeholder="10-digit mobile number"
           type="tel"
           maxLength={10}
@@ -169,7 +165,8 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({
           <div className="p-2.5 bg-red-50 border border-red-200 rounded text-xs text-red-800 flex items-start gap-2">
             <Flame className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
             <p>
-              <strong>Emergency Priority Triage:</strong> This token will be placed at the top of the waiting list for urgent attention by the consulting physician.
+              <strong>Emergency Priority Triage:</strong> This token will be placed at the top of
+              the waiting list for urgent attention by the consulting physician.
             </p>
           </div>
         )}

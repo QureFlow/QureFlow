@@ -1,75 +1,82 @@
-import React from 'react';
 import { Doctor } from '../../types';
 import { Link } from 'react-router-dom';
-import { Button } from '../common/Button';
-import { StatusBadge } from '../common/StatusBadge';
-import { MapPin, Calendar, Clock, ChevronRight } from 'lucide-react';
-
-interface DoctorCardProps {
-  doctor: Doctor;
-}
-
-export const DoctorCard: React.FC<DoctorCardProps> = ({ doctor }) => {
+import { ArrowUpRight, Clock3, Languages, MapPin } from 'lucide-react';
+export const DoctorCard = ({ doctor }: { doctor: Doctor }) => {
+  const initials = doctor.name
+    .replace(/^Dr\.\s*/, '')
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('');
+  const colors = [
+    'bg-[#e2e8f0] text-[#475569]',
+    'bg-[#e0e7ff] text-[#4338ca]',
+    'bg-[#f1f5f9] text-[#475569]',
+    'bg-[#dbeafe] text-[#1d4ed8]',
+  ];
+  const color = colors[doctor.id.split('').reduce((s, c) => s + c.charCodeAt(0), 0) % 4];
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-subtle hover:border-slate-300 transition-all flex flex-col justify-between">
-      <div>
-        {/* Header with Avatar & Status */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-brand-50 border border-brand-200 text-brand-900 flex items-center justify-center font-bold text-sm select-none">
-              {doctor.name
-                .split(' ')
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join('')}
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 leading-snug">{doctor.name}</h3>
-              <p className="text-xs font-semibold text-brand-700">{doctor.specialization}</p>
-            </div>
-          </div>
-          <StatusBadge status={doctor.isAvailableToday ? 'active' : 'inactive'} size="sm" />
+    <article className="qf-panel p-5 sm:p-6 flex flex-col hover:border-brand-300 transition-colors">
+      <div className="flex items-start justify-between gap-3">
+        <div
+          className={`w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-semibold ${color}`}
+        >
+          {initials}
         </div>
-
-        {/* Qualifications & Clinic */}
-        <div className="space-y-1.5 text-xs text-slate-600 mb-4">
-          <p className="text-[11px] text-slate-500 line-clamp-1">{doctor.qualifications}</p>
-          <div className="flex items-center gap-1.5 text-slate-600">
-            <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-            <span className="truncate">{doctor.clinicName}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-slate-600">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-            <span className="truncate">
-              {doctor.consultationDays.slice(0, 3).join(', ')}
-              {doctor.consultationDays.length > 3 ? ` +${doctor.consultationDays.length - 3} days` : ''}
-            </span>
-          </div>
-        </div>
-
-        {/* Next Slot highlight box */}
-        <div className="bg-slate-50 rounded-md p-2.5 border border-slate-100 mb-4 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5 text-slate-700">
-            <Clock className="w-3.5 h-3.5 text-slate-500" />
-            <span className="font-medium">{doctor.isAvailableToday ? 'Available today' : 'Consulting days'}</span>
-          </div>
-          <span className="font-semibold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-            {doctor.nextAvailableSlot}
-          </span>
-        </div>
-      </div>
-
-      {/* Action CTA */}
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-        <span className="text-xs text-slate-500">
-          Fee: <span className="font-semibold text-slate-900">₹{doctor.consultationFee}</span>
+        <span
+          className={`text-[10px] font-semibold rounded-full px-2.5 py-1 ${doctor.isAvailableToday ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500'}`}
+        >
+          {doctor.isAvailableToday ? 'Consulting today' : 'View schedule'}
         </span>
-        <Link to={`/patient/doctors/${doctor.id}`}>
-          <Button variant="outline" size="sm" icon={<ChevronRight className="w-3.5 h-3.5" />}>
-            View Doctor
-          </Button>
+      </div>
+      <p className="qf-eyebrow mt-5">{doctor.specialization}</p>
+      <h3 className="text-lg font-semibold tracking-tight text-brand-950 mt-2">{doctor.name}</h3>
+      <p className="text-xs text-slate-500 mt-1">
+        {doctor.qualifications} · {doctor.experienceYears} years experience
+      </p>
+      <div className="space-y-2.5 text-xs text-slate-500 my-5">
+        <p className="flex gap-2 items-start">
+          <MapPin className="w-3.5 h-3.5 shrink-0 text-brand-600" />
+          {doctor.clinicName}
+        </p>
+        <p className="flex gap-2 items-center">
+          <Clock3 className="w-3.5 h-3.5 shrink-0 text-brand-600" />
+          {doctor.startTime} – {doctor.endTime}
+        </p>
+        {!!doctor.languages?.length && (
+          <p className="flex gap-2 items-center">
+            <Languages className="w-3.5 h-3.5 shrink-0 text-brand-600" />
+            {doctor.languages.join(', ')}
+          </p>
+        )}
+      </div>
+      {!!doctor.clinicalInterests?.length && (
+        <div className="flex flex-wrap gap-1.5 mb-5">
+          {doctor.clinicalInterests.slice(0, 2).map((s) => (
+            <span
+              key={s}
+              className="text-[10px] px-2.5 py-1 rounded-full border border-[#e2e8f0] text-slate-600"
+            >
+              {s}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="border-t border-[#e2e8f0] pt-4 mt-auto flex justify-between items-center gap-2">
+        <div>
+          <p className="text-[10px] text-slate-400">Consultation</p>
+          <p className="text-base font-semibold text-brand-950">
+            ₹{doctor.consultationFee}
+            <span className="text-[10px] font-normal text-slate-400 ml-1">/ visit</span>
+          </p>
+        </div>
+        <Link
+          to={`/patient/doctors/${doctor.id}`}
+          className="flex items-center gap-2 bg-brand-600 text-white rounded-full text-xs font-semibold px-4 py-2.5"
+        >
+          View Doctor <ArrowUpRight className="w-3.5 h-3.5" />
         </Link>
       </div>
-    </div>
+    </article>
   );
 };

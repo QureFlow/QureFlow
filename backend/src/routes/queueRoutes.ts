@@ -1,101 +1,133 @@
 import { Router } from 'express';
+import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
 import { queueService } from '../services/queueService.js';
 import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
-
+import { accessDoctor, staffClinic } from '../lib/access.js';
+import { parse, nameSchema, phoneSchema } from '../lib/validation.js';
+import { route } from '../lib/http.js';
+import { AppError } from '../lib/errors.js';
 const router = Router();
-
-// Get queue status for a specific doctor
-router.get('/doctor/:doctorId', async (req, res) => {
-  try {
-    const queue = await queueService.getDoctorQueue(req.params.doctorId);
-    res.json(queue);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Get queues for all doctors
-router.get('/all', async (_req, res) => {
-  try {
-    const doctors = await dynamoDbRepo.getDoctors();
-    const queues = await Promise.all(
-      doctors.map((d) => queueService.getDoctorQueue(d.id))
+router.use(authenticateToken);
+const visibleQueue = (queue: any, user: any) =>
+  user.role === 'patient'
+    ? {
+        ...queue,
+        tokens: queue.tokens.map((t: any) =>
+          t.patientId === user.sub
+            ? t
+            : {
+                id: `position-${t.tokenNumber}`,
+                tokenNumber: t.tokenNumber,
+                doctorId: t.doctorId,
+                doctorName: t.doctorName,
+                clinicId: t.clinicId,
+                clinicName: t.clinicName,
+                status: t.status,
+                patientName: '',
+                patientPhone: '',
+                scheduledTime: t.scheduledTime,
+                priority: 'normal',
+                isWalkIn: t.isWalkIn,
+                createdAt: t.createdAt,
+              },
+        ),
+      }
+    : queue;
+router.get(
+  '/doctor/:doctorId',
+  route(async (req, res) => {
+    await accessDoctor(req, req.params.doctorId);
+    res.json(visibleQueue(await queueService.getDoctorQueue(req.params.doctorId), req.user));
+  }),
+);
+router.get(
+  '/all',
+  route(async (req, res) => {
+    let doctors = await dynamoDbRepo.getDoctors();
+    if (req.user.role !== 'patient')
+      doctors = doctors.filter(
+        (d) =>
+          d.clinicId === staffClinic(req) &&
+          (req.user.role !== 'doctor' || d.id === req.user.doctorId),
+      );
+    res.json(
+      await Promise.all(
+        doctors.map(async (d) => visibleQueue(await queueService.getDoctorQueue(d.id), req.user)),
+      ),
     );
-    res.json(queues);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Join queue (Patients or Reception Walk-in)
-router.post('/join', async (req, res) => {
-  try {
-    const {
-      doctorId,
-      patientId,
-      patientName,
-      patientPhone,
-      priority,
-      isWalkIn,
-      scheduledTime,
-      appointmentId,
-      dateStr,
-    } = req.body;
-
-    if (!doctorId || !patientName || !patientPhone) {
-      res.status(400).json({ error: 'doctorId, patientName, and patientPhone are required' });
-      return;
-    }
-
-    const token = await queueService.joinQueue({
-      doctorId,
-      patientId,
-      patientName,
-      patientPhone,
-      priority: priority || 'normal',
-      isWalkIn: Boolean(isWalkIn),
-      scheduledTime,
-      appointmentId,
-      dateStr,
+  }),
+);
+router.post(
+  '/join',
+  requireRoles('admin', 'health_worker'),
+  route(async (req, res) => {
+    const data = parse(
+      z
+        .object({
+          doctorId: z.string().min(1).max(100),
+          patientName: nameSchema,
+          patientPhone: phoneSchema,
+          priority: z.enum(['normal', 'emergency']).default('normal'),
+          isWalkIn: z.literal(true),
+          time: z.string().trim().max(100).optional(),
+        })
+        .strict(),
+      req.body,
+    );
+    await accessDoctor(req, data.doctorId);
+    let patient = await dynamoDbRepo.findUserByIdentifier(data.patientPhone);
+    if (patient && patient.role !== 'patient')
+      throw new AppError(409, 'This phone belongs to a staff account.');
+    if (!patient)
+      patient = await dynamoDbRepo.saveUser({
+        id: `patient-${randomUUID()}`,
+        name: data.patientName,
+        phone: data.patientPhone,
+        email: '',
+        role: 'patient',
+        clinicId: staffClinic(req),
+        createdAt: new Date().toISOString(),
+        metadata: { source: 'walk_in', accountStatus: 'unclaimed' },
+      });
+    res
+      .status(201)
+      .json(
+        await queueService.joinQueue({
+          doctorId: data.doctorId,
+          patientId: patient.id,
+          patientName: patient.name,
+          patientPhone: patient.phone,
+          priority: data.priority,
+          isWalkIn: true,
+          scheduledTime: data.time,
+        }),
+      );
+  }),
+);
+router.post(
+  '/call-next',
+  requireRoles('doctor', 'admin', 'health_worker'),
+  route(async (req, res) => {
+    const data = parse(z.object({ doctorId: z.string().min(1).max(100) }).strict(), req.body);
+    await accessDoctor(req, data.doctorId);
+    res.json(await queueService.callNextPatient(data.doctorId));
+  }),
+);
+router.post(
+  '/pause',
+  requireRoles('doctor', 'admin', 'health_worker'),
+  route(async (req, res) => {
+    const data = parse(
+      z.object({ doctorId: z.string().min(1).max(100), paused: z.boolean() }).strict(),
+      req.body,
+    );
+    await accessDoctor(req, data.doctorId);
+    res.json({
+      doctorId: data.doctorId,
+      isPaused: await dynamoDbRepo.setDoctorPause(data.doctorId, data.paused),
     });
-
-    res.status(201).json(token);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// Doctor or Admin calls next patient
-router.post('/call-next', authenticateToken, requireRoles('doctor', 'admin', 'health_worker'), async (req, res) => {
-  try {
-    const { doctorId } = req.body;
-    if (!doctorId) {
-      res.status(400).json({ error: 'doctorId is required' });
-      return;
-    }
-
-    const token = await queueService.callNextPatient(doctorId);
-    res.json(token);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Toggle pause queue for doctor
-router.post('/pause', authenticateToken, requireRoles('doctor', 'admin', 'health_worker'), async (req, res) => {
-  try {
-    const { doctorId, paused } = req.body;
-    if (!doctorId) {
-      res.status(400).json({ error: 'doctorId is required' });
-      return;
-    }
-
-    const result = await dynamoDbRepo.setDoctorPause(doctorId, Boolean(paused));
-    res.json({ doctorId, isPaused: result });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
+  }),
+);
 export default router;

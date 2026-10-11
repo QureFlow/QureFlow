@@ -1,4 +1,5 @@
 import React from 'react';
+import { clinicDate } from '../../lib/time';
 import { Appointment } from '../../types';
 import { StatusBadge } from '../common/StatusBadge';
 import { Button } from '../common/Button';
@@ -14,8 +15,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   appointment,
   onCancelRequest,
 }) => {
-  const canCancel =
-    appointment.status === 'booked' || appointment.status === 'waiting';
+  const canCancel = appointment.status === 'booked' || appointment.status === 'waiting';
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-subtle hover:border-slate-300 transition-all flex flex-col justify-between">
@@ -63,13 +63,15 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       {/* Actions */}
       <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          {appointment.tokenNumber && (
-            <Link to="/patient/token">
-              <Button variant="outline" size="sm">
-                View Queue
-              </Button>
-            </Link>
-          )}
+          {appointment.tokenNumber &&
+            appointment.date === clinicDate() &&
+            ['booked', 'waiting', 'in_consultation'].includes(appointment.status) && (
+              <Link to="/patient/token">
+                <Button variant="outline" size="sm">
+                  View Queue
+                </Button>
+              </Link>
+            )}
         </div>
 
         {canCancel && onCancelRequest && (

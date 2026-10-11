@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ConnectionBanner } from './components/common/ConnectionBanner';
 import { AuthProvider } from './context/AuthContext';
 import { QueueProvider } from './context/QueueContext';
 import { ToastContainer } from './components/common/ToastContainer';
-import { DemoSwitcher } from './components/common/DemoSwitcher';
 import { PatientRoute, AdminRoute } from './components/common/ProtectedRoute';
 
 // Public
@@ -29,6 +29,7 @@ import { AddDoctor } from './pages/admin/AddDoctor';
 import { AdminPatients } from './pages/admin/AdminPatients';
 import { AdminClinics } from './pages/admin/AdminClinics';
 import { AdminSettings } from './pages/admin/AdminSettings';
+import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 
 export function App() {
   return (
@@ -36,7 +37,6 @@ export function App() {
       <AuthProvider>
         <QueueProvider>
           {/* Subtle switcher for easy reviewer testing between Patient & Admin */}
-          <DemoSwitcher />
 
           {/* Core Routes */}
           <Routes>
@@ -57,22 +57,8 @@ export function App() {
                 </PatientRoute>
               }
             />
-            <Route
-              path="/patient/doctors"
-              element={
-                <PatientRoute>
-                  <DoctorList />
-                </PatientRoute>
-              }
-            />
-            <Route
-              path="/patient/doctors/:id"
-              element={
-                <PatientRoute>
-                  <DoctorDetails />
-                </PatientRoute>
-              }
-            />
+            <Route path="/patient/doctors" element={<DoctorList />} />
+            <Route path="/patient/doctors/:id" element={<DoctorDetails />} />
             <Route
               path="/patient/book"
               element={
@@ -172,12 +158,21 @@ export function App() {
               }
             />
 
+            <Route
+              path="/admin/analytics"
+              element={
+                <AdminRoute>
+                  <AdminAnalytics />
+                </AdminRoute>
+              }
+            />
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
 
           {/* Feedback Toasts */}
           <ToastContainer />
+          <ConnectionBanner />
         </QueueProvider>
       </AuthProvider>
     </Router>

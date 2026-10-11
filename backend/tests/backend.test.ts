@@ -1,292 +1,738 @@
-import { authService } from '../src/services/authService.js';
-import { queueService } from '../src/services/queueService.js';
-import { dynamoDbRepo } from '../src/repositories/dynamoDbRepo.js';
-import { appointmentService } from '../src/services/appointmentService.js';
+import assert from 'node:assert/strict';
+import { randomUUID, randomBytes } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
-async function runTests() {
-  console.log('\n========================================');
-  console.log('RUNNING QUREFLOW BACKEND INTEGRATION TESTS');
-  console.log('========================================\n');
-
-  let passed = 0;
-  let failed = 0;
-
-  const assert = (condition: boolean, testName: string) => {
-    if (condition) {
-      console.log(`  [PASS] ${testName}`);
-      passed++;
-    } else {
-      console.error(`  [FAIL] ${testName}`);
-      failed++;
-    }
-  };
-
+// Isolation is established BEFORE imports load dotenv or initialize an AWS client.
+process.env.NODE_ENV = 'test';
+process.env.AUTH_PROVIDER = 'local';
+process.env.DYNAMODB_ENDPOINT = 'http://127.0.0.1:18000';
+process.env.DYNAMODB_TABLE_NAME = `QureFlowTest-${randomUUID()}`;
+process.env.JWT_SECRET = randomBytes(48).toString('hex');
+const results: { name: string; passed: boolean; durationMs: number; error?: string }[] = [];
+async function check(name: string, test: () => Promise<unknown> | unknown) {
+  const start = Date.now();
   try {
-    // ------------------------------------------------------------------------
-    // Test 1: Doctor Retrieval from DynamoDB
-    // ------------------------------------------------------------------------
-    console.log('Test Suite 1: Doctor and Clinic Retrieval');
-    const doctors = await dynamoDbRepo.getDoctors();
-    assert(doctors.length >= 10, `Retrieved ${doctors.length} doctors from DynamoDB`);
-    const doc1 = await dynamoDbRepo.getDoctorById('doc-1');
-    assert(doc1 !== null && doc1.name === 'Dr. Ananya Sharma', 'Retrieved doc-1 (Dr. Ananya Sharma)');
-
-    const clinics = await dynamoDbRepo.getClinics();
-    assert(clinics.length >= 3, `Retrieved ${clinics.length} clinics from DynamoDB`);
-
-    // ------------------------------------------------------------------------
-    // Test 2: Authentication (Login & Registration)
-    // ------------------------------------------------------------------------
-    console.log('\nTest Suite 2: Authentication');
-    const adminSession = await authService.login('admin@bolpurhealth.org', 'AdminPass123!');
-    assert(adminSession.user.role === 'admin', 'Admin logged in successfully with correct role');
-    assert(Boolean(adminSession.token), 'Admin received signed JWT token');
-
-    const testPhone = `99900${Math.floor(10000 + Math.random() * 90000)}`;
-    const testPatientSession = await authService.registerPatient({
-      name: 'Integration Test Patient',
-      phone: testPhone,
-      email: `test.${testPhone}@example.com`,
-      gender: 'Female',
-      password: 'TestPassword123!',
-    });
-    assert(testPatientSession.user.role === 'patient', 'New patient registered successfully');
-    assert(testPatientSession.user.phone === testPhone, 'Registered phone matches');
-
-    // Test duplicate registration rejection
-    let duplicateRejected = false;
-    try {
-      await authService.registerPatient({
-        name: 'Duplicate Patient',
-        phone: testPhone,
-        email: `dup.${testPhone}@example.com`,
-      });
-    } catch {
-      duplicateRejected = true;
-    }
-    assert(duplicateRejected, 'Duplicate registration with same phone properly rejected');
-
-    // ------------------------------------------------------------------------
-    // Test 3: Concurrency-Safe Queue Joins & Atomic Token Generation
-    // ------------------------------------------------------------------------
-    console.log('\nTest Suite 3: Queue Management & Concurrency');
-    const testDate = `test-${Date.now()}`;
-    const p1 = await queueService.joinQueue({
-      doctorId: 'doc-1',
-      patientId: `pat-test-1-${Date.now()}`,
-      patientName: 'Normal Patient 1',
-      patientPhone: '9990000001',
-      priority: 'normal',
-      dateStr: testDate,
-    });
-    assert(p1.tokenNumber.startsWith('A-'), `Token 1 generated with prefix A (${p1.tokenNumber})`);
-
-    const p2 = await queueService.joinQueue({
-      doctorId: 'doc-1',
-      patientId: `pat-test-2-${Date.now()}`,
-      patientName: 'Normal Patient 2',
-      patientPhone: '9990000002',
-      priority: 'normal',
-      dateStr: testDate,
-    });
-    assert(p2.tokenNumber !== p1.tokenNumber, `Token numbers are unique: ${p1.tokenNumber} vs ${p2.tokenNumber}`);
-
-    // Test duplicate active queue entry prevention for same patient
-    let duplicateQueueRejected = false;
-    try {
-      await queueService.joinQueue({
-        doctorId: 'doc-1',
-        patientId: p1.patientId,
-        patientName: 'Same Patient Again',
-        patientPhone: '9990000001',
-        priority: 'normal',
-        dateStr: testDate,
-      });
-    } catch {
-      duplicateQueueRejected = true;
-    }
-    assert(duplicateQueueRejected, 'Patient joining queue twice in active state properly rejected');
-
-    // ------------------------------------------------------------------------
-    // Test 4: Priority / Emergency Triage Ordering
-    // ------------------------------------------------------------------------
-    console.log('\nTest Suite 4: Priority & Emergency Triage');
-    // Normal patient joined earlier (p2), now emergency patient joins
-    const emergencyPat = await queueService.joinQueue({
-      doctorId: 'doc-1',
-      patientId: `pat-test-emg-${Date.now()}`,
-      patientName: 'Emergency Triage Patient',
-      patientPhone: '9990000999',
-      priority: 'emergency',
-      dateStr: testDate,
-    });
-    assert(emergencyPat.priority === 'emergency', 'Emergency patient registered');
-
-    // Doctor calls next patient: emergency patient should be served before normal patients!
-    const calledToken = await queueService.callNextPatient('doc-1', testDate);
-    assert(
-      calledToken !== null && calledToken.id === emergencyPat.id,
-      `Emergency patient (${calledToken?.tokenNumber}) prioritized ahead of earlier normal queue entries`
-    );
-
-    // ------------------------------------------------------------------------
-    // Test 5: Queue State Progression (Serve, Complete, Skip)
-    // ------------------------------------------------------------------------
-    console.log('\nTest Suite 5: Doctor Queue Progression');
-    if (calledToken) {
-      await queueService.markPatientServed(calledToken.id);
-      const afterServedStatus = await queueService.getDoctorQueue('doc-1', testDate);
-      const servedItem = afterServedStatus.tokens.find((t) => t.id === calledToken.id);
-      assert(servedItem?.status === 'completed', 'Patient status transitioned to completed');
-    }
-
-    // Call next normal patient
-    const nextNormal = await queueService.callNextPatient('doc-1', testDate);
-    assert(nextNormal !== null, `Doctor called next patient: ${nextNormal?.tokenNumber}`);
-
-    if (nextNormal) {
-      await queueService.skipPatient(nextNormal.id);
-      const afterSkipStatus = await queueService.getDoctorQueue('doc-1', testDate);
-      const skippedItem = afterSkipStatus.tokens.find((t) => t.id === nextNormal.id);
-      assert(skippedItem?.status === 'skipped', 'Patient status transitioned to skipped');
-    }
-
-    // ------------------------------------------------------------------------
-    // Test 6: Estimated Wait Time & Position Calculation
-    // ------------------------------------------------------------------------
-    console.log('\nTest Suite 6: Patient Waiting Status & Estimation');
-    const waitingPat = await queueService.getPatientActiveStatus(p2.patientId!);
-    assert(waitingPat !== null, 'Retrieved active patient queue status');
-    assert(typeof waitingPat?.estimatedWaitMinutes === 'number', `Estimated wait calculated: ${waitingPat?.estimatedWaitMinutes} mins`);
-    assert(typeof waitingPat?.patientsAhead === 'number', `Patients ahead calculated: ${waitingPat?.patientsAhead}`);
-
-    // ------------------------------------------------------------------------
-    // Test 7: Appointment Booking with Automatic Token Allocation
-    // ------------------------------------------------------------------------
-    console.log('\nTest Suite 7: Appointments');
-    const aptResult = await appointmentService.createAppointment({
-      patientId: testPatientSession.user.id,
-      patientName: testPatientSession.user.name,
-      patientPhone: testPatientSession.user.phone,
-      doctorId: 'doc-2',
-      date: new Date().toISOString().split('T')[0],
-      time: '11:00 AM',
-      notes: 'Routine pediatric checkup',
-    });
-    assert(Boolean(aptResult.appointment.id), 'Appointment created successfully');
-    assert(aptResult.token.tokenNumber.startsWith('B-'), `Token allocated with prefix B (${aptResult.token.tokenNumber})`);
-
-    // Clean up test appointments
-    await appointmentService.cancelAppointment(aptResult.appointment.id, 'Test cleanup');
-    const cancelledApt = await dynamoDbRepo.getAppointmentById(aptResult.appointment.id);
-    assert(cancelledApt?.status === 'cancelled', 'Appointment successfully cancelled');
-
-    // ------------------------------------------------------------------------
-    // Test 8: Slot Availability, Formula Calculation & "Slot Full" Threshold
-    // Formula: tactive * pactive + (p - 1) * tavg + buffer
-    // ------------------------------------------------------------------------
-    console.log('\nTest Suite 8: Slot Waiting Time Formula & Slot Full Enforcement');
-    const slotTestDate = `2099-01-${Math.floor(10 + Math.random() * 18)}`;
-    const slotTestDoctor = 'doc-1'; // tavg = 10, slotDuration = 30, buffer = 2
-
-    // 8a. Initial slot check (0 bookings)
-    let slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
-    const initialSlot10 = slots.find((s) => s.time === '10:00 AM');
-    assert(initialSlot10?.available === true, '10:00 AM slot is initially available');
-    assert(initialSlot10?.patientsAhead === 0, '10:00 AM has 0 patients ahead initially');
-    assert(initialSlot10?.estimatedWaitMinutes === 0, '10:00 AM has 0 min estimated wait initially');
-
-    // 8b. Book 1st patient: p = 0 at booking time
-    const apt1 = await appointmentService.createAppointment({
-      patientId: `pat-slot-1-${Date.now()}`,
-      patientName: 'Slot Patient 1',
-      patientPhone: '9991110001',
-      doctorId: slotTestDoctor,
-      date: slotTestDate,
-      time: '10:00 AM',
-    });
-
-    // Verify after 1 booking: next patient sees p = 1 ahead, wait = 10*1 + (1-1)*10 + 2 = 12 mins
-    slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
-    const slot10After1 = slots.find((s) => s.time === '10:00 AM');
-    assert(slot10After1?.patientsAhead === 1, '10:00 AM shows 1 patient ahead');
-    assert(slot10After1?.estimatedWaitMinutes === 12, `Estimated wait for 2nd patient is 12m (tactive*pactive + (p-1)*tavg + buffer): actual ${slot10After1?.estimatedWaitMinutes}m`);
-    assert(slot10After1?.available === true && !slot10After1?.isFull, '10:00 AM is still available after 1 booking (12m <= 30m slot duration)');
-
-    // 8c. Book 2nd patient: next patient sees p = 2 ahead, wait = 10*1 + (2-1)*10 + 2 = 22 mins
-    const apt2 = await appointmentService.createAppointment({
-      patientId: `pat-slot-2-${Date.now()}`,
-      patientName: 'Slot Patient 2',
-      patientPhone: '9991110002',
-      doctorId: slotTestDoctor,
-      date: slotTestDate,
-      time: '10:00 AM',
-    });
-
-    slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
-    const slot10After2 = slots.find((s) => s.time === '10:00 AM');
-    assert(slot10After2?.patientsAhead === 2, '10:00 AM shows 2 patients ahead');
-    assert(slot10After2?.estimatedWaitMinutes === 22, `Estimated wait for 3rd patient is 22m: actual ${slot10After2?.estimatedWaitMinutes}m`);
-    assert(slot10After2?.available === true && !slot10After2?.isFull, '10:00 AM is still available after 2 bookings (22m <= 30m slot duration)');
-
-    // 8d. Book 3rd patient: next patient sees p = 3 ahead, wait = 10*1 + (3-1)*10 + 2 = 32 mins (> 30m)
-    const apt3 = await appointmentService.createAppointment({
-      patientId: `pat-slot-3-${Date.now()}`,
-      patientName: 'Slot Patient 3',
-      patientPhone: '9991110003',
-      doctorId: slotTestDoctor,
-      date: slotTestDate,
-      time: '10:00 AM',
-    });
-
-    // Verify slot is now FULL
-    slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
-    const slot10After3 = slots.find((s) => s.time === '10:00 AM');
-    assert(slot10After3?.patientsAhead === 3, '10:00 AM shows 3 patients ahead');
-    assert(slot10After3?.estimatedWaitMinutes === 32, `Estimated wait calculated as 32m: actual ${slot10After3?.estimatedWaitMinutes}m`);
-    assert(slot10After3?.isFull === true, 'Slot marked as FULL because wait time (32m) exceeds 30m slot duration');
-    assert(slot10After3?.available === false, 'Slot unavailable for booking when full');
-    assert(slot10After3?.statusText === 'Slot Full', 'Slot statusText is "Slot Full"');
-
-    // 8e. Attempting to book a 4th patient for full slot is rejected
-    let slotFullRejected = false;
-    try {
-      await appointmentService.createAppointment({
-        patientId: `pat-slot-4-${Date.now()}`,
-        patientName: 'Slot Patient 4',
-        patientPhone: '9991110004',
-        doctorId: slotTestDoctor,
-        date: slotTestDate,
-        time: '10:00 AM',
-      });
-    } catch (err: any) {
-      slotFullRejected = true;
-      assert(err.message.includes('full'), `Booking rejected with error message: "${err.message}"`);
-    }
-    assert(slotFullRejected, 'Booking into full slot properly rejected by backend validation');
-
-    // Clean up test slot appointments
-    await appointmentService.cancelAppointment(apt1.appointment.id, 'Test cleanup');
-    await appointmentService.cancelAppointment(apt2.appointment.id, 'Test cleanup');
-    await appointmentService.cancelAppointment(apt3.appointment.id, 'Test cleanup');
-
-    // After cancellation, slot reopens
-    slots = await appointmentService.getDoctorSlotAvailability(slotTestDoctor, slotTestDate);
-    const slot10AfterCancel = slots.find((s) => s.time === '10:00 AM');
-    assert(slot10AfterCancel?.isFull === false && slot10AfterCancel?.available === true, '10:00 AM slot reopens after cancellations');
-
-  } catch (err: any) {
-    console.error('Unhandled test exception:', err);
-    failed++;
-  }
-
-  console.log('\n========================================');
-  console.log(`TEST RESULTS: ${passed} PASSED, ${failed} FAILED`);
-  console.log('========================================\n');
-
-  if (failed > 0) {
-    process.exit(1);
+    await test();
+    results.push({ name, passed: true, durationMs: Date.now() - start });
+    console.log(`PASS ${name}`);
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    results.push({ name, passed: false, durationMs: Date.now() - start, error });
+    console.error(`FAIL ${name}: ${error}`);
   }
 }
 
-runTests();
+async function run() {
+  const { seedLocalDemo, requireLocalDatabase } = await import('../src/demo/localDatabase.js');
+  const { dynamoDbRepo: repo } = await import('../src/repositories/dynamoDbRepo.js');
+  const { authService: auth } = await import('../src/services/authService.js');
+  const { queueService: queue } = await import('../src/services/queueService.js');
+  const { appointmentService: appointments } = await import(
+    '../src/services/appointmentService.js'
+  );
+  const { clinicDate } = await import('../src/lib/time.js');
+  const { app } = await import('../src/server.js');
+  const { trainDurationModel, predictDuration } = await import(
+    '../src/services/predictionService.js'
+  );
+  const { DynamoDBClient, DeleteTableCommand } = await import('@aws-sdk/client-dynamodb');
+  requireLocalDatabase();
+  await seedLocalDemo(false);
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise<void>((resolve) => server.once('listening', resolve));
+  const port = (server.address() as any).port,
+    base = `http://127.0.0.1:${port}/api`;
+  const api = async (endpoint: string, token?: string, method = 'GET', body?: any) => {
+    const response = await fetch(base + endpoint, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+    return { status: response.status, body: await response.json(), headers: response.headers };
+  };
+  const admin = await auth.login('demo.staff@example.invalid', 'DemoClinic123!'),
+    otherAdmin = await auth.login('demo.staff2@example.invalid', 'DemoClinic123!'),
+    patient = await auth.login('demo.patient@example.invalid', 'DemoPatient123!');
+  const day = clinicDate(),
+    future = clinicDate(new Date(Date.now() + 86400000));
+  const join = (id: string, doctorId = 'doc-1', priority: 'normal' | 'emergency' = 'normal') =>
+    queue.joinQueue({
+      doctorId,
+      patientId: id,
+      patientName: 'Test patient',
+      patientPhone: '9900012345',
+      isWalkIn: true,
+      priority,
+    });
+  let ownToken: any, secondToken: any, booked: any;
+  try {
+    await check('Test database uses a loopback endpoint and a unique disposable table', () => {
+      assert.match(process.env.DYNAMODB_TABLE_NAME!, /^QureFlowTest-/);
+      requireLocalDatabase();
+    });
+    await check('Public doctor and clinic directories are served from DynamoDB', async () => {
+      assert.equal((await api('/doctors')).body.length, 10);
+      assert.equal((await api('/clinics')).body.length, 3);
+    });
+    await check('Health responses omit infrastructure names and set no-store', async () => {
+      const r = await api('/health');
+      assert.equal(r.status, 200);
+      assert.equal(r.body.dynamoDbTable, undefined);
+      assert.equal(r.headers.get('cache-control'), 'no-store');
+      assert.ok(r.headers.get('x-request-id'));
+      assert.equal(r.headers.get('x-powered-by'), null);
+    });
+    await check('Unknown API endpoints return JSON 404 rather than the SPA', async () =>
+      assert.equal((await api('/does-not-exist')).status, 404),
+    );
+    for (const endpoint of ['/appointments', '/queues/all', '/patients', '/analytics'])
+      await check(`Unauthenticated GET ${endpoint} is rejected`, async () =>
+        assert.equal((await api(endpoint)).status, 401),
+      );
+    await check('Unauthenticated booking and queue joins are rejected', async () => {
+      assert.equal((await api('/appointments', undefined, 'POST', {})).status, 401);
+      assert.equal((await api('/queues/join', undefined, 'POST', {})).status, 401);
+    });
+    await check('A password cannot be omitted at login', async () =>
+      assert.equal(
+        (await api('/auth/login', undefined, 'POST', { identifier: 'demo.staff@example.invalid' }))
+          .status,
+        400,
+      ),
+    );
+    await check('Wrong passwords and demo aliases cannot bypass authentication', async () => {
+      await assert.rejects(auth.login('demo.staff@example.invalid', 'wrong'));
+      await assert.rejects(auth.login('admin', 'anything'));
+    });
+    await check('Identifier lookup never matches blank phone fields', async () =>
+      assert.equal(await repo.findUserByIdentifier('not-an-existing-user'), null),
+    );
+    await check('Forged and expired JWTs are rejected', async () => {
+      const jwt = (await import('jsonwebtoken')).default;
+      assert.equal((await api('/auth/me', 'not-a-token')).status, 401);
+      const forged = jwt.sign({ sub: 'admin-1' }, 'wrong-secret', {
+        issuer: 'qureflow',
+        audience: 'qureflow-api',
+      });
+      assert.equal((await api('/auth/me', forged)).status, 401);
+      const expired = jwt.sign({ sub: 'admin-1' }, process.env.JWT_SECRET!, {
+        issuer: 'qureflow',
+        audience: 'qureflow-api',
+        expiresIn: -1,
+      });
+      assert.equal((await api('/auth/me', expired)).status, 401);
+    });
+    await check(
+      'Authentication responses omit password hashes and private provider fields',
+      async () => {
+        const r = await api('/auth/me', admin.token);
+        assert.equal(r.body.passwordHash, undefined);
+        assert.equal(r.body.cognitoSub, undefined);
+        assert.equal(r.body.pk, undefined);
+      },
+    );
+    await check('Weak passwords and impossible birth dates are rejected', async () => {
+      assert.equal(
+        (
+          await api('/auth/register', undefined, 'POST', {
+            name: 'Example',
+            phone: '9900055555',
+            email: 'test@example.invalid',
+            password: 'weak',
+          })
+        ).status,
+        400,
+      );
+      assert.equal(
+        (await api('/patients/patient-1', patient.token, 'PATCH', { dob: '2026-02-30' })).status,
+        400,
+      );
+    });
+    await check('Passwords require a symbol and fit the bcrypt UTF-8 byte limit', async () => {
+      const { passwordSchema } = await import('../src/lib/validation.js');
+      assert.equal(passwordSchema.safeParse('StrongPassword123').success, false);
+      assert.equal(passwordSchema.safeParse('Aa1!' + 'é'.repeat(36)).success, false);
+      assert.equal(passwordSchema.safeParse('StrongPassword123!').success, true);
+    });
+    await check(
+      'Registration forces the patient role and rejects injected staff fields',
+      async () =>
+        assert.equal(
+          (
+            await api('/auth/register', undefined, 'POST', {
+              name: 'Example',
+              phone: '9900055555',
+              email: 'test@example.invalid',
+              password: 'StrongPassword123!',
+              role: 'admin',
+            })
+          ).status,
+          400,
+        ),
+    );
+    await check('Concurrent registration claims allow only one account per phone', async () => {
+      const attempts = await Promise.allSettled(
+        [1, 2].map((i) =>
+          auth.registerPatient({
+            name: 'Parallel patient',
+            phone: '9900055555',
+            email: `parallel${i}@example.invalid`,
+            password: 'StrongPassword123!',
+          }),
+        ),
+      );
+      assert.equal(attempts.filter((r) => r.status === 'fulfilled').length, 1);
+    });
+    await check('Profile mass assignment cannot change role, ID, or password hash', async () => {
+      const r = await api('/patients/patient-1', patient.token, 'PATCH', {
+        role: 'admin',
+        id: 'admin-1',
+        passwordHash: 'bad',
+      });
+      assert.equal(r.status, 400);
+      assert.equal((await repo.getUserById('patient-1'))!.role, 'patient');
+    });
+    await check('Patients cannot read another patient profile or appointments', async () => {
+      assert.equal((await api('/patients/demo-patient-1', patient.token)).status, 403);
+      assert.equal(
+        (await api('/appointments?patientId=demo-patient-1', patient.token)).status,
+        403,
+      );
+    });
+    await check('Patients cannot assign priority, change settings, or create doctors', async () => {
+      assert.equal((await api('/queues/join', patient.token, 'POST', {})).status, 403);
+      assert.equal((await api('/settings', patient.token, 'PUT', {})).status, 403);
+      assert.equal((await api('/doctors', patient.token, 'POST', {})).status, 403);
+    });
+    await check('Staff cannot manage another clinic or queue', async () => {
+      assert.equal((await api('/queues/doctor/doc-1', otherAdmin.token)).status, 403);
+      assert.equal(
+        (await api('/queues/pause', otherAdmin.token, 'POST', { doctorId: 'doc-1', paused: true }))
+          .status,
+        403,
+      );
+      assert.equal(
+        (await api('/clinics/clinic-1', otherAdmin.token, 'PATCH', { name: 'Taken over' })).status,
+        403,
+      );
+    });
+    await check('Patient lists never return password hashes', async () => {
+      const r = await api('/patients', admin.token);
+      assert.equal(r.status, 200);
+      assert.ok(r.body.every((u: any) => u.passwordHash === undefined && u.pk === undefined));
+    });
+    await check('Queue settings enforce types and preserve omitted settings', async () => {
+      assert.equal(
+        (await api('/settings', admin.token, 'PUT', { allowWalkIns: 'false' })).status,
+        400,
+      );
+      assert.equal(
+        (await api('/settings', admin.token, 'PUT', { averageConsultationMinutes: 0 })).status,
+        400,
+      );
+      const r = await api('/settings', admin.token, 'PUT', { averageConsultationMinutes: 12 });
+      assert.equal(r.status, 200);
+      assert.equal(r.body.allowWalkIns, true);
+      assert.equal(r.body.averageConsultationMinutes, 12);
+    });
+    await check('A valid patient profile update persists', async () => {
+      const r = await api('/patients/patient-1', patient.token, 'PATCH', {
+        name: 'Updated Demo Patient',
+      });
+      assert.equal(r.status, 200);
+      assert.equal((await repo.getUserById('patient-1'))!.name, 'Updated Demo Patient');
+    });
+    await check('Patient contact updates cannot take over a staff identity', async () =>
+      assert.equal(
+        (
+          await api('/patients/patient-1', patient.token, 'PATCH', {
+            email: 'demo.staff@example.invalid',
+          })
+        ).status,
+        409,
+      ),
+    );
+    await check('Fixed recovery codes cannot reset a local account', async () => {
+      assert.equal(
+        (
+          await api('/auth/confirm-forgot-password', undefined, 'POST', {
+            identifier: 'demo.patient@example.invalid',
+            code: '123456',
+            newPassword: 'MaliciousPassword123!',
+          })
+        ).status,
+        400,
+      );
+      await auth.login('demo.patient@example.invalid', 'DemoPatient123!');
+    });
+    await check('Password recovery does not reveal whether an account exists', async () => {
+      const known = await api('/auth/forgot-password', undefined, 'POST', {
+          identifier: 'demo.patient@example.invalid',
+        }),
+        unknown = await api('/auth/forgot-password', undefined, 'POST', {
+          identifier: 'unknown@example.invalid',
+        });
+      assert.deepEqual(known.body, unknown.body);
+    });
+    await check(
+      'Atomic counter allocations produce distinct sequences under concurrency',
+      async () => {
+        const values = await Promise.all(
+          Array.from({ length: 12 }, () => repo.getNextTokenSequence(`${day}#counter-test`)),
+        );
+        assert.equal(new Set(values.map((v) => v.seq)).size, 12);
+      },
+    );
+    await check('Concurrent joins produce one active patient token', async () => {
+      const attempts = await Promise.allSettled([join('patient-1'), join('patient-1')]);
+      assert.equal(attempts.filter((r) => r.status === 'fulfilled').length, 1);
+      ownToken = (attempts.find((r) => r.status === 'fulfilled') as any).value;
+    });
+    await check('Token metadata stores date, source, version, and correlation ID', () => {
+      assert.equal(ownToken.queueDate, day);
+      assert.equal(ownToken.metadata.source, 'reception');
+      assert.ok(ownToken.metadata.requestId);
+      assert.equal(ownToken.version, 1);
+    });
+    await check('Queue joins reject nonexistent patients without allocating a visit', async () =>
+      assert.rejects(join('nonexistent-patient')),
+    );
+    await check('Doctor permissions require assignment and restrict patient records', async () => {
+      await repo.saveUser({
+        id: 'test-doctor',
+        name: 'Test Doctor',
+        email: 'doctor@example.invalid',
+        phone: '',
+        role: 'doctor',
+        clinicId: 'clinic-1',
+        doctorId: 'doc-1',
+        createdAt: new Date().toISOString(),
+        passwordHash: (await import('bcryptjs')).default.hashSync('DoctorPassword123!', 4),
+      });
+      const doctor = await auth.login('doctor@example.invalid', 'DoctorPassword123!');
+      assert.equal((await api('/queues/doctor/doc-2', doctor.token)).status, 403);
+      assert.equal((await api('/patients/demo-patient-3', doctor.token)).status, 403);
+      assert.equal((await api('/patients/patient-1', doctor.token)).status, 200);
+      assert.ok(
+        (await api('/patients', doctor.token)).body.every((u: any) => u.id === 'patient-1'),
+      );
+      const profile = (await repo.getUserById('test-doctor'))!;
+      await repo.saveUser({ ...profile, doctorId: undefined });
+      assert.equal((await api('/appointments', doctor.token)).status, 403);
+      assert.equal((await api('/patients', doctor.token)).status, 403);
+    });
+    await check('An active token prevents a duplicate visit with another doctor', async () =>
+      assert.rejects(join('patient-1', 'doc-2')),
+    );
+    secondToken = await join('demo-patient-1');
+    await check(
+      'Patients see their own token while other patient details are redacted',
+      async () => {
+        const r = await api('/queues/doctor/doc-1', patient.token);
+        const other = r.body.tokens.find((t: any) => t.tokenNumber === secondToken.tokenNumber);
+        assert.equal(other.patientName, '');
+        assert.equal(other.patientPhone, '');
+        assert.equal(other.patientId, undefined);
+        assert.notEqual(other.id, secondToken.id);
+      },
+    );
+    await check('Patients cannot cancel another patient token', async () =>
+      assert.equal(
+        (await api(`/tokens/${secondToken.id}/cancel`, patient.token, 'POST', {})).status,
+        403,
+      ),
+    );
+    await check('Paused queues reject call-next without changing any token', async () => {
+      await repo.setDoctorPause('doc-1', true);
+      assert.equal(
+        (await api('/queues/call-next', admin.token, 'POST', { doctorId: 'doc-1' })).status,
+        409,
+      );
+      assert.equal((await repo.findTokenById(ownToken.id))!.token.status, 'waiting');
+      await repo.setDoctorPause('doc-1', false);
+    });
+    const emergency = await join('demo-patient-2', 'doc-1', 'emergency');
+    await check('Priority tokens are called before earlier normal walk-ins', async () => {
+      const visible = await api('/queues/doctor/doc-1', patient.token);
+      assert.equal(
+        visible.body.tokens.filter((t: any) => t.status === 'waiting')[0].tokenNumber,
+        emergency.tokenNumber,
+      );
+      const called = await queue.callNextPatient('doc-1');
+      assert.equal(called!.id, emergency.id);
+    });
+    await check('Calling next cannot silently complete the current consultation', async () => {
+      await assert.rejects(queue.callNextPatient('doc-1'));
+      assert.equal((await repo.findTokenById(emergency.id))!.token.status, 'current');
+    });
+    await check('Patients cannot self-complete a consultation', async () =>
+      assert.equal(
+        (await api(`/tokens/${ownToken.id}/serve`, patient.token, 'POST', {})).status,
+        403,
+      ),
+    );
+    await check('Serving a waiting token or cancelling a current token is rejected', async () => {
+      await assert.rejects(queue.markPatientServed(ownToken.id));
+      await assert.rejects(queue.cancelToken(emergency.id));
+    });
+    await check('Completion records served time and rejects a repeated transition', async () => {
+      await queue.markPatientServed(emergency.id);
+      const record = (await repo.findTokenById(emergency.id))!.token;
+      assert.equal(record.status, 'completed');
+      assert.ok(record.calledAt && record.servedAt);
+      await assert.rejects(queue.markPatientServed(emergency.id));
+    });
+    await check('Concurrent staff calls create at most one current consultation', async () => {
+      const attempts = await Promise.allSettled([
+        queue.callNextPatient('doc-1'),
+        queue.callNextPatient('doc-1'),
+      ]);
+      assert.equal(attempts.filter((r) => r.status === 'fulfilled' && r.value).length, 1);
+      assert.equal(
+        (await queue.getDoctorQueue('doc-1')).tokens.filter((t) => t.status === 'current').length,
+        1,
+      );
+    });
+    await check('Current patients have zero people ahead and zero estimated wait', async () => {
+      const status = await queue.getPatientActiveStatus('patient-1');
+      assert.equal(status!.token.status, 'current');
+      assert.equal(status!.patientsAhead, 0);
+      assert.equal(status!.estimatedWaitMinutes, 0);
+      assert.equal(status!.prediction!.isEstimate, true);
+    });
+    await queue.markPatientServed(ownToken.id);
+    await queue.cancelToken(secondToken.id);
+    await check('Terminal tokens release the active visit claim', async () =>
+      assert.equal(await repo.getActivePatientToken('patient-1'), null),
+    );
+    await check('Invalid, past, and out-of-horizon booking dates are rejected', async () => {
+      for (const date of ['2026-02-30', '2000-01-01', '2099-01-01'])
+        assert.equal(
+          (
+            await api('/appointments', patient.token, 'POST', {
+              doctorId: 'doc-1',
+              date,
+              time: '09:00 AM',
+            })
+          ).status,
+          400,
+        );
+    });
+    await check('Booking rejects times outside the doctor schedule', async () =>
+      assert.equal(
+        (
+          await api('/appointments', patient.token, 'POST', {
+            doctorId: 'doc-1',
+            date: future,
+            time: '11:59 PM',
+          })
+        ).status,
+        409,
+      ),
+    );
+    await check(
+      'Slots accommodate long consultations and reject undersized final windows',
+      async () => {
+        const doc = (await repo.getDoctorById('doc-10'))!;
+        await repo.saveDoctor({
+          ...doc,
+          startTime: '09:00 AM',
+          endTime: '10:15 AM',
+          slotDurationMinutes: 30,
+        });
+        const slots = await appointments.getDoctorSlotAvailability(doc.id, future);
+        assert.equal(slots[0].slotDurationMinutes, 60);
+        assert.equal(slots[0].available, true);
+        assert.equal(slots[1].available, false);
+        await repo.saveDoctor(doc);
+      },
+    );
+    await check('Valid bookings atomically store the appointment and linked token', async () => {
+      const r = await api('/appointments', patient.token, 'POST', {
+        patientId: 'patient-1',
+        patientName: 'Forged name',
+        patientPhone: '9999999999',
+        doctorId: 'doc-1',
+        date: future,
+        time: '09:00 AM',
+        notes: 'Demo visit',
+      });
+      assert.equal(r.status, 201);
+      booked = r.body;
+      assert.equal(booked.appointment.patientName, 'Updated Demo Patient');
+      assert.equal(booked.token.appointmentId, booked.appointment.id);
+      assert.equal(booked.appointment.tokenId, booked.token.id);
+      assert.equal(
+        (await repo.getAppointmentById(booked.appointment.id))!.tokenNumber,
+        booked.token.tokenNumber,
+      );
+    });
+    await check('Future bookings do not appear as active visits today', async () =>
+      assert.equal(await queue.getPatientActiveStatus('patient-1'), null),
+    );
+    await check('Booking on behalf of another patient is rejected', async () =>
+      assert.equal(
+        (
+          await api('/appointments', patient.token, 'POST', {
+            patientId: 'demo-patient-4',
+            doctorId: 'doc-1',
+            date: future,
+            time: '09:30 AM',
+          })
+        ).status,
+        403,
+      ),
+    );
+    await check('Failed duplicate booking leaves no orphan appointment', async () => {
+      const before = (await repo.getAppointments({ patientId: 'patient-1' })).length;
+      await assert.rejects(
+        appointments.createAppointment({
+          patientId: 'patient-1',
+          patientName: 'Test',
+          patientPhone: '9900000002',
+          doctorId: 'doc-1',
+          date: future,
+          time: '09:30 AM',
+        }),
+      );
+      assert.equal((await repo.getAppointments({ patientId: 'patient-1' })).length, before);
+    });
+    await check('Concurrent bookings cannot exceed the slot capacity', async () => {
+      const attempts = await Promise.allSettled(
+        [3, 4, 5, 6, 7, 8].map((i) =>
+          appointments.createAppointment({
+            patientId: `demo-patient-${i}`,
+            patientName: 'Capacity test',
+            patientPhone: '9900012345',
+            doctorId: 'doc-2',
+            date: future,
+            time: '09:30 AM',
+          }),
+        ),
+      );
+      const saved = await repo.getAppointments({ doctorId: 'doc-2', date: future });
+      assert.ok(saved.length > 0 && saved.length <= 2);
+      assert.equal(saved.length, attempts.filter((r) => r.status === 'fulfilled').length);
+      for (const apt of saved) {
+        const tokens = await repo.getAllTokensForQueue(repo.getQueueId('doc-2', future));
+        assert.ok(tokens.some((t) => t.appointmentId === apt.id));
+      }
+    });
+    await check(
+      'Cancellation atomically updates appointment, token, and slot availability',
+      async () => {
+        const r = await api(
+          `/appointments/${booked.appointment.id}/cancel`,
+          patient.token,
+          'POST',
+          { reason: 'Test cancellation' },
+        );
+        assert.equal(r.status, 200);
+        const cancelled = (await repo.getAppointmentById(booked.appointment.id))!;
+        assert.equal(cancelled.status, 'cancelled');
+        assert.equal(cancelled.notes, 'Demo visit');
+        assert.equal(cancelled.metadata?.cancellationReason, 'Test cancellation');
+        assert.equal((await repo.findTokenById(booked.token.id))!.token.status, 'cancelled');
+        assert.equal(
+          (await appointments.getDoctorSlotAvailability('doc-1', future)).find(
+            (s) => s.time === '09:00 AM',
+          )!.available,
+          true,
+        );
+      },
+    );
+    await check(
+      'Audit events include actor, transitions, and request IDs without credentials or contact details',
+      async () => {
+        const events = await repo.getAuditEvents('clinic-1');
+        assert.ok(events.some((e) => e.action === 'status_changed'));
+        assert.ok(events.every((e) => e.requestId && e.actorId));
+        const raw = JSON.stringify(events);
+        assert.ok(!raw.includes('passwordHash') && !raw.includes('patientPhone'));
+      },
+    );
+    await check('Analytics is staff-only and restricted to the assigned clinic', async () => {
+      assert.equal((await api('/analytics', patient.token)).status, 403);
+      const r = await api('/analytics', otherAdmin.token);
+      assert.equal(r.status, 200);
+      assert.equal(r.body.clinicId, 'clinic-2');
+      assert.ok(r.body.doctors.every((d: any) => ['doc-5', 'doc-6', 'doc-7'].includes(d.id)));
+    });
+    await check('Learning falls back when there are too few completed consultations', () => {
+      assert.equal(trainDurationModel([], 10).method, 'configured');
+    });
+    const samples = Array.from({ length: 80 }, (_, i) => {
+      const isWalkIn = i % 2 === 0,
+        priority = i % 7 === 0 ? 'emergency' : 'normal',
+        calledAt = new Date(Date.now() - (80 - i) * 3600000).toISOString(),
+        minutes = 6 + (isWalkIn ? 3 : 0) + (priority === 'emergency' ? 4 : 0);
+      return {
+        ...ownToken,
+        id: `model-test-${i}`,
+        status: 'completed',
+        isWalkIn,
+        priority,
+        calledAt,
+        servedAt: new Date(Date.parse(calledAt) + minutes * 60000).toISOString(),
+      };
+    });
+    await check('Learned models validate on a chronological holdout before activation', () => {
+      const model = trainDurationModel(samples, 15);
+      assert.equal(model.method, 'ridge_regression');
+      assert.equal(model.trainingCount, 64);
+      assert.equal(model.validationCount, 16);
+      assert.ok(model.modelMae! < model.baselineMae!);
+      assert.ok(predictDuration(model, samples[0]) >= 2);
+    });
+    await check('Invalid consultation durations are excluded from learning', () => {
+      const invalid = samples.map((t) => ({ ...t, servedAt: t.calledAt }));
+      assert.equal(trainDurationModel(invalid, 10).sampleCount, 0);
+    });
+    await check('Models that underperform the configured baseline are rejected', () => {
+      const flat = samples.map((t) => ({
+        ...t,
+        servedAt: new Date(Date.parse(t.calledAt) + 10 * 60000).toISOString(),
+      }));
+      assert.equal(trainDurationModel(flat, 10).method, 'configured');
+    });
+    await check('The Lambda adapter executes actual Express routes', async () => {
+      const { handler } = await import('../src/lambda.js');
+      const output: any = await handler(
+        {
+          version: '2.0',
+          routeKey: 'GET /api/appointments',
+          rawPath: '/api/appointments',
+          rawQueryString: '',
+          headers: { host: 'localhost' },
+          requestContext: {
+            http: {
+              method: 'GET',
+              path: '/api/appointments',
+              sourceIp: '127.0.0.1',
+              protocol: 'HTTP/1.1',
+            },
+            requestId: randomUUID(),
+          },
+          isBase64Encoded: false,
+        },
+        {} as any,
+      );
+      assert.equal(output.statusCode, 401);
+    });
+    await check('Hostile origins do not receive CORS permission', async () => {
+      const response = await fetch(base + '/health', {
+        headers: { Origin: 'https://untrusted.example' },
+      });
+      assert.equal(response.headers.get('access-control-allow-origin'), null);
+    });
+    await check(
+      'Indexed catalog, clinic visit and appointment reads match existing primary records',
+      async () => {
+        const { docClient, DYNAMODB_TABLE_NAME } = await import('../src/config/aws.js');
+        const { PutCommand } = await import('@aws-sdk/lib-dynamodb');
+        const before = await repo.getAppointments({ clinicId: 'clinic-1' });
+        const beforeVisits = await repo.getRecentTokens('clinic-1', 30);
+        await docClient.send(
+          new PutCommand({ TableName: DYNAMODB_TABLE_NAME, Item: { pk: 'READ_MODELS', sk: 'V1' } }),
+        );
+        assert.equal((await repo.getDoctors()).length, 10);
+        assert.equal((await repo.getClinics()).length, 3);
+        assert.deepEqual(
+          (await repo.getAppointments({ clinicId: 'clinic-1' }))
+            .map((a) => [a.id, a.status])
+            .sort(),
+          before.map((a) => [a.id, a.status]).sort(),
+        );
+        assert.deepEqual(
+          (await repo.getRecentTokens('clinic-1', 30)).map((t) => [t.id, t.status]).sort(),
+          beforeVisits.map((t) => [t.id, t.status]).sort(),
+        );
+        const directory = await api('/patients', admin.token);
+        assert.equal(directory.status, 200);
+        assert.ok(directory.body.length > 0);
+        assert.ok(directory.body.every((p: any) => !p.passwordHash && p.role === 'patient'));
+        const scoped = await api('/appointments', otherAdmin.token);
+        assert.ok(scoped.body.every((a: any) => a.clinicId === 'clinic-2'));
+      },
+    );
+    await check(
+      'Token transitions atomically update clinic and appointment read models',
+      async () => {
+        const p = await auth.registerPatient({
+          name: 'Indexed Read Patient',
+          phone: '9900099901',
+          email: 'indexed.read@example.invalid',
+          password: 'IndexedPatient123!',
+        });
+        const token = await join(p.user.id, 'doc-9');
+        assert.ok((await repo.getPatients(undefined, 'clinic-3')).some((u) => u.id === p.user.id));
+        await queue.cancelToken(token.id);
+        const visit = (await repo.getRecentTokens('clinic-3', 30)).find((t) => t.id === token.id);
+        assert.equal(visit?.status, 'cancelled');
+        const booking = await api('/appointments', p.token, 'POST', {
+          doctorId: 'doc-9',
+          date: future,
+          time: '10:00 AM',
+        });
+        assert.equal(booking.status, 201);
+        assert.ok(
+          (await repo.getAppointments({ patientId: p.user.id })).some(
+            (a) => a.id === booking.body.appointment.id && a.status === 'booked',
+          ),
+        );
+        await queue.cancelToken(booking.body.token.id);
+        for (const filter of [
+          { patientId: p.user.id },
+          { doctorId: 'doc-9' },
+          { clinicId: 'clinic-3' },
+        ])
+          assert.equal(
+            (await repo.getAppointments(filter)).find((a) => a.id === booking.body.appointment.id)
+              ?.status,
+            'cancelled',
+          );
+      },
+    );
+    await check('Session revocation takes effect on the next request', async () => {
+      const user = (await repo.getUserById('patient-1'))!;
+      await repo.saveUser({ ...user, sessionVersion: (user.sessionVersion || 0) + 1 });
+      assert.equal((await api('/auth/me', patient.token)).status, 401);
+    });
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((err) => (err ? reject(err) : resolve())),
+    );
+    const client = new DynamoDBClient({
+      region: 'eu-north-1',
+      endpoint: process.env.DYNAMODB_ENDPOINT,
+      credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
+    });
+    requireLocalDatabase();
+    await client.send(new DeleteTableCommand({ TableName: process.env.DYNAMODB_TABLE_NAME }));
+    client.destroy();
+    const dir = path.resolve(
+      process.cwd(),
+      process.cwd().endsWith('backend') ? '../docs/verification' : 'docs/verification',
+    );
+    await mkdir(dir, { recursive: true });
+    const summary = {
+      executedAt: new Date().toISOString(),
+      database: 'Amazon DynamoDB Local',
+      isolatedTableDeleted: true,
+      passed: results.filter((r) => r.passed).length,
+      failed: results.filter((r) => !r.passed).length,
+      results,
+    };
+    await writeFile(path.join(dir, 'test-results.json'), JSON.stringify(summary, null, 2));
+    console.log(`\n${summary.passed} passed, ${summary.failed} failed. Isolated table deleted.`);
+    process.exitCode = summary.failed ? 1 : 0;
+  }
+}
+run().catch((err) => {
+  console.error(err.name, err.message);
+  process.exitCode = 1;
+});

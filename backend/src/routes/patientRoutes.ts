@@ -1,75 +1,61 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { queueService } from '../services/queueService.js';
-import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
-import { authenticateToken, AuthenticatedRequest, requireRoles } from '../middlewares/authMiddleware.js';
-
+import { dynamoDbRepo, publicUser } from '../repositories/dynamoDbRepo.js';
+import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
+import { accessPatient, accessiblePatients } from '../lib/access.js';
+import { parse, profileSchema } from '../lib/validation.js';
+import { route } from '../lib/http.js';
+import { AppError } from '../lib/errors.js';
 const router = Router();
-
-// Retrieve patient active token status, queue position, and estimated wait
-router.get('/me/status', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    const identifier = req.user.sub || req.user.phone;
-    const status = await queueService.getPatientActiveStatus(identifier);
-    res.json(status);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Admin/Doctor patient list
-router.get('/', authenticateToken, requireRoles('admin', 'health_worker', 'doctor'), async (req, res) => {
-  try {
-    const search = req.query.query as string | undefined;
-    const patients = await dynamoDbRepo.getPatients(search);
-    res.json(patients);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.get('/:id', authenticateToken, async (req, res) => {
-  try {
-    const patientId = req.params.id as string;
-    const patient = await dynamoDbRepo.getUserById(patientId);
-    if (!patient) {
-      res.status(404).json({ error: 'Patient not found' });
-      return;
-    }
-    const sanitized = { ...patient };
-    delete sanitized.passwordHash;
-    res.json(sanitized);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.patch('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const patientId = req.params.id as string;
-    const existing = await dynamoDbRepo.getUserById(patientId);
-    if (!existing) {
-      res.status(404).json({ error: 'Patient not found' });
-      return;
-    }
-
-    // Only allow updating own profile unless admin
-    if (req.user?.role !== 'admin' && req.user?.sub !== patientId) {
-      res.status(403).json({ error: 'Forbidden: Cannot update other patients' });
-      return;
-    }
-
-    const updated = await dynamoDbRepo.saveUser({ ...existing, ...req.body });
-    const sanitized = { ...updated };
-    delete sanitized.passwordHash;
-    res.json(sanitized);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
+router.use(authenticateToken);
+router.get(
+  '/me/status',
+  requireRoles('patient'),
+  route(async (req, res) => res.json(await queueService.getPatientActiveStatus(req.user.sub))),
+);
+router.get(
+  '/',
+  requireRoles('admin', 'health_worker', 'doctor'),
+  route(async (req, res) => {
+    const patients = await accessiblePatients(
+      req,
+      typeof req.query.query === 'string' ? req.query.query : undefined,
+    );
+    res.json(patients.map(publicUser));
+  }),
+);
+router.get(
+  '/:id',
+  route(async (req, res) => {
+    await accessPatient(req, req.params.id);
+    const user = await dynamoDbRepo.getUserById(req.params.id);
+    if (!user) throw new AppError(404, 'Patient not found');
+    res.json(publicUser(user));
+  }),
+);
+router.patch(
+  '/:id',
+  route(async (req, res) => {
+    await accessPatient(req, req.params.id);
+    const updates = parse(profileSchema, req.body),
+      user = await dynamoDbRepo.getUserById(req.params.id);
+    if (!user || user.role !== 'patient') throw new AppError(404, 'Patient not found');
+    if (
+      user.cognitoSub &&
+      ((updates.email !== undefined && updates.email !== user.email) ||
+        (updates.phone !== undefined && updates.phone !== user.phone))
+    )
+      throw new AppError(
+        409,
+        'Contact changes require Cognito verification. Contact the clinic administrator.',
+      );
+    for (const contact of [updates.phone, updates.email])
+      if (contact) {
+        const existing = await dynamoDbRepo.findUserByIdentifier(contact);
+        if (existing && existing.id !== user.id)
+          throw new AppError(409, 'These contact details belong to another account.');
+      }
+    res.json(publicUser(await dynamoDbRepo.saveUser({ ...user, ...updates })));
+  }),
+);
 export default router;

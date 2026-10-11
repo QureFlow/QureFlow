@@ -19,7 +19,9 @@ export const PatientProfile: React.FC = () => {
   const [phone, setPhone] = useState(user?.phone || '');
   const [email, setEmail] = useState(user?.email || '');
   const [dob, setDob] = useState(user?.dob || '');
-  const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>((user?.gender as any) || 'Male');
+  const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>(
+    (user?.gender as any) || 'Male',
+  );
 
   useEffect(() => {
     if (user) {
@@ -31,8 +33,9 @@ export const PatientProfile: React.FC = () => {
     }
   }, [user]);
 
-  const [smsNotification, setSmsNotification] = useState(true);
-  const [whatsappNotification, setWhatsappNotification] = useState(true);
+  const [smsNotification] = useState(false);
+  const [whatsappNotification] = useState(false);
+  const [error, setError] = useState('');
 
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -41,16 +44,19 @@ export const PatientProfile: React.FC = () => {
     e.preventDefault();
     if (!user) return;
     setIsSaving(true);
+    setError('');
     try {
       await patientService.updatePatient(user.id, {
         name,
         phone,
         email,
-        dob,
+        dob: dob || undefined,
         gender,
       });
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Profile update failed.');
     } finally {
       setIsSaving(false);
     }
@@ -68,7 +74,7 @@ export const PatientProfile: React.FC = () => {
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <PageHeader
           title="Patient Profile & Settings"
-          subtitle="Manage your contact details, demographic information, and SMS queue alerts."
+          subtitle="Manage your contact details and profile information."
         />
 
         {isSaved && (
@@ -76,6 +82,11 @@ export const PatientProfile: React.FC = () => {
             <Check className="w-4 h-4 text-emerald-600" />
             Profile updated successfully.
           </div>
+        )}
+        {error && (
+          <p role="alert" className="p-3 bg-red-50 text-red-800 rounded text-sm">
+            {error}
+          </p>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -151,13 +162,13 @@ export const PatientProfile: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={smsNotification}
-                    onChange={(e) => setSmsNotification(e.target.checked)}
+                    disabled
                     className="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                   />
                   <div>
                     <p className="font-semibold text-slate-800">SMS Token Status</p>
                     <p className="text-[11px] text-slate-500">
-                      Alert me via SMS when 2 patients remain ahead.
+                      Not configured. Track your token in the patient portal.
                     </p>
                   </div>
                 </label>
@@ -166,13 +177,13 @@ export const PatientProfile: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={whatsappNotification}
-                    onChange={(e) => setWhatsappNotification(e.target.checked)}
+                    disabled
                     className="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                   />
                   <div>
                     <p className="font-semibold text-slate-800">WhatsApp Alert</p>
                     <p className="text-[11px] text-slate-500">
-                      Send digital slip with room directions.
+                      WhatsApp delivery is not configured.
                     </p>
                   </div>
                 </label>
@@ -184,9 +195,7 @@ export const PatientProfile: React.FC = () => {
                 <Shield className="w-3.5 h-3.5" />
                 Security & Session
               </h2>
-              <p className="text-xs text-slate-500">
-                You are securely signed in as a verified patient on QueueLess Rural.
-              </p>
+              <p className="text-xs text-slate-500">You are signed in to your QureFlow account.</p>
               <Button
                 variant="outline"
                 size="sm"

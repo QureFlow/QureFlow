@@ -34,15 +34,7 @@ export const AddDoctor: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const weekDays = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
+  const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const toggleDay = (day: string) => {
     if (selectedDays.includes(day)) {
@@ -80,7 +72,7 @@ export const AddDoctor: React.FC = () => {
         endTime,
         slotDurationMinutes: parseInt(slotDurationMinutes, 10) || 10,
         consultationFee: parseInt(consultationFee, 10) || 100,
-        isAvailableToday: selectedDays.includes('Saturday'), // current test day
+        isAvailableToday: false,
         nextAvailableSlot: startTime,
         status,
       });
