@@ -64,7 +64,7 @@ export const AdminPatients: React.FC = () => {
     <div className="min-h-screen qf-shell">
       <Sidebar isOpen={sidebar} onClose={() => setSidebar(false)} />
       <div className="lg:pl-64">
-        <header className="h-20 bg-white/90 border-b border-slate-200 flex items-center gap-4 px-6 lg:px-10">
+        <header className="qf-workspace-bar h-20 bg-white/90 border-b border-slate-200 flex items-center gap-4 px-6 lg:px-10">
           <button aria-label="Open sidebar" onClick={() => setSidebar(true)} className="lg:hidden">
             <Menu />
           </button>

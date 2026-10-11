@@ -22,14 +22,14 @@ export const StatCard: React.FC<StatCardProps> = ({
 }) => {
   return (
     <div
-      className={`rounded-xl p-5 sm:p-6 border transition-all ${
-        highlight ? 'bg-brand-50/50 border-brand-200' : 'bg-white border-slate-200 shadow-subtle'
+      className={`qf-stat-card p-5 sm:p-6 ${
+        highlight ? 'qf-stat-card-highlight' : ''
       }`}
     >
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+        <p className="text-xs font-medium text-slate-600">{label}</p>
         <div
-          className={`p-2 rounded-md ${highlight ? 'bg-brand-100 text-brand-800' : 'bg-slate-100 text-slate-600'}`}
+          className={`p-2.5 rounded-lg ${highlight ? 'bg-brand-100 text-brand-800' : 'bg-brand-50 text-brand-600'}`}
         >
           {icon}
         </div>

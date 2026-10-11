@@ -39,7 +39,7 @@ export const AdminDashboard = () => {
     <div className="qf-shell min-h-screen lg:flex">
       <Sidebar isOpen={sidebar} onClose={() => setSidebar(false)} />
       <div className="flex-1 lg:pl-64 min-w-0">
-        <header className="h-20 px-5 sm:px-8 flex items-center justify-between bg-white/75 border-b border-[#e2e8f0] sticky top-0 z-20 backdrop-blur-md">
+        <header className="qf-workspace-bar h-20 px-5 sm:px-8 flex items-center justify-between bg-white/75 border-b border-[#e2e8f0] sticky top-0 z-20 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <button
               className="lg:hidden"
@@ -66,7 +66,7 @@ export const AdminDashboard = () => {
           </div>
         </header>
         <main className="max-w-[1440px] mx-auto p-5 sm:p-8 space-y-7 qf-enter">
-          <div className="flex flex-wrap justify-between gap-4 items-end">
+          <div className="qf-page-heading flex flex-wrap justify-between gap-4 items-end">
             <div>
               <p className="qf-eyebrow">
                 {new Intl.DateTimeFormat('en-IN', {
@@ -95,7 +95,7 @@ export const AdminDashboard = () => {
               demonstration.
             </p>
           )}
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="qf-metrics grid grid-cols-2 xl:grid-cols-4 gap-4">
             <StatCard
               label="Waiting now"
               value={waiting.length}

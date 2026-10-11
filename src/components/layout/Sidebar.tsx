@@ -42,7 +42,7 @@ export const Sidebar = ({ isOpen = false, onClose }: Props) => {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0f2038] text-white flex flex-col transition-transform lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`qf-sidebar fixed inset-y-0 left-0 z-50 w-64 text-white flex flex-col transition-transform lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="h-20 px-6 flex justify-between items-center">
           <BrandLogo isWhite to="/admin/dashboard" />
@@ -52,7 +52,7 @@ export const Sidebar = ({ isOpen = false, onClose }: Props) => {
             </button>
           )}
         </div>
-        <div className="mx-4 p-4 rounded-2xl bg-[#ffffff0a] border border-[#ffffff12]">
+        <div className="mx-4 p-4 rounded-xl bg-white/5 border border-white/10">
           <div className="flex justify-between items-center">
             <Building2 className="w-4 h-4 text-[#cbd5e1]" />
             {clinic?.metadata?.synthetic === true && (
@@ -87,7 +87,7 @@ export const Sidebar = ({ isOpen = false, onClose }: Props) => {
                 to={to}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-3 py-3 text-xs font-medium transition-colors ${isActive ? 'bg-[#2563eb] text-[#ffffff]' : 'text-[#cbd5e1] hover:bg-[#ffffff08] hover:text-white'}`
+                  `qf-sidebar-link flex items-center gap-3 rounded-lg px-3 py-3 text-xs font-medium transition-colors ${isActive ? 'qf-sidebar-link-active' : 'text-[#c5dce4] hover:bg-white/5 hover:text-white'}`
                 }
               >
                 <Icon className="w-4 h-4" />
@@ -103,7 +103,7 @@ export const Sidebar = ({ isOpen = false, onClose }: Props) => {
         <div className="px-5 py-4">
           <div className="rounded-xl bg-[#ffffff06] px-3 py-2.5 text-[10px] text-[#cbd5e1] flex gap-2 items-center">
             <span
-              className={`w-1.5 h-1.5 rounded-full ${connectionError ? 'bg-amber-400' : 'bg-[#60a5fa]'}`}
+              className={`w-1.5 h-1.5 rounded-full ${connectionError ? 'bg-amber-400' : 'bg-emerald-300'}`}
             />
             {connectionError
               ? 'Connection interrupted'

@@ -65,7 +65,7 @@ export const PatientDashboard: React.FC = () => {
               Hello, {user?.name.split(' ')[0] || 'there'}.
             </h1>
             <p className="text-slate-500 mt-3">
-              A little less waiting. A little more time for you.
+              Your appointments, queue updates and care team, together.
             </p>
           </div>
           <Link
@@ -83,10 +83,10 @@ export const PatientDashboard: React.FC = () => {
           </p>
         )}
         <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
-          <section className="rounded-[28px] bg-brand-950 text-white p-7 sm:p-9 qf-grid-paper relative overflow-hidden">
+          <section className="rounded-2xl bg-brand-950 text-white p-7 sm:p-9 qf-grid-paper relative overflow-hidden">
             <div className="flex justify-between items-center">
               <p className="text-[11px] tracking-[.18em] uppercase text-brand-200 font-semibold">
-                Your queue companion
+                Your live queue
               </p>
               <Ticket className="text-brand-300" />
             </div>

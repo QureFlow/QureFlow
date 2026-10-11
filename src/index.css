@@ -3,91 +3,146 @@
 
 @layer base {
   :root {
-    --brand-navy: #0f2038;
-    --brand-blue: #2563eb;
-    --bg-canvas: #f6f8fb;
+    --brand-navy: #102e3d;
+    --brand-blue: #087b91;
+    --bg-canvas: #f5f8fa;
+    --qf-border: #dce7eb;
+    --qf-gold: #edb541;
   }
-
+  html { scroll-behavior: smooth; scroll-padding-top: 110px; }
   body {
     background-color: var(--bg-canvas);
-    color: #0f172a;
+    color: #183748;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-tap-highlight-color: transparent;
   }
+  h1, h2, h3 { font-family: 'Manrope', 'Inter', system-ui, sans-serif; }
+  button:not(:disabled), a, select { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled), select { cursor: pointer; }
+  button, input, select, textarea { font: inherit; }
+  ::selection { background: #cbe8ed; color: #102e3d; }
+  :focus-visible { outline: 3px solid #168fa5; outline-offset: 3px; }
 }
 
-.qf-shell {
-  background: var(--bg-canvas);
-}
-.qf-panel {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px #0f172a06;
-}
-.qf-eyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #64748b;
-}
-.qf-title {
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 1.12;
-}
-.qf-divider {
-  border-color: #e2e8f0;
-}
-.qf-grid-paper {
-  background-image:
-    linear-gradient(#ffffff05 1px, transparent 1px),
-    linear-gradient(90deg, #ffffff05 1px, transparent 1px);
-  background-size: 64px 64px;
-}
-.qf-enter {
-  animation: qf-appear 0.45s ease-out both;
-}
-@keyframes qf-appear {
-  from {
-    transform: translateY(8px);
+@layer components {
+  .qf-shell { background: var(--bg-canvas); }
+  .qf-panel {
+    background: #fff;
+    border: 1px solid var(--qf-border);
+    border-radius: 14px;
+    box-shadow: 0 3px 14px #163b4a05;
   }
-  to {
-    transform: translateY(0);
+  .qf-title { font-weight: 700; letter-spacing: -.035em; line-height: 1.16; }
+  .qf-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: #087b91; }
+  .qf-divider { border-color: var(--qf-border); }
+  .qf-grid-paper { background-image: linear-gradient(120deg, #ffffff05, transparent 65%); }
+  .qf-container { width: 100%; max-width: 1280px; margin-inline: auto; padding-inline: 32px; }
+  .qf-home { background: #fff; }
+  .qf-utility-bar { background: #133d4e; color: #e0edf1; font-size: 11px; }
+  .qf-public-header { background: #fffffff5; border-bottom: 1px solid var(--qf-border); backdrop-filter: blur(12px); }
+  .qf-public-header nav a { transition: color .18s; }
+  .qf-public-header nav a:hover { color: #087b91; }
+  .qf-home-hero { background: linear-gradient(112deg, #f0f8f9 0%, #f7fafb 55%, #edf5f6 100%); border-bottom: 1px solid #e4eef0; }
+  .qf-accent-label { display: flex; align-items: center; gap: 12px; }
+  .qf-accent-label::before { content: ''; width: 30px; height: 3px; background: var(--qf-gold); }
+  .qf-action {
+    display: inline-flex; justify-content: center; align-items: center; gap: 10px;
+    min-height: 48px; padding: 12px 21px; border: 1px solid transparent; border-radius: 8px;
+    font-size: 13px; font-weight: 600; line-height: 1.5; transition: background .18s, border-color .18s, box-shadow .18s;
+  }
+  .qf-action-primary { color: #fff; background: #087b91; box-shadow: 0 3px 7px #087b9115; }
+  .qf-action-primary:hover { background: #096378; box-shadow: 0 5px 12px #087b9126; }
+  .qf-action-secondary { color: #133d4e; background: #fff; border-color: #cbdde3; }
+  .qf-action-secondary:hover { background: #f2f8fa; border-color: #7ac5d2; }
+  .qf-action-gold { background: #edb541; color: #102e3d; }
+  .qf-action-gold:hover { background: #f4c660; }
+  .qf-visit-card { border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid #d8e6e9; box-shadow: 0 16px 40px #183f4e0d; }
+  .qf-visit-card-heading { background: #133d4e; color: #fff; padding: 28px 32px; border-top: 4px solid var(--qf-gold); }
+  .qf-service-link { display: flex; align-items: center; gap: 16px; padding-block: 23px; }
+  .qf-service-link + .qf-service-link { border-top: 1px solid #e8eef0; }
+  .qf-service-link:hover strong { color: #087b91; }
+  .qf-visit-card-foot { display: flex; align-items: center; gap: 8px; background: #f7fafb; border-top: 1px solid #e8eef0; padding: 16px 32px; font-size: 11px; color: #536b78; }
+  .qf-directory-strip { background: #fff; border-bottom: 1px solid var(--qf-border); }
+  .qf-directory-stat { padding-inline: 26px; border-left: 1px solid var(--qf-border); }
+  .qf-directory-stat:first-child { padding-left: 0; border-left: 0; }
+  .qf-home-section { padding-block: 72px; scroll-margin-top: 20px; }
+  .qf-section-heading { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+  .qf-text-link { display: inline-flex; align-items: center; gap: 10px; color: #096378; font-weight: 600; font-size: 13px; padding-block: 8px; }
+  .qf-text-link:hover { color: #102e3d; }
+  [data-tone="coral"] { --tone-start: #fff1ed; --tone-end: #ffe1dc; --tone-ink: #b45145; }
+  [data-tone="gold"] { --tone-start: #fff8e8; --tone-end: #faecc8; --tone-ink: #997126; }
+  [data-tone="lavender"] { --tone-start: #f6f2fc; --tone-end: #eae0f6; --tone-ink: #795399; }
+  [data-tone="mint"] { --tone-start: #edf8f3; --tone-end: #d7eee2; --tone-ink: #377c61; }
+  [data-tone="rose"] { --tone-start: #fdf0f5; --tone-end: #f5dce7; --tone-ink: #a25375; }
+  [data-tone="blue"] { --tone-start: #edf6fc; --tone-end: #d9eafa; --tone-ink: #3b7199; }
+  .qf-specialty-card {
+    display: grid; grid-template-columns: 36% minmax(0, 1fr); min-height: 154px;
+    overflow: hidden; border: 1px solid #dce7eb; border-radius: 10px; background: #fff;
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .qf-specialty-card:hover { box-shadow: 0 6px 18px #163b4a0b; border-color: #97bdc6; }
+  .qf-specialty-photo { display: block; position: relative; min-height: 154px; overflow: hidden; background: #eaf0f1; }
+  .qf-specialty-photo img { position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: center; transition: transform .3s; }
+  .qf-specialty-card:hover img { transform: scale(1.035); }
+  .qf-specialty-copy { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0; padding: 20px 18px; }
+  .qf-specialty-copy h3 { color: #102e3d; font-size: 15px; font-weight: 600; line-height: 1.4; }
+  .qf-specialty-copy p { color: #617681; font-size: 12px; line-height: 1.65; margin-top: 5px; }
+  .qf-specialty-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; color: #096378; font-size: 11px; font-weight: 600; }
+  .qf-specialty-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 52px; height: 56px; border-radius: 13px; background: #ffffff90; color: var(--tone-ink, #087b91); }
+  .qf-specialty-icon[data-tone] { width: 46px; height: 46px; background: var(--tone-start); }
+  .qf-specialty-filter { background: var(--tone-start); color: #3d5664; border: 1px solid var(--tone-end); transition: border-color .18s, background .18s; }
+  .qf-demo-note { color: #667b87; font-size: 11px; line-height: 1.6; }
+  .qf-doctors-section { background: #f6f9fa; border-block: 1px solid #e7eef1; }
+  .qf-visit-step { padding-top: 22px; border-top: 2px solid #c2dfe5; }
+  .qf-clinic-banner { background: #133d4e; padding: 44px 48px; border-radius: 14px; border-left: 5px solid #edb541; }
+  .qf-doctor-card { position: relative; border-top: 3px solid var(--tone-end, #b6e0e7); transition: box-shadow .2s, border-color .2s; }
+  .qf-doctor-card:hover { box-shadow: 0 10px 24px #163b4a0b; border-color: #a6c8d0; }
+  .qf-doctor-avatar { background: linear-gradient(135deg, var(--tone-start), var(--tone-end)); color: var(--tone-ink); border: 1px solid #ffffff; }
+  .qf-stat-card { position: relative; background: #fff; border: 1px solid var(--qf-border); border-radius: 12px; box-shadow: 0 3px 14px #163b4a04; border-top: 3px solid #b6e0e7; }
+  .qf-stat-card-highlight { background: #eef8fa; border-color: #b6e0e7; border-top-color: #087b91; }
+  .qf-metrics > .qf-stat-card:nth-child(2) { border-top-color: #96b7da; }
+  .qf-metrics > .qf-stat-card:nth-child(3) { border-top-color: #8ebea8; }
+  .qf-metrics > .qf-stat-card:nth-child(4) { border-top-color: #e3c174; }
+  .qf-sidebar { background: #133d4e; border-right: 1px solid #194c5f; }
+  .qf-sidebar-link { border: 1px solid transparent; border-left-width: 3px; }
+  .qf-sidebar-link-active { background: #ffffff10; border-color: #ffffff0a; border-left-color: #edb541; color: #fff; }
+  .qf-sidebar-link-active svg { color: #edc46e; }
+  .qf-workspace-bar { background: #ffffffed; border-bottom: 1px solid var(--qf-border); backdrop-filter: blur(12px); }
+  .qf-page-heading { padding-bottom: 22px; border-bottom: 1px solid var(--qf-border); }
+  .qf-directory-heading { background: #edf6f8; border: 1px solid #d5e7ec; border-radius: 14px; border-left: 4px solid #edb541; }
+  .qf-auth { background: #f7fafb; }
+  .qf-auth-aside { background: #133d4e; border-top: 5px solid #edb541; }
+  .qf-auth-aside h1 { line-height: 1.2; }
+  .qf-auth main > div:first-child { text-align: left; }
+  .qf-auth main > div:first-child > a { justify-content: flex-start; }
+  .qf-auth main > div:first-child > h2 { font-size: 28px; margin-top: 12px; }
+  .qf-auth main > div:first-child > p { font-size: 13px; line-height: 1.8; margin-top: 10px; }
+  .qf-auth main .qf-panel { box-shadow: 0 12px 35px #163b4a06; border-top: 3px solid #b6e0e7; }
+  .qf-panel table { font-variant-numeric: tabular-nums; }
+  .qf-panel thead th { background: #f0f5f7; padding-block: 15px; color: #526d7b; font-size: 10px; letter-spacing: .07em; }
+  .qf-panel tbody td { padding-block: 16px; }
+  .qf-footer { background: #f4f8f9; border-top: 1px solid #dce7eb; }
+  .qf-enter { animation: qf-appear .4s ease-out both; }
+  @keyframes qf-appear { from { opacity: .65; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 639px) {
+    .qf-container { padding-inline: 20px; }
+    .qf-home-section { padding-block: 48px; }
+    .qf-utility-bar { font-size: 10px; }
+    .qf-directory-stat { padding-inline: 16px; }
+    .qf-directory-stat:nth-child(3) { border-left: 0; padding-left: 0; }
+    .qf-specialty-card { grid-template-columns: 34% minmax(0, 1fr); min-height: 146px; }
+    .qf-specialty-photo { min-height: 146px; }
+    .qf-specialty-copy { padding: 18px 16px; }
+    .qf-clinic-banner { padding: 30px 24px; }
+    .qf-visit-card-heading { padding: 26px 24px; }
+    .qf-visit-card-foot { padding-inline: 24px; }
   }
 }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f0f5f7; }
+::-webkit-scrollbar-thumb { background: #becfd6; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #8aa7b4; }
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Custom scrollbar for data tables and horizontal lists */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Accessible focus visible outlines */
-:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }

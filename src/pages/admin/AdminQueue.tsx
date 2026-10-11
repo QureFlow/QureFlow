@@ -16,6 +16,7 @@ import {
   PhoneForwarded,
   CheckCircle2,
   Users,
+  Volume2,
 } from 'lucide-react';
 
 export const AdminQueue: React.FC = () => {
@@ -26,6 +27,9 @@ export const AdminQueue: React.FC = () => {
     doctors,
     pausedDoctors,
     callNextPatient,
+    testAnnouncement,
+    repeatAnnouncement,
+    announcementError,
     markServed,
     skipToken,
     cancelToken,
@@ -70,7 +74,7 @@ export const AdminQueue: React.FC = () => {
 
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
         {/* Top Operational Bar */}
-        <div className="h-20 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
+        <div className="qf-workspace-bar h-20 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -165,6 +169,14 @@ export const AdminQueue: React.FC = () => {
 
                 {/* Queue Actions */}
                 <div className="flex items-center gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={testAnnouncement} icon={<Volume2 className="w-3.5 h-3.5" />}>
+                    Test voice
+                  </Button>
+                  {currentToken && (
+                    <Button variant="outline" size="sm" onClick={() => repeatAnnouncement(currentToken)} icon={<Volume2 className="w-3.5 h-3.5" />}>
+                      Repeat announcement
+                    </Button>
+                  )}
                   <Button
                     variant="primary"
                     size="sm"
@@ -192,6 +204,12 @@ export const AdminQueue: React.FC = () => {
                   </Button>
                 </div>
               </div>
+
+              {announcementError && (
+                <p role="alert" className="mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  {announcementError} Use Repeat announcement to call out the current token again.
+                </p>
+              )}
 
               <p className="text-xs text-slate-500 mt-4 leading-relaxed">
                 Calls follow emergency priority, then issued token order.{' '}

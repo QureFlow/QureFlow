@@ -6,6 +6,7 @@ import { MobileNav } from '../../components/layout/MobileNav';
 import { Footer } from '../../components/layout/Footer';
 import { DoctorCard } from '../../components/patient/DoctorCard';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
+import { specialtyAppearance } from '../../lib/specialtyAppearance';
 
 export const DoctorList: React.FC = () => {
   const { doctors, clinics } = useQueue();
@@ -60,15 +61,14 @@ export const DoctorList: React.FC = () => {
     <div className="min-h-screen qf-shell pb-16 md:pb-0 flex flex-col">
       <Navbar />
       <main className="max-w-7xl mx-auto w-full px-5 sm:px-8 py-10 flex-1 qf-enter">
-        <div className="rounded-[28px] bg-brand-100/60 p-7 sm:p-10 mb-8 flex flex-wrap justify-between items-end gap-6">
+        <div className="qf-directory-heading p-7 sm:p-10 mb-8 flex flex-wrap justify-between items-end gap-6">
           <div>
             <p className="qf-eyebrow mb-3">Find your next consultation</p>
             <h1 className="qf-title text-4xl sm:text-5xl font-semibold text-brand-950">
-              The right care.
-              <br />A better way to get there.
+              Find your doctor.
             </h1>
             <p className="text-brand-800 mt-4 max-w-xl">
-              Explore specialties, meet your doctor, and choose a time that works for you.
+              Browse specialists, compare consulting hours, and plan your next visit.
             </p>
           </div>
           <div className="flex gap-8 text-brand-950">
@@ -108,8 +108,9 @@ export const DoctorList: React.FC = () => {
           {specialties.map((s) => (
             <button
               key={s}
+              data-tone={specialtyAppearance(s).tone}
               onClick={() => setParams({ specialty: s })}
-              className={`rounded-full px-4 py-2 text-xs font-medium ${specialty === s ? 'bg-brand-950 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-brand-400'}`}
+              className={`qf-specialty-filter rounded-lg px-4 py-2.5 text-xs font-medium ${specialty === s ? 'bg-brand-900 text-white border-brand-900' : 'hover:border-brand-400'}`}
             >
               {s}
             </button>

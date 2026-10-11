@@ -5,8 +5,8 @@ import { ShieldCheck, PhoneCall, HelpCircle } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-white border-t border-slate-200 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <footer className="qf-footer mt-auto">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-10 sm:py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 text-xs text-slate-600">
           <div className="space-y-2 md:col-span-2">
             <BrandLogo showTagline />
@@ -14,7 +14,7 @@ export const Footer: React.FC = () => {
               QureFlow is an accessible, digital queue and appointment management platform tailored
               for community health centres, sub-divisional hospitals, and rural healthcare clinics.
             </p>
-            <div className="flex items-center gap-4 text-[11px] text-slate-500 pt-2">
+            <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 pt-2">
               <span className="inline-flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 Role-based access to patient records

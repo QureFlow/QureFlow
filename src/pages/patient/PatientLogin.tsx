@@ -84,7 +84,7 @@ export const PatientLogin: React.FC = () => {
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="patient-password"
-                  className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+                  className="block text-xs font-semibold text-slate-700"
                 >
                   Password
                 </label>

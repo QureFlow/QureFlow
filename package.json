@@ -11,6 +11,7 @@
     "build": "tsc && vite build && npm run build --prefix backend",
     "start": "node backend/dist/server.js",
     "test": "npm test --prefix backend",
+    "test:announcements": "node backend/node_modules/tsx/dist/cli.mjs --test tests/clinicAnnouncements.test.ts",
     "seed": "npm run seed --prefix backend",
     "preview": "vite preview"
   },

@@ -7,19 +7,19 @@ export const AuthShell: React.FC<{ children: React.ReactNode; kind: 'patient' | 
   children,
   kind,
 }) => (
-  <div className="min-h-screen qf-shell grid lg:grid-cols-2">
-    <aside className="hidden lg:flex bg-brand-950 text-white p-14 xl:p-20 flex-col justify-between qf-grid-paper">
-      <BrandLogo isWhite />
+  <div className="min-h-screen qf-auth grid lg:grid-cols-2">
+    <aside className="qf-auth-aside hidden lg:flex text-white p-14 xl:p-20 flex-col justify-between">
+      <BrandLogo isWhite showTagline />
       <div className="my-12">
-        <p className="text-slate-300 text-xs uppercase tracking-[.16em] mb-6">
+        <p className="text-brand-200 text-xs uppercase tracking-[.16em] mb-6">
           {kind === 'staff' ? 'The clinic workspace' : 'The patient portal'}
         </p>
-        <h1 className="qf-title text-white text-5xl xl:text-6xl font-semibold max-w-lg">
+        <h1 className="qf-title text-white text-4xl xl:text-5xl font-semibold max-w-lg">
           {kind === 'staff'
-            ? 'Your clinic. One connected workspace.'
-            : 'Less time waiting. More time living.'}
+            ? 'Your clinic day, clearly organised.'
+            : 'Your next visit starts here.'}
         </h1>
-        <p className="text-slate-300 text-base leading-relaxed max-w-sm mt-7">
+        <p className="text-brand-100 text-base leading-relaxed max-w-sm mt-7">
           {kind === 'staff'
             ? 'One place for your care team, appointments, patient records and daily queues.'
             : 'Find your doctor, plan your visit and follow your queue from wherever you are.'}
@@ -46,12 +46,12 @@ export const AuthShell: React.FC<{ children: React.ReactNode; kind: 'patient' | 
             },
           ].map(({ Icon, title, description }) => (
             <div key={title} className="flex items-center gap-4">
-              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-slate-200">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-[#edc46e]">
                 <Icon size={21} />
               </div>
               <div>
                 <h2 className="font-medium text-sm">{title}</h2>
-                <p className="text-xs text-slate-400 mt-1">{description}</p>
+                <p className="text-xs text-brand-200 mt-1">{description}</p>
               </div>
             </div>
           ))}

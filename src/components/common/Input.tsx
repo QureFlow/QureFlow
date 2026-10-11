@@ -20,7 +20,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
+            className="block text-xs font-semibold text-slate-700 mb-2"
           >
             {label}
           </label>
@@ -40,7 +40,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             } ${isPassword ? 'pr-10' : 'pr-3'} py-3 ${
               error
                 ? 'border-red-400 text-red-900 focus:border-red-500 focus:ring-red-500 bg-red-50/20'
-                : 'border-slate-300 text-slate-900 focus:border-brand-600 focus:ring-brand-600 bg-white'
+                : 'border-[#ccdce2] text-slate-900 focus:border-brand-600 focus:ring-brand-600 bg-white hover:border-brand-300'
             } ${className}`}
             {...props}
           />

@@ -28,14 +28,14 @@ export const Navbar: React.FC = () => {
   };
 
   const navItemClasses = ({ isActive }: { isActive: boolean }) =>
-    `inline-flex items-center gap-2 px-3 py-2.5 rounded-full text-xs font-medium transition-colors ${
+    `inline-flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
       isActive
         ? 'bg-brand-50 text-brand-800 font-semibold'
         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
     }`;
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-slate-200">
+    <header className="qf-public-header sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-8">
@@ -43,7 +43,7 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Navigation links */}
           {isPatient && (
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1">
               <NavLink to="/patient/dashboard" className={navItemClasses}>
                 <LayoutDashboard className="w-3.5 h-3.5" />
                 Dashboard
@@ -129,7 +129,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Mobile menu trigger */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2 lg:hidden">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -142,7 +142,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-2 pb-4 space-y-1">
+        <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-2 pb-4 space-y-1">
           {isPatient ? (
             <>
               <div className="py-2 px-3 mb-2 bg-slate-50 rounded-md border border-slate-200 flex items-center gap-3">

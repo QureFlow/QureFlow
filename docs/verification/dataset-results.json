@@ -1,5 +1,5 @@
 {
-  "executedAt": "2026-10-11T07:49:14.627Z",
+  "executedAt": "2026-10-11T09:32:14.441Z",
   "database": "Amazon DynamoDB Local",
   "table": "QureFlowDemo",
   "readOnly": true,
@@ -8,15 +8,15 @@
   "doctors": 48,
   "specialties": 12,
   "patientProfiles": 737,
-  "appointments": 5043,
-  "visits": 5654,
+  "appointments": 5040,
+  "visits": 5650,
   "addedVisits": 5040,
   "metadataSchemaVersion": 3,
   "clinicDirectory": [
     {
       "clinicId": "clinic-1",
-      "patients": 137,
-      "appointments": 843
+      "patients": 136,
+      "appointments": 840
     },
     {
       "clinicId": "clinic-2",
@@ -50,56 +50,56 @@
       "method": "ridge_regression",
       "sampleCount": 148,
       "syntheticCount": 148,
-      "validationMaeMinutes": 0.6309504475436608
+      "validationMaeMinutes": 0.7234477076885316
     },
     {
       "doctorId": "doc-10",
       "method": "ridge_regression",
       "sampleCount": 148,
       "syntheticCount": 148,
-      "validationMaeMinutes": 1.0859661717322096
+      "validationMaeMinutes": 1.1452449563409834
     },
     {
       "doctorId": "doc-11",
       "method": "ridge_regression",
       "sampleCount": 88,
       "syntheticCount": 88,
-      "validationMaeMinutes": 0.7114499278879984
+      "validationMaeMinutes": 0.7801776934203758
     },
     {
       "doctorId": "doc-12",
       "method": "ridge_regression",
       "sampleCount": 88,
       "syntheticCount": 88,
-      "validationMaeMinutes": 0.6796136905375706
+      "validationMaeMinutes": 0.7421966133238551
     },
     {
       "doctorId": "doc-13",
       "method": "ridge_regression",
       "sampleCount": 88,
       "syntheticCount": 88,
-      "validationMaeMinutes": 0.7109261303388951
+      "validationMaeMinutes": 0.7735515847456688
     },
     {
       "doctorId": "doc-2",
       "method": "ridge_regression",
       "sampleCount": 148,
       "syntheticCount": 148,
-      "validationMaeMinutes": 0.6202424791304533
+      "validationMaeMinutes": 0.6720848249673114
     },
     {
       "doctorId": "doc-3",
       "method": "ridge_regression",
       "sampleCount": 148,
       "syntheticCount": 148,
-      "validationMaeMinutes": 0.7965089524878909
+      "validationMaeMinutes": 0.8208943208245513
     },
     {
       "doctorId": "doc-4",
       "method": "ridge_regression",
       "sampleCount": 148,
       "syntheticCount": 148,
-      "validationMaeMinutes": 1.0859661717322096
+      "validationMaeMinutes": 1.1452449563409834
     }
   ],
   "assertions": [

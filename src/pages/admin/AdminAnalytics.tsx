@@ -86,7 +86,7 @@ export const AdminAnalytics = () => {
     <div className="min-h-screen qf-shell lg:flex">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 lg:pl-64 min-w-0">
-        <header className="h-20 bg-white border-b border-slate-200 px-5 flex items-center justify-between">
+        <header className="qf-workspace-bar h-20 bg-white border-b border-slate-200 px-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               aria-label="Open sidebar"

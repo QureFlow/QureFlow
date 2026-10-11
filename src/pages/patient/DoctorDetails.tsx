@@ -1,3 +1,4 @@
+import { specialtyAppearance } from '../../lib/specialtyAppearance';
 import { clinicDate } from '../../lib/time';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -129,10 +130,10 @@ export const DoctorDetails: React.FC = () => {
           </p>
         )}
         {/* Doctor Profile Banner */}
-        <div className="qf-panel p-6 sm:p-8 mb-8">
+        <div className="qf-panel qf-doctor-card p-6 sm:p-8 mb-8" data-tone={specialtyAppearance(doctor.specialization).tone}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-100">
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-full bg-brand-50 border border-brand-200 text-brand-900 flex items-center justify-center font-bold text-xl select-none flex-shrink-0">
+              <div className="qf-doctor-avatar w-16 h-16 rounded-xl flex items-center justify-center font-bold text-xl select-none flex-shrink-0">
                 {doctor.name
                   .split(' ')
                   .map((n) => n[0])
@@ -220,7 +221,7 @@ export const DoctorDetails: React.FC = () => {
         </div>
 
         {/* Date Selector */}
-        <div className="qf-panel p-6 sm:p-8 mb-8">
+        <div className="qf-panel qf-doctor-card p-6 sm:p-8 mb-8" data-tone={specialtyAppearance(doctor.specialization).tone}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Choose Appointment Date</h2>
