@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { authService } from '../services/authService.js';
-import { dynamoDbRepo, publicUser } from '../repositories/dynamoDbRepo.js';
+import { db, publicUser } from '../repositories/repository.js';
 import { authenticateToken } from '../middlewares/authMiddleware.js';
 import { parse, registrationSchema, passwordSchema } from '../lib/validation.js';
 import { route } from '../lib/http.js';
@@ -28,7 +28,7 @@ router.get(
   '/me',
   authenticateToken,
   route(async (req, res) => {
-    const user = await dynamoDbRepo.getUserById(req.user.sub);
+    const user = await db.getUserById(req.user.sub);
     if (!user) throw new AppError(401, 'Session is no longer valid');
     res.json(publicUser(user));
   }),

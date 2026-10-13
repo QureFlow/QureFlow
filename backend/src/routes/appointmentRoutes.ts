@@ -1,13 +1,57 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { appointmentService } from '../services/appointmentService.js';
-import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
+import { db } from '../repositories/repository.js';
+import { mysqlRepo } from '../repositories/mysqlRepo.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
 import { accessDoctor, staffClinic } from '../lib/access.js';
 import { parse, bookingDateSchema } from '../lib/validation.js';
 import { route } from '../lib/http.js';
 import { AppError } from '../lib/errors.js';
 const router = Router();
+router.get(
+  '/search',
+  authenticateToken,
+  requireRoles('admin', 'health_worker', 'doctor'),
+  route(async (req, res) => {
+    if (process.env.DATABASE_PROVIDER !== 'mysql')
+      throw new AppError(404, 'SQL search is available in the DBMS variant.');
+    const filters = parse(
+      z
+        .object({
+          query: z.string().trim().max(200).optional(),
+          doctorId: z.string().max(100).optional(),
+          date: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          status: z
+            .enum([
+              'all',
+              'booked',
+              'waiting',
+              'in_consultation',
+              'completed',
+              'cancelled',
+              'no_show',
+            ])
+            .optional(),
+          page: z.coerce.number().int().min(1).max(10000).default(1),
+          pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        })
+        .strict(),
+      req.query,
+    );
+    const doctorId = req.user.role === 'doctor' ? req.user.doctorId : filters.doctorId;
+    if (req.user.role === 'doctor') {
+      if (!doctorId) throw new AppError(403, 'Assigned doctor required.');
+      await accessDoctor(req, doctorId);
+    }
+    res.json(
+      await mysqlRepo.searchAppointments({ ...filters, clinicId: staffClinic(req), doctorId }),
+    );
+  }),
+);
 router.use(authenticateToken);
 router.get(
   '/',
@@ -74,7 +118,7 @@ router.post(
 router.post(
   '/:id/cancel',
   route(async (req, res) => {
-    const apt = await dynamoDbRepo.getAppointmentById(req.params.id);
+    const apt = await db.getAppointmentById(req.params.id);
     if (!apt) throw new AppError(404, 'Appointment not found');
     if (req.user.role === 'patient') {
       if (apt.patientId !== req.user.sub)

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
+import { db } from '../repositories/repository.js';
+import { mysqlRepo } from '../repositories/mysqlRepo.js';
 import {
   QueueToken,
   QueuePriority,
@@ -44,23 +45,23 @@ export class QueueService {
     appointment?: Appointment,
     capacity?: number,
   ): Promise<QueueToken> {
-    const doc = await dynamoDbRepo.getDoctorById(data.doctorId);
+    const doc = await db.getDoctorById(data.doctorId);
     if (!doc) throw new AppError(404, 'Doctor not found');
     if (doc.status !== 'active') throw new AppError(409, 'This doctor is not accepting patients.');
     if (!data.patientId) throw new AppError(400, 'A patient record is required.');
-    const patient = await dynamoDbRepo.getUserById(data.patientId);
+    const patient = await db.getUserById(data.patientId);
     if (!patient || patient.role !== 'patient')
       throw new AppError(400, 'A valid patient record is required.');
-    const settings = await dynamoDbRepo.getSettings(doc.clinicId);
+    const settings = await db.getSettings(doc.clinicId);
     if (data.isWalkIn && !settings.allowWalkIns)
       throw new AppError(409, 'Walk-in registration is disabled.');
     if (data.priority === 'emergency' && !settings.allowEmergencyPriority)
       throw new AppError(409, 'Priority registration is disabled.');
     const date = data.dateStr || clinicDate();
-    if (await dynamoDbRepo.getActivePatientToken(data.patientId, date))
+    if (await db.getActivePatientToken(data.patientId, date))
       throw new AppError(409, 'This patient already has an active visit on this date.');
-    const queueId = dynamoDbRepo.getQueueId(doc.id, date),
-      { seq } = await dynamoDbRepo.getNextTokenSequence(queueId);
+    const queueId = db.getQueueId(doc.id, date),
+      { seq } = await db.getNextTokenSequence(queueId);
     const token: QueueToken = {
       id: `tok-${randomUUID()}`,
       tokenNumber: `${doctorPrefix(doc.id)}-${String(seq).padStart(3, '0')}`,
@@ -80,12 +81,12 @@ export class QueueService {
       ...(patient.metadata?.synthetic === true ? { metadata: { synthetic: true } } : {}),
     };
     if (appointment) appointment.tokenNumber = token.tokenNumber;
-    return dynamoDbRepo.createToken(token, queueId, seq, appointment, capacity);
+    return db.createToken(token, queueId, seq, appointment, capacity);
   }
   async getDoctorQueue(doctorId: string, date = clinicDate()): Promise<DoctorQueueState> {
-    const doc = await dynamoDbRepo.getDoctorById(doctorId);
+    const doc = await db.getDoctorById(doctorId);
     if (!doc) throw new AppError(404, 'Doctor not found');
-    const tokens = await dynamoDbRepo.getAllTokensForQueue(dynamoDbRepo.getQueueId(doctorId, date));
+    const tokens = await db.getAllTokensForQueue(db.getQueueId(doctorId, date));
     const waiting = tokens
       .filter((t) => t.status === 'waiting')
       .sort(
@@ -94,14 +95,17 @@ export class QueueService {
           (a.tokenSeq || Number(a.tokenNumber.split('-').pop())) -
             (b.tokenSeq || Number(b.tokenNumber.split('-').pop())),
       );
-    const ordered = [...tokens.filter((t) => t.status !== 'waiting'), ...waiting];
+    const ordered =
+      process.env.DATABASE_PROVIDER === 'mysql'
+        ? tokens
+        : [...tokens.filter((t) => t.status !== 'waiting'), ...waiting];
     return {
       doctorId,
       doctorName: doc.name,
       specialization: doc.specialization,
       clinicId: doc.clinicId,
       currentTokenNumber: tokens.find((t) => t.status === 'current')?.tokenNumber || null,
-      isPaused: await dynamoDbRepo.isDoctorPaused(doctorId),
+      isPaused: await db.isDoctorPaused(doctorId),
       tokens: ordered,
     };
   }
@@ -113,47 +117,48 @@ export class QueueService {
         409,
         'Complete or skip the current consultation before calling the next patient.',
       );
-    const waiting = await dynamoDbRepo.getWaitingTokens(dynamoDbRepo.getQueueId(doctorId, date));
+    const waiting = await db.getWaitingTokens(db.getQueueId(doctorId, date));
     // Future appointments must never be called as walk-ins ahead of their appointment window.
-    const token = waiting.find(
-      (t) =>
-        t.priority === 'emergency' ||
-        t.isWalkIn ||
-        ['Now', 'Walk-in'].includes(t.scheduledTime) ||
-        (date === clinicDate() && clockMinutes(t.scheduledTime) <= clinicNowMinutes()),
-    );
+    const token =
+      process.env.DATABASE_PROVIDER === 'mysql'
+        ? await mysqlRepo.getNextEligibleToken(db.getQueueId(doctorId, date), clinicNowMinutes())
+        : waiting.find(
+            (t) =>
+              t.priority === 'emergency' ||
+              t.isWalkIn ||
+              ['Now', 'Walk-in'].includes(t.scheduledTime) ||
+              (date === clinicDate() && clockMinutes(t.scheduledTime) <= clinicNowMinutes()),
+          );
     if (!token) return null;
-    const found = await dynamoDbRepo.findTokenById(token.id);
+    const found = await db.findTokenById(token.id);
     if (!found) return null;
-    return dynamoDbRepo.updateTokenStatus(found.pk, found.sk, 'current', {
+    return db.updateTokenStatus(found.pk, found.sk, 'current', {
       calledAt: new Date().toISOString(),
     });
   }
   async markPatientServed(id: string): Promise<void> {
-    const found = await dynamoDbRepo.findTokenById(id);
+    const found = await db.findTokenById(id);
     if (!found) throw new AppError(404, 'Token not found');
-    await dynamoDbRepo.updateTokenStatus(found.pk, found.sk, 'completed', {
+    await db.updateTokenStatus(found.pk, found.sk, 'completed', {
       servedAt: new Date().toISOString(),
     });
   }
   async skipPatient(id: string): Promise<void> {
-    const found = await dynamoDbRepo.findTokenById(id);
+    const found = await db.findTokenById(id);
     if (!found) throw new AppError(404, 'Token not found');
-    await dynamoDbRepo.updateTokenStatus(found.pk, found.sk, 'skipped');
+    await db.updateTokenStatus(found.pk, found.sk, 'skipped');
   }
   async cancelToken(id: string, reason?: string): Promise<void> {
-    const found = await dynamoDbRepo.findTokenById(id);
+    const found = await db.findTokenById(id);
     if (!found) throw new AppError(404, 'Token not found');
-    await dynamoDbRepo.updateTokenStatus(found.pk, found.sk, 'cancelled', { reason });
+    await db.updateTokenStatus(found.pk, found.sk, 'cancelled', { reason });
   }
   async getPatientActiveStatus(patientId: string): Promise<PatientQueueStatus | null> {
-    const token = await dynamoDbRepo.getActivePatientToken(patientId, clinicDate());
+    const token = await db.getActivePatientToken(patientId, clinicDate());
     if (!token) return null;
     const queue = await this.getDoctorQueue(token.doctorId),
-      settings = await dynamoDbRepo.getSettings(token.clinicId);
-    const waiting = (
-      await dynamoDbRepo.getWaitingTokens(dynamoDbRepo.getQueueId(token.doctorId))
-    ).filter(
+      settings = await db.getSettings(token.clinicId);
+    const waiting = (await db.getWaitingTokens(db.getQueueId(token.doctorId))).filter(
       (t) =>
         t.priority === 'emergency' ||
         t.isWalkIn ||

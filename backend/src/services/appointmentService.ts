@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
+import { db } from '../repositories/repository.js';
 import { queueService } from './queueService.js';
 import { Appointment, QueueToken, SlotAvailability } from '../models/types.js';
 import { clockMinutes, clinicDate, clinicNowMinutes, timeLabel, weekday } from '../lib/time.js';
@@ -8,12 +8,12 @@ import { bookingDateSchema, parse } from '../lib/validation.js';
 export class AppointmentService {
   async getDoctorSlotAvailability(doctorId: string, date: string): Promise<SlotAvailability[]> {
     parse(bookingDateSchema, date);
-    const doc = await dynamoDbRepo.getDoctorById(doctorId);
+    const doc = await db.getDoctorById(doctorId);
     if (!doc) throw new AppError(404, 'Doctor not found');
-    const appointments = (await dynamoDbRepo.getAppointments({ doctorId, date })).filter(
+    const appointments = (await db.getAppointments({ doctorId, date })).filter(
       (a) => !['cancelled', 'no_show'].includes(a.status),
     );
-    const settings = await dynamoDbRepo.getSettings(doc.clinicId),
+    const settings = await db.getSettings(doc.clinicId),
       slots: SlotAvailability[] = [];
     const start = clockMinutes(doc.startTime),
       end = clockMinutes(doc.endTime),
@@ -58,21 +58,21 @@ export class AppointmentService {
     notes?: string;
   }): Promise<{ appointment: Appointment; token: QueueToken }> {
     parse(bookingDateSchema, data.date);
-    const doc = await dynamoDbRepo.getDoctorById(data.doctorId);
+    const doc = await db.getDoctorById(data.doctorId);
     if (!doc) throw new AppError(404, 'Doctor not found');
     const slot = (await this.getDoctorSlotAvailability(data.doctorId, data.date)).find(
       (s) => s.time === data.time,
     );
     if (!slot || !slot.available)
       throw new AppError(409, 'This slot is full or unavailable. Choose an available time.');
-    const settings = await dynamoDbRepo.getSettings(doc.clinicId),
+    const settings = await db.getSettings(doc.clinicId),
       capacity = Math.max(
         0,
         Math.floor(
           slot.slotDurationMinutes / (doc.slotDurationMinutes + (settings.bufferMinutes ?? 2)),
         ),
       );
-    await dynamoDbRepo.initializeSlot(doc.id, data.date, data.time, capacity);
+    await db.initializeSlot(doc.id, data.date, data.time, capacity);
     const appointment: Appointment = {
       id: `apt-${randomUUID()}`,
       patientId: data.patientId,
@@ -97,7 +97,7 @@ export class AppointmentService {
       appointment,
       capacity,
     );
-    return { appointment: (await dynamoDbRepo.getAppointmentById(appointment.id))!, token };
+    return { appointment: (await db.getAppointmentById(appointment.id))!, token };
   }
   async getAppointments(filters?: {
     patientId?: string;
@@ -105,16 +105,16 @@ export class AppointmentService {
     date?: string;
     clinicId?: string;
   }) {
-    return dynamoDbRepo.getAppointments(filters);
+    return db.getAppointments(filters);
   }
   async cancelAppointment(id: string, reason?: string): Promise<void> {
-    const apt = await dynamoDbRepo.getAppointmentById(id);
+    const apt = await db.getAppointmentById(id);
     if (!apt) throw new AppError(404, 'Appointment not found');
     const tokens = apt.tokenId
-      ? [(await dynamoDbRepo.findTokenById(apt.tokenId))?.token].filter((t): t is QueueToken =>
+      ? [(await db.findTokenById(apt.tokenId))?.token].filter((t): t is QueueToken =>
           Boolean(t),
         )
-      : await dynamoDbRepo.getAllTokensForQueue(dynamoDbRepo.getQueueId(apt.doctorId, apt.date));
+      : await db.getAllTokensForQueue(db.getQueueId(apt.doctorId, apt.date));
     const token =
       tokens.find((t) => t.appointmentId === id) ||
       tokens.find(

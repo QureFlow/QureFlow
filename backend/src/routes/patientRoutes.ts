@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { queueService } from '../services/queueService.js';
-import { dynamoDbRepo, publicUser } from '../repositories/dynamoDbRepo.js';
+import { db, publicUser } from '../repositories/repository.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
 import { accessPatient, accessiblePatients } from '../lib/access.js';
 import { parse, profileSchema } from '../lib/validation.js';
@@ -28,7 +28,7 @@ router.get(
   '/:id',
   route(async (req, res) => {
     await accessPatient(req, req.params.id);
-    const user = await dynamoDbRepo.getUserById(req.params.id);
+    const user = await db.getUserById(req.params.id);
     if (!user) throw new AppError(404, 'Patient not found');
     res.json(publicUser(user));
   }),
@@ -38,7 +38,7 @@ router.patch(
   route(async (req, res) => {
     await accessPatient(req, req.params.id);
     const updates = parse(profileSchema, req.body),
-      user = await dynamoDbRepo.getUserById(req.params.id);
+      user = await db.getUserById(req.params.id);
     if (!user || user.role !== 'patient') throw new AppError(404, 'Patient not found');
     if (
       user.cognitoSub &&
@@ -51,11 +51,11 @@ router.patch(
       );
     for (const contact of [updates.phone, updates.email])
       if (contact) {
-        const existing = await dynamoDbRepo.findUserByIdentifier(contact);
+        const existing = await db.findUserByIdentifier(contact);
         if (existing && existing.id !== user.id)
           throw new AppError(409, 'These contact details belong to another account.');
       }
-    res.json(publicUser(await dynamoDbRepo.saveUser({ ...user, ...updates })));
+    res.json(publicUser(await db.saveUser({ ...user, ...updates })));
   }),
 );
 export default router;

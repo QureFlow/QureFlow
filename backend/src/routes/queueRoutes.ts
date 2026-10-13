@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { queueService } from '../services/queueService.js';
-import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
+import { db } from '../repositories/repository.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
 import { accessDoctor, staffClinic } from '../lib/access.js';
 import { parse, nameSchema, phoneSchema } from '../lib/validation.js';
@@ -45,7 +45,7 @@ router.get(
 router.get(
   '/all',
   route(async (req, res) => {
-    let doctors = await dynamoDbRepo.getDoctors();
+    let doctors = await db.getDoctors();
     if (req.user.role !== 'patient')
       doctors = doctors.filter(
         (d) =>
@@ -77,11 +77,11 @@ router.post(
       req.body,
     );
     await accessDoctor(req, data.doctorId);
-    let patient = await dynamoDbRepo.findUserByIdentifier(data.patientPhone);
+    let patient = await db.findUserByIdentifier(data.patientPhone);
     if (patient && patient.role !== 'patient')
       throw new AppError(409, 'This phone belongs to a staff account.');
     if (!patient)
-      patient = await dynamoDbRepo.saveUser({
+      patient = await db.saveUser({
         id: `patient-${randomUUID()}`,
         name: data.patientName,
         phone: data.patientPhone,
@@ -91,19 +91,17 @@ router.post(
         createdAt: new Date().toISOString(),
         metadata: { source: 'walk_in', accountStatus: 'unclaimed' },
       });
-    res
-      .status(201)
-      .json(
-        await queueService.joinQueue({
-          doctorId: data.doctorId,
-          patientId: patient.id,
-          patientName: patient.name,
-          patientPhone: patient.phone,
-          priority: data.priority,
-          isWalkIn: true,
-          scheduledTime: data.time,
-        }),
-      );
+    res.status(201).json(
+      await queueService.joinQueue({
+        doctorId: data.doctorId,
+        patientId: patient.id,
+        patientName: patient.name,
+        patientPhone: patient.phone,
+        priority: data.priority,
+        isWalkIn: true,
+        scheduledTime: data.time,
+      }),
+    );
   }),
 );
 router.post(
@@ -126,7 +124,7 @@ router.post(
     await accessDoctor(req, data.doctorId);
     res.json({
       doctorId: data.doctorId,
-      isPaused: await dynamoDbRepo.setDoctorPause(data.doctorId, data.paused),
+      isPaused: await db.setDoctorPause(data.doctorId, data.paused),
     });
   }),
 );
