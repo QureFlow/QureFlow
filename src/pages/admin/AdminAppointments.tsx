@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { appointmentService } from '../../services/appointmentService';
 import { clinicDate } from '../../lib/time';
 import { Modal } from '../../components/common/Modal';
 import { Appointment } from '../../types';
@@ -40,24 +41,48 @@ export const AdminAppointments: React.FC = () => {
     }
   };
 
-  const filteredAppointments = useMemo(() => {
-    return appointments
-      .filter((apt) => {
-        const matchesSearch =
-          !searchQuery.trim() ||
-          apt.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          apt.patientPhone.includes(searchQuery) ||
-          apt.tokenNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          apt.doctorName.toLowerCase().includes(searchQuery.toLowerCase());
-
-        const matchesDoctor = doctorFilter === 'all' || apt.doctorId === doctorFilter;
-        const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
-        const matchesDate = !dateFilter || apt.date === dateFilter;
-
-        return matchesSearch && matchesDoctor && matchesStatus && matchesDate;
-      })
-      .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
-  }, [appointments, searchQuery, doctorFilter, statusFilter, dateFilter]);
+  const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
+  const [total, setTotal] = useState(0),
+    [loading, setLoading] = useState(true),
+    [loadError, setLoadError] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError('');
+    const timer = setTimeout(() => {
+      appointmentService
+        .searchAppointments({
+          query: searchQuery,
+          doctorId: doctorFilter,
+          status: statusFilter,
+          date: dateFilter,
+          page,
+          pageSize: 20,
+        })
+        .then((result) => {
+          if (!cancelled) {
+            setFilteredAppointments(result.appointments);
+            setTotal(result.total);
+          }
+        })
+        .catch((error) => {
+          if (!cancelled) {
+            setFilteredAppointments([]);
+            setTotal(0);
+            setLoadError(
+              error instanceof Error ? error.message : 'Appointment records could not load.',
+            );
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, doctorFilter, statusFilter, dateFilter, page, appointments]);
 
   const doctorOptions = [
     { value: 'all', label: 'All Consulting Doctors' },
@@ -100,6 +125,16 @@ export const AdminAppointments: React.FC = () => {
         </div>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
+          {loadError && (
+            <p role="alert" className="qf-panel border-red-200 p-4 text-sm text-red-800">
+              {loadError}
+            </p>
+          )}
+          {loading && (
+            <p role="status" className="text-sm text-slate-500">
+              Loading appointment records…
+            </p>
+          )}
           <PageHeader
             title="Every visit, connected."
             subtitle="Search, verify, and inspect all patient OPD appointments and digital tokens."
@@ -161,8 +196,7 @@ export const AdminAppointments: React.FC = () => {
           <div className="qf-panel overflow-hidden">
             <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500">
               <span>
-                Found <strong className="text-slate-800">{filteredAppointments.length}</strong>{' '}
-                appointments
+                Found <strong className="text-slate-800">{total}</strong> appointments
               </span>
             </div>
 
@@ -179,14 +213,20 @@ export const AdminAppointments: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredAppointments.length === 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-500">
+                        Loading matching appointments…
+                      </td>
+                    </tr>
+                  ) : total === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-slate-400">
                         No appointments match current filters.
                       </td>
                     </tr>
                   ) : (
-                    filteredAppointments.slice((page - 1) * 20, page * 20).map((apt) => (
+                    filteredAppointments.map((apt) => (
                       <tr key={apt.id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-3 px-4">
                           <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
@@ -252,13 +292,13 @@ export const AdminAppointments: React.FC = () => {
             </div>
             <div className="p-4 border-t border-slate-100 flex gap-3 items-center justify-between text-xs text-slate-500">
               <span>
-                Page {page} of {Math.max(1, Math.ceil(filteredAppointments.length / 20))}
+                Page {page} of {Math.max(1, Math.ceil(total / 20))}
               </span>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={page <= 1}
+                  disabled={loading || page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                 >
                   Previous
@@ -266,7 +306,7 @@ export const AdminAppointments: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={page * 20 >= filteredAppointments.length}
+                  disabled={loading || page * 20 >= total}
                   onClick={() => setPage((p) => p + 1)}
                 >
                   Next

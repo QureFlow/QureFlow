@@ -1,0 +1,132 @@
+Tables_in_qureflow_dbms
+appointment_details
+appointment_slots
+appointments
+audit_events
+clinic_settings
+clinics
+daily_patient_flow
+demo_seed
+doctor_days
+doctor_directory
+doctor_interests
+doctor_languages
+doctors
+languages
+prediction_models
+queue_counters
+queue_state
+queue_tokens
+schema_migrations
+specialties
+users
+visit_details
+id	name	specialty	clinic	consultationFee
+doc-30	Dr. Meera Patel	Gynecology	Willow Community Care	350.00
+doc-18	Dr. Aditi Roy	Gynecology	Riverstone Medical Centre	550.00
+doc-6	Dr. Sourav Ganguly	Gynecology	Riverstone Medical Centre	750.00
+doc-42	Dr. Aditi Chatterjee	Gynecology	Maple Outpatient Centre	850.00
+name	specialization	clinicName	consultationFee
+Dr. Riya Banerjee	Dentistry	Cedar Multispecialty Clinic	250.00
+Dr. Kunal Chatterjee	Ophthalmology	Maple Outpatient Centre	250.00
+Dr. Kunal Roy	Ophthalmology	Cedar Multispecialty Clinic	650.00
+Dr. Kavya Mehta	Dermatology	Horizon Health Centre	650.00
+Dr. Kavya Mukherjee	Dermatology	Riverstone Medical Centre	350.00
+Dr. Aditya Mehta	General Medicine	Horizon Health Centre	350.00
+Dr. Aditya Mukherjee	General Medicine	Evergreen Family Clinic	750.00
+Dr. Tara Bose	Dentistry	Horizon Health Centre	750.00
+Dr. Amitav Bhattacharya	Dentistry	Evergreen Family Clinic	450.00
+tokenNumber	patientName	priority	scheduledMinute
+A-004	Demo Patient	normal	NULL
+A-005	Kabir Sen	normal	NULL
+A-006	Meera Sen	normal	NULL
+name	specialty	doctorCount	averageFee
+Cedar Multispecialty Clinic	Dentistry	1	250.00
+Cedar Multispecialty Clinic	Endocrinology	1	350.00
+Cedar Multispecialty Clinic	ENT	2	500.00
+Cedar Multispecialty Clinic	Neurology	2	600.00
+Cedar Multispecialty Clinic	Ophthalmology	1	650.00
+Cedar Multispecialty Clinic	Pulmonology	1	450.00
+Evergreen Family Clinic	Cardiology	1	450.00
+Evergreen Family Clinic	Dentistry	1	450.00
+Evergreen Family Clinic	Dermatology	1	550.00
+Evergreen Family Clinic	Endocrinology	1	550.00
+Evergreen Family Clinic	General Medicine	2	500.00
+Evergreen Family Clinic	Pediatrics	1	350.00
+Evergreen Family Clinic	Pulmonology	1	650.00
+Horizon Health Centre	Cardiology	1	550.00
+Horizon Health Centre	Dentistry	1	750.00
+Horizon Health Centre	Dermatology	1	650.00
+Horizon Health Centre	Endocrinology	1	850.00
+Horizon Health Centre	General Medicine	1	350.00
+Horizon Health Centre	Neurology	1	650.00
+Horizon Health Centre	Pediatrics	1	450.00
+Horizon Health Centre	Pulmonology	1	250.00
+Maple Outpatient Centre	Dentistry	1	550.00
+Maple Outpatient Centre	Endocrinology	1	650.00
+Maple Outpatient Centre	ENT	1	350.00
+Maple Outpatient Centre	Gynecology	1	850.00
+Maple Outpatient Centre	Neurology	1	450.00
+Maple Outpatient Centre	Ophthalmology	1	250.00
+Maple Outpatient Centre	Orthopedics	1	750.00
+Maple Outpatient Centre	Pulmonology	1	750.00
+Riverstone Medical Centre	Cardiology	1	250.00
+Riverstone Medical Centre	Dermatology	1	350.00
+Riverstone Medical Centre	Gynecology	2	650.00
+Riverstone Medical Centre	Ophthalmology	1	850.00
+Riverstone Medical Centre	Orthopedics	2	550.00
+Riverstone Medical Centre	Pediatrics	1	850.00
+Willow Community Care	Cardiology	1	750.00
+Willow Community Care	Dermatology	1	850.00
+Willow Community Care	ENT	1	550.00
+Willow Community Care	General Medicine	1	550.00
+Willow Community Care	Gynecology	1	350.00
+Willow Community Care	Ophthalmology	1	450.00
+Willow Community Care	Orthopedics	1	250.00
+Willow Community Care	Pediatrics	1	650.00
+clinicId	date	total	completed	cancelled	noShow
+clinic-1	2026-10-16	8	0	0	0
+clinic-1	2026-10-15	8	0	0	0
+clinic-1	2026-10-14	8	0	0	0
+clinic-1	2026-10-13	48	16	0	0
+clinic-1	2026-10-12	40	40	0	0
+clinic-1	2026-10-11	43	42	0	1
+clinic-1	2026-10-10	41	40	0	1
+clinic-1	2026-10-09	39	37	0	2
+clinic-1	2026-10-08	37	34	0	3
+clinic-1	2026-10-07	40	36	1	3
+clinic-1	2026-10-06	43	37	2	4
+clinic-1	2026-10-05	41	36	2	3
+clinic-1	2026-10-04	39	34	3	2
+clinic-1	2026-10-03	37	33	3	1
+minutes
+12.50
+date	total	completed	cancelled	noShow
+2026-09-30	41	37	2	2
+2026-10-01	43	39	3	1
+2026-10-02	40	36	3	1
+2026-10-03	37	33	3	1
+2026-10-04	39	34	3	2
+2026-10-05	41	36	2	3
+2026-10-06	43	37	2	4
+2026-10-07	40	36	1	3
+2026-10-08	37	34	0	3
+2026-10-09	39	37	0	2
+2026-10-10	41	40	0	1
+2026-10-11	43	42	0	1
+2026-10-12	40	40	0	0
+2026-10-13	48	16	0	0
+workload
+[{"name": "Dr. Aditya Mukherjee", "waiting": 3, "doctorId": "doc-13"}, {"name": "Dr. Amitav Bhattacharya", "waiting": 3, "doctorId": "doc-10"}, {"name": "Dr. Ananya Sharma", "waiting": 3, "doctorId": "doc-1"}, {"name": "Dr. Debabrata Roy", "waiting": 3, "doctorId": "doc-4"}, {"name": "Dr. Rahul Sen", "waiting": 3, "doctorId": "doc-2"}, {"name": "Dr. Sana Das", "waiting": 3, "doctorId": "doc-12"}, {"name": "Dr. Sunita Banerjee", "waiting": 3, "doctorId": "doc-3"}, {"name": "Dr. Vihaan Das", "waiting": 3, "doctorId": "doc-11"}]
+Trigger	Event	Table	Statement	Timing	Created	sql_mode	Definer	character_set_client	collation_connection	Database Collation
+audit_token_insert	INSERT	queue_tokens	BEGIN\n  INSERT INTO audit_events(id,clinicId,entityType,entityId,action,actorId,requestId,details)\n  SELECT UUID(),clinicId,'token',NEW.id,'created',COALESCE(@qf_actor,'sql-client'),COALESCE(@qf_request,UUID()),\n    JSON_OBJECT('status',NEW.status,'queueDate',NEW.queueDate) FROM doctors WHERE id=NEW.doctorId;\nEND	AFTER	2026-10-13 09:35:03.03	IGNORE_SPACE,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION	qureflow@%	utf8mb4	utf8mb4_unicode_ci	utf8mb4_0900_ai_ci
+validate_token_transition	UPDATE	queue_tokens	BEGIN\n  IF NEW.status<>OLD.status AND NOT (\n    OLD.status='waiting' AND NEW.status IN ('current','skipped','cancelled') OR\n    OLD.status='current' AND NEW.status IN ('completed','skipped')\n  ) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Invalid queue status transition'; END IF;\n  IF NEW.status='current' AND EXISTS(SELECT 1 FROM queue_state WHERE doctorId=NEW.doctorId AND isPaused=TRUE)\n    THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Resume the queue before calling a patient'; END IF;\nEND	BEFORE	2026-10-13 09:35:03.03	IGNORE_SPACE,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION	qureflow@%	utf8mb4	utf8mb4_unicode_ci	utf8mb4_0900_ai_ci
+synchronize_token_update	UPDATE	queue_tokens	BEGIN\n  IF NEW.status<>OLD.status THEN\n    UPDATE appointments SET status=CASE NEW.status WHEN 'current' THEN 'in_consultation'\n      WHEN 'skipped' THEN 'no_show' ELSE NEW.status END,\n      version=version+1,updatedAt=UTC_TIMESTAMP(3)\n    WHERE id=NEW.appointmentId;\n    IF NEW.status IN ('cancelled','skipped') THEN\n      UPDATE appointment_slots s JOIN appointments a ON a.doctorId=s.doctorId AND a.date=s.slotDate AND a.slotMinute=s.slotMinute\n      SET s.bookedCount=GREATEST(0,s.bookedCount-1) WHERE a.id=NEW.appointmentId;\n    END IF;\n    INSERT INTO audit_events(id,clinicId,entityType,entityId,action,actorId,requestId,details)\n    SELECT UUID(),clinicId,'token',NEW.id,'status_changed',COALESCE(@qf_actor,'sql-client'),COALESCE(@qf_request,UUID()),\n      JSON_OBJECT('from',OLD.status,'to',NEW.status,'queueDate',NEW.queueDate) FROM doctors WHERE id=NEW.doctorId;\n  END IF;\nEND	AFTER	2026-10-13 09:35:03.04	IGNORE_SPACE,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION	qureflow@%	utf8mb4	utf8mb4_unicode_ci	utf8mb4_0900_ai_ci
+ROUTINE_NAME	ROUTINE_TYPE
+fn_consultation_minutes	FUNCTION
+sp_daily_patient_flow	PROCEDURE
+sp_doctor_workload_cursor	PROCEDURE
+Table	Create Table
+queue_tokens	CREATE TABLE `queue_tokens` (\n  `id` varchar(100) NOT NULL,\n  `appointmentId` varchar(100) DEFAULT NULL,\n  `patientId` varchar(100) NOT NULL,\n  `doctorId` varchar(100) NOT NULL,\n  `queueDate` date NOT NULL,\n  `tokenSeq` int NOT NULL,\n  `tokenNumber` varchar(100) NOT NULL,\n  `scheduledMinute` int DEFAULT NULL,\n  `priority` enum('normal','emergency') NOT NULL DEFAULT 'normal',\n  `isWalkIn` tinyint(1) NOT NULL DEFAULT '0',\n  `status` enum('waiting','current','completed','skipped','cancelled') NOT NULL,\n  `createdAt` datetime(3) NOT NULL,\n  `calledAt` datetime(3) DEFAULT NULL,\n  `servedAt` datetime(3) DEFAULT NULL,\n  `version` int NOT NULL DEFAULT '1',\n  `updatedAt` datetime(3) NOT NULL,\n  `metadata` json DEFAULT NULL,\n  `activePatientId` varchar(100) GENERATED ALWAYS AS ((case when (`status` in (_utf8mb4'waiting',_utf8mb4'current')) then `patientId` else NULL end)) STORED,\n  `servingDoctorId` varchar(100) GENERATED ALWAYS AS ((case when (`status` = _utf8mb4'current') then `doctorId` else NULL end)) STORED,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `token_sequence` (`doctorId`,`queueDate`,`tokenSeq`),\n  UNIQUE KEY `appointmentId` (`appointmentId`),\n  UNIQUE KEY `active_visit` (`activePatientId`,`queueDate`),\n  UNIQUE KEY `one_consultation` (`servingDoctorId`,`queueDate`),\n  KEY `patientId` (`patientId`),\n  KEY `queue_waiting` (`doctorId`,`queueDate`,`status`,`priority`,`tokenSeq`),\n  CONSTRAINT `queue_tokens_ibfk_1` FOREIGN KEY (`patientId`) REFERENCES `users` (`id`),\n  CONSTRAINT `queue_tokens_ibfk_2` FOREIGN KEY (`doctorId`) REFERENCES `doctors` (`id`),\n  CONSTRAINT `queue_tokens_ibfk_3` FOREIGN KEY (`appointmentId`) REFERENCES `appointments` (`id`),\n  CONSTRAINT `queue_tokens_chk_1` CHECK (((`servedAt` is null) or ((`calledAt` is not null) and (`servedAt` >= `calledAt`))))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	doctors	NULL	ref	clinicId,doctors_directory	doctors_directory	407	const,const,const	2	100.00	Using index condition

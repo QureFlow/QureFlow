@@ -1,15 +1,16 @@
-import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
+import { db } from '../repositories/repository.js';
 import { clinicDate } from '../lib/time.js';
 import { trainDurationModel, DurationModel } from './predictionService.js';
+import { mysqlRepo } from '../repositories/mysqlRepo.js';
 const modelCache = new Map<string, { expires: number; models: Map<string, DurationModel> }>();
 export const analyticsService = {
   async getModels(clinicId: string, refresh = false) {
     const cached = modelCache.get(clinicId);
     if (cached && cached.expires > Date.now() && !refresh) return cached.models;
     const [tokens, doctors, settings] = await Promise.all([
-      dynamoDbRepo.getRecentTokens(clinicId),
-      dynamoDbRepo.getDoctors(),
-      dynamoDbRepo.getSettings(clinicId),
+      db.getRecentTokens(clinicId),
+      db.getDoctors(),
+      db.getSettings(clinicId),
     ]);
     const models = new Map(
       doctors
@@ -27,11 +28,11 @@ export const analyticsService = {
   },
   async overview(clinicId: string) {
     const [tokens, doctors, settings, models, events] = await Promise.all([
-      dynamoDbRepo.getRecentTokens(clinicId),
-      dynamoDbRepo.getDoctors(),
-      dynamoDbRepo.getSettings(clinicId),
+      db.getRecentTokens(clinicId),
+      db.getDoctors(),
+      db.getSettings(clinicId),
       this.getModels(clinicId),
-      dynamoDbRepo.getAuditEvents(clinicId, 30),
+      db.getAuditEvents(clinicId, 30),
     ]);
     const today = clinicDate(),
       todayTokens = tokens.filter(
@@ -55,13 +56,15 @@ export const analyticsService = {
         noShow: day.filter((t) => t.status === 'skipped').length,
       };
     });
+    const sqlFlow =
+      process.env.DATABASE_PROVIDER === 'mysql' ? await mysqlRepo.flowAnalytics(clinicId) : null;
     return {
       clinicId,
       generatedAt: new Date().toISOString(),
       windowDays: 30,
       timeZone: 'Asia/Kolkata',
       syntheticData: tokens.some((t) => t.metadata?.synthetic === true),
-      summary: {
+      summary: sqlFlow?.summary || {
         waiting: todayTokens.filter((t) => t.status === 'waiting').length,
         inConsultation: todayTokens.filter((t) => t.status === 'current').length,
         completedToday: todayTokens.filter((t) => t.status === 'completed').length,
@@ -70,7 +73,7 @@ export const analyticsService = {
         cancellationCount: tokens.filter((t) => t.status === 'cancelled').length,
         noShowCount: tokens.filter((t) => t.status === 'skipped').length,
       },
-      trend,
+      trend: sqlFlow?.trend || trend,
       doctors: doctors
         .filter((d) => d.clinicId === clinicId)
         .map((d) => ({
@@ -87,7 +90,7 @@ export const analyticsService = {
   },
   async refreshModels(clinicId: string) {
     const models = await this.getModels(clinicId, true);
-    for (const [id, model] of models) await dynamoDbRepo.saveModelMetadata(id, clinicId, model);
+    for (const [id, model] of models) await db.saveModelMetadata(id, clinicId, model);
     return { success: true, modelsUpdated: models.size };
   },
 };

@@ -1,4 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { doctorService } from '../../services/doctorService';
+import type { Doctor } from '../../types';
 import { useSearchParams } from 'react-router-dom';
 import { useQueue } from '../../context/QueueContext';
 import { Navbar } from '../../components/layout/Navbar';
@@ -19,42 +21,75 @@ export const DoctorList: React.FC = () => {
   const [today, setToday] = useState(false);
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const specialties = useMemo(
-    () => [...new Set(doctors.map((d) => d.specialization))].sort(),
-    [doctors],
-  );
-  const languages = useMemo(
-    () => [...new Set(doctors.flatMap((d) => d.languages || []))].sort(),
-    [doctors],
-  );
-  const results = useMemo(
-    () =>
-      doctors
-        .filter(
-          (d) =>
-            d.status === 'active' &&
-            [d.name, d.specialization, d.clinicName, d.bio || '', ...(d.clinicalInterests || [])]
-              .join(' ')
-              .toLowerCase()
-              .includes(query.trim().toLowerCase()) &&
-            (specialty === 'all' || specialty === d.specialization) &&
-            (clinic === 'all' || clinic === d.clinicId) &&
-            (language === 'all' || d.languages?.includes(language)) &&
-            (!today || d.isAvailableToday),
-        )
-        .sort((a, b) =>
-          sort === 'fee'
-            ? a.consultationFee - b.consultationFee
-            : sort === 'experience'
-              ? b.experienceYears - a.experienceYears
-              : a.name.localeCompare(b.name),
-        ),
-    [doctors, query, specialty, clinic, language, today, sort],
-  );
+  const [results, setResults] = useState<Doctor[]>([]);
+  const [total, setTotal] = useState(0);
+  const [options, setOptions] = useState({
+    specialties: [] as string[],
+    languages: [] as string[],
+    doctorCount: 0,
+    clinicCount: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const specialties = options.specialties,
+    languages = options.languages;
+  useEffect(() => {
+    let cancelled = false;
+    doctorService
+      .directoryOptions()
+      .then((value) => {
+        if (!cancelled) setOptions(value);
+      })
+      .catch((err) => {
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : 'Directory filters could not load.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    const timer = setTimeout(() => {
+      doctorService
+        .searchDoctors({
+          query,
+          specialization: specialty,
+          clinicId: clinic,
+          language,
+          sort,
+          availableTodayOnly: today,
+          page,
+          pageSize: 9,
+        })
+        .then((value) => {
+          if (!cancelled) {
+            setResults(value.doctors);
+            setTotal(value.total);
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setResults([]);
+            setTotal(0);
+            setError(err instanceof Error ? err.message : 'Doctor search failed.');
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 220);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, specialty, clinic, language, today, sort, page]);
   useEffect(() => {
     setPage(1);
   }, [query, specialty, clinic, language, today, sort]);
-  const pages = Math.max(1, Math.ceil(results.length / 9));
+  const pages = Math.max(1, Math.ceil(total / 9));
   const field =
     'w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 mt-2';
   return (
@@ -73,13 +108,11 @@ export const DoctorList: React.FC = () => {
           </div>
           <div className="flex gap-8 text-brand-950">
             <div>
-              <strong className="block text-3xl">
-                {doctors.filter((d) => d.status === 'active').length}
-              </strong>
+              <strong className="block text-3xl">{options.doctorCount}</strong>
               <span className="text-xs">doctors</span>
             </div>
             <div>
-              <strong className="block text-3xl">{clinics.length}</strong>
+              <strong className="block text-3xl">{options.clinicCount}</strong>
               <span className="text-xs">care locations</span>
             </div>
             <ArrowUpRight className="hidden sm:block" size={34} />
@@ -95,7 +128,7 @@ export const DoctorList: React.FC = () => {
             className="bg-transparent outline-none flex-1 min-w-0 text-base"
           />
           <span className="hidden sm:block rounded-full bg-brand-50 text-brand-700 px-3 py-1 text-xs">
-            {results.length} matches
+            {total} matches
           </span>
         </label>
         <div className="flex lg:flex-wrap gap-2 mb-6 overflow-x-auto pb-2 max-w-full [&>button]:shrink-0 [&>button]:whitespace-nowrap">
@@ -205,35 +238,41 @@ export const DoctorList: React.FC = () => {
               onClick={() => setFiltersOpen(false)}
               className="block lg:hidden mt-5 bg-brand-600 text-white rounded-full w-full py-3 text-sm font-semibold"
             >
-              Show {results.length} doctors
+              Show {total} doctors
             </button>
             <p className="text-xs text-slate-400 leading-relaxed mt-6">
               Availability and fees come from the clinic directory. Open a profile to see
               appointment slots.
             </p>
           </aside>
-          <section>
+          <section aria-busy={loading}>
+            {error && (
+              <p role="alert" className="qf-panel border-red-200 p-4 mb-4 text-sm text-red-800">
+                {error}
+              </p>
+            )}
+            {loading && (
+              <p role="status" className="text-sm text-slate-500 mb-4">
+                Searching the directory…
+              </p>
+            )}
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-semibold text-slate-800">
-                {results.length} doctors available to explore
-              </h2>
+              <h2 className="font-semibold text-slate-800">{total} doctors available to explore</h2>
               <span className="text-xs text-slate-500">
                 Page {page} / {pages}
               </span>
             </div>
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {results.slice((page - 1) * 9, page * 9).map((d) => (
-                <DoctorCard key={d.id} doctor={d} />
-              ))}
+              {!loading && results.map((d) => <DoctorCard key={d.id} doctor={d} />)}
             </div>
-            {!results.length && (
+            {!loading && !error && !total && (
               <div className="qf-panel p-12 text-center text-slate-500">
                 No doctors match these filters. Try another specialty or location.
               </div>
             )}
             <div className="flex items-center justify-center gap-4 mt-8">
               <button
-                disabled={page <= 1}
+                disabled={loading || page <= 1}
                 aria-label="Previous doctor page"
                 onClick={() => setPage((p) => p - 1)}
                 className="p-3 rounded-full border bg-white disabled:opacity-30"
@@ -244,7 +283,7 @@ export const DoctorList: React.FC = () => {
                 {page} of {pages}
               </span>
               <button
-                disabled={page >= pages}
+                disabled={loading || page >= pages}
                 aria-label="Next doctor page"
                 onClick={() => setPage((p) => p + 1)}
                 className="p-3 rounded-full border bg-white disabled:opacity-30"

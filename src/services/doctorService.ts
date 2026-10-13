@@ -19,6 +19,21 @@ const editable = (data: Partial<Doctor>) => {
   return Object.fromEntries(Object.entries(data).filter(([key]) => allowed.includes(key)));
 };
 export const doctorService = {
+  searchDoctors: (filters: Record<string, string | number | boolean>) => {
+    const params = new URLSearchParams(
+      Object.entries(filters).map(([key, value]) => [key, String(value)]),
+    );
+    return apiClient.get<{ doctors: Doctor[]; total: number; page: number; pageSize: number }>(
+      `/doctors/search?${params}`,
+    );
+  },
+  directoryOptions: () =>
+    apiClient.get<{
+      specialties: string[];
+      languages: string[];
+      doctorCount: number;
+      clinicCount: number;
+    }>('/doctors/options'),
   async getDoctors(filters?: {
     specialization?: string;
     clinicId?: string;

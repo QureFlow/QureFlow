@@ -1,6 +1,19 @@
 import { Appointment, QueueToken } from '../types';
 import { apiClient } from './apiClient';
 export const appointmentService = {
+  searchAppointments: (filters: Record<string, string | number>) => {
+    const params = new URLSearchParams(
+      Object.entries(filters)
+        .filter(([, value]) => value !== '')
+        .map(([key, value]) => [key, String(value)]),
+    );
+    return apiClient.get<{
+      appointments: Appointment[];
+      total: number;
+      page: number;
+      pageSize: number;
+    }>(`/appointments/search?${params}`);
+  },
   async getAppointments(filters?: {
     patientId?: string;
     patientPhone?: string;

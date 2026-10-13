@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'node:crypto';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { JWT_SECRET } from '../config/aws.js';
-import { dynamoDbRepo, publicUser } from '../repositories/dynamoDbRepo.js';
+import { db, publicUser } from '../repositories/repository.js';
 import { cognitoService } from './cognitoService.js';
 import { User } from '../models/types.js';
 import { AppError } from '../lib/errors.js';
@@ -33,7 +33,7 @@ export class AuthService {
           issuer: 'qureflow',
           audience: 'qureflow-api',
         }) as jwt.JwtPayload;
-        const user = payload.sub ? await dynamoDbRepo.getUserById(payload.sub) : null;
+        const user = payload.sub ? await db.getUserById(payload.sub) : null;
         return user &&
           !user.cognitoSub &&
           (user.sessionVersion || 0) === (payload.sessionVersion || 0)
@@ -42,7 +42,7 @@ export class AuthService {
       }
       if (!verifier) return null;
       const payload = await verifier.verify(token);
-      return await dynamoDbRepo.findUserByCognitoSub(payload.sub);
+      return await db.findUserByCognitoSub(payload.sub);
     } catch {
       return null;
     }
@@ -50,8 +50,8 @@ export class AuthService {
   async registerPatient(input: unknown) {
     const data = parse(registrationSchema, input);
     if (
-      (await dynamoDbRepo.findUserByIdentifier(data.phone)) ||
-      (data.email && (await dynamoDbRepo.findUserByIdentifier(data.email)))
+      (await db.findUserByIdentifier(data.phone)) ||
+      (data.email && (await db.findUserByIdentifier(data.email)))
     )
       throw new AppError(409, 'An account with these contact details already exists.');
     let cognitoSub: string | undefined,
@@ -73,7 +73,7 @@ export class AuthService {
       sessionVersion: 0,
       ...(cognitoSub ? { cognitoSub } : { passwordHash: await bcrypt.hash(data.password, 12) }),
     };
-    const saved = await dynamoDbRepo.saveUser(user);
+    const saved = await db.saveUser(user);
     // A Cognito account must confirm and sign in before receiving a session.
     return {
       user: publicUser(saved),
@@ -91,7 +91,7 @@ export class AuthService {
       Buffer.byteLength(password, 'utf8') > 72
     )
       throw new AppError(401, 'Invalid identifier or password.');
-    let user = await dynamoDbRepo.findUserByIdentifier(identifier);
+    let user = await db.findUserByIdentifier(identifier);
     if (user?.cognitoSub || (cognitoService.isConfigured() && (!user || user.role === 'patient'))) {
       let result;
       try {
@@ -107,7 +107,7 @@ export class AuthService {
         throw new AppError(401, 'Account identity mismatch.');
       if (!user.cognitoSub) {
         const { passwordHash, ...profile } = user;
-        user = await dynamoDbRepo.saveUser({ ...profile, cognitoSub: claims.sub });
+        user = await db.saveUser({ ...profile, cognitoSub: claims.sub });
       }
       return { user: publicUser(user), token: result.AccessToken };
     }
@@ -119,7 +119,7 @@ export class AuthService {
     if (typeof identifier !== 'string')
       throw new AppError(400, 'Enter your registered email or phone.');
     if (cognitoService.isConfigured()) {
-      const user = await dynamoDbRepo.findUserByIdentifier(identifier);
+      const user = await db.findUserByIdentifier(identifier);
       try {
         await cognitoService.forgotPassword(user?.email || user?.phone || identifier);
       } catch {
@@ -139,7 +139,7 @@ export class AuthService {
         400,
         'Self-service recovery is unavailable for local accounts. Contact your administrator.',
       );
-    const user = await dynamoDbRepo.findUserByIdentifier(identifier);
+    const user = await db.findUserByIdentifier(identifier);
     try {
       await cognitoService.confirmForgotPassword(
         user?.email || user?.phone || identifier,
@@ -154,7 +154,7 @@ export class AuthService {
   async confirmRegistration(identifier: string, code: string) {
     if (!cognitoService.isConfigured())
       throw new AppError(400, 'Account verification is unavailable in local mode.');
-    const user = await dynamoDbRepo.findUserByIdentifier(identifier);
+    const user = await db.findUserByIdentifier(identifier);
     try {
       await cognitoService.confirmSignUp(user?.email || user?.phone || identifier, code);
     } catch {

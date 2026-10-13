@@ -136,6 +136,7 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'healthy',
     project: 'QureFlow',
+    database: process.env.DATABASE_PROVIDER === 'mysql' ? 'mysql' : 'dynamodb',
     timestamp: new Date().toISOString(),
   });
 });
@@ -178,6 +179,7 @@ if (process.env.NODE_ENV !== 'test' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
     console.log(`[QureFlow Unified Server] Running at http://localhost:${PORT}`);
     console.log(`[QureFlow Unified Server] Frontend & Backend active on port ${PORT}`);
     console.log(
+      process.env.DATABASE_PROVIDER==='mysql' ? '[QureFlow DBMS] MySQL relational database connected.' :
       `[QureFlow Unified Server] AWS Region: ${AWS_REGION}, DynamoDB: ${DYNAMODB_TABLE_NAME}`,
     );
   });

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { dynamoDbRepo } from '../repositories/dynamoDbRepo.js';
+import { db } from '../repositories/repository.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
 import { route } from '../lib/http.js';
 import { staffClinic } from '../lib/access.js';
@@ -9,12 +9,12 @@ import { AppError } from '../lib/errors.js';
 const router = Router();
 router.get(
   '/clinics',
-  route(async (_req, res) => res.json(await dynamoDbRepo.getClinics())),
+  route(async (_req, res) => res.json(await db.getClinics())),
 );
 router.get(
   '/clinics/:id',
   route(async (req, res) => {
-    const clinic = await dynamoDbRepo.getClinicById(req.params.id);
+    const clinic = await db.getClinicById(req.params.id);
     if (!clinic) throw new AppError(404, 'Clinic not found');
     res.json(clinic);
   }),
@@ -40,15 +40,15 @@ router.patch(
       .partial()
       .strict();
     const updates = parse(fields, req.body),
-      clinic = await dynamoDbRepo.getClinicById(req.params.id);
+      clinic = await db.getClinicById(req.params.id);
     if (!clinic) throw new AppError(404, 'Clinic not found');
-    res.json(await dynamoDbRepo.saveClinic({ ...clinic, ...updates }));
+    res.json(await db.saveClinic({ ...clinic, ...updates }));
   }),
 );
 router.get(
   '/settings',
   authenticateToken,
-  route(async (req, res) => res.json(await dynamoDbRepo.getSettings(req.user.clinicId))),
+  route(async (req, res) => res.json(await db.getSettings(req.user.clinicId))),
 );
 router.put(
   '/settings',
@@ -57,13 +57,13 @@ router.put(
   route(async (req, res) => {
     const updates = parse(settingsSchema, req.body),
       clinicId = staffClinic(req),
-      settings = await dynamoDbRepo.getSettings(clinicId);
+      settings = await db.getSettings(clinicId);
     if (updates.notifyOnTwoAhead === true)
       throw new AppError(
         400,
         'SMS queue alerts are not enabled. Leave this setting off until an alert delivery worker is configured.',
       );
-    res.json(await dynamoDbRepo.saveSettings({ ...settings, ...updates }, clinicId));
+    res.json(await db.saveSettings({ ...settings, ...updates }, clinicId));
   }),
 );
 export default router;
