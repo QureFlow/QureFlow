@@ -4,7 +4,8 @@ process.env.AUTH_PROVIDER = 'local';
 process.env.NODE_ENV = 'development';
 process.env.PORT = process.env.DBMS_PORT || '5001';
 process.env.JWT_SECRET = process.env.DBMS_JWT_SECRET || randomBytes(48).toString('hex');
-process.env.CORS_ORIGINS = 'http://localhost:5174,http://127.0.0.1:5174,http://localhost:5001';
+process.env.CORS_ORIGINS = process.env.DBMS_CORS_ORIGINS ||
+  'http://localhost:5174,http://127.0.0.1:5174,http://localhost:5001,https://localhost';
 async function start() {
   if (
     !['127.0.0.1', 'localhost'].includes(process.env.MYSQL_HOST || '127.0.0.1') ||

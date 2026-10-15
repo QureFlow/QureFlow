@@ -145,6 +145,15 @@ app.use('/api', (_req, res) => {
 });
 
 // Serve static frontend assets from dist (Unified single-port hosting)
+if (process.env.DATABASE_PROVIDER === 'mysql' && process.env.NODE_ENV === 'development') {
+  app.get('/downloads/qureflow-debug.apk', (_req, res) => {
+    const apkPath = path.resolve(process.cwd(),
+      process.cwd().endsWith('backend') ? '../artifacts/QureFlow-debug.apk' : 'artifacts/QureFlow-debug.apk');
+    res.download(apkPath, 'QureFlow-debug.apk', (error) => {
+      if (error && !res.headersSent) res.status(404).json({ error: 'The Android APK has not been built yet.' });
+    });
+  });
+}
 app.use(express.static(distPath));
 
 // Catch-all route to serve SPA frontend for any non-API routes

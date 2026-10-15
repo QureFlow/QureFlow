@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "contentType": [
+    "application/vnd.android.package-archive"
+  ],
+  "disposition": [
+    "attachment; filename=\"QureFlow-debug.apk\""
+  ],
+  "sha256Matches": true,
+  "url": "http://172.16.145.76:5001/downloads/qureflow-debug.apk"
+}

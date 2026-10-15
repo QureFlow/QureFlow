@@ -1,0 +1,12 @@
+
+> qureflow@1.0.0 android:apk
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1
+
+Android SDK API 36 is missing. Install Android Studio and API 36 in SDK Manager, then rerun npm run android:apk.
+At C:\Users\sreya\Desktop\DBMS Project\QureFlow-codex-mysql-dbms\scripts\build-android.ps1:8 char:5
++     throw 'Android SDK API 36 is missing. Install Android Studio and  ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Android SDK API...un android:apk.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Android SDK API 36 is missing. Install Android Studio and API 36 in SDK Manager, then re 
+   run npm run android:apk.
+ 

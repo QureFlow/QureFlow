@@ -1,0 +1,10 @@
+
+> qureflow@1.0.0 seed
+> npm run seed:dbms --prefix backend
+
+
+> qureflow-backend@1.0.0 seed:dbms
+> tsx src/dbms/setup.ts
+
+[QureFlow MySQL] Seeded 6 clinics, 48 doctors, 737 patients and 6195 linked visits.
+[QureFlow] Local MySQL database is ready.

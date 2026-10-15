@@ -1,13 +1,13 @@
 # QureFlow — MySQL DBMS variant
 
-This local branch uses **MySQL 8.4** for the SQL-focused DBMS submission. The primary AWS checkout at `C:\Users\ASUS\Documents\GitHub\QureFlow` remains on `main` and is unchanged. Nothing has been committed, pushed, deployed or written to a cloud database.
+This separate local folder uses **MySQL 8.4** for the SQL-focused DBMS submission. The AWS DynamoDB/Cognito implementation is retained. This supplied folder is not a Git checkout; no commits, pushes, deployment or cloud database writes were performed during this setup.
 
 ## Run this version
 
 Open a terminal in this checkout:
 
 ```powershell
-cd C:\Users\ASUS\.codex\worktrees\mysql-dbms\QureFlow
+cd 'C:\Users\sreya\Desktop\DBMS Project\QureFlow-codex-mysql-dbms'
 npm ci
 npm ci --prefix backend
 docker compose -p qureflow-dbms -f compose.dbms.yaml up -d --wait
@@ -75,10 +75,28 @@ Default `npm run dev`, `npm run dev:demo`, `npm run seed`, `npm test` and `npm s
 
 ## Local-only safeguards and limitations
 
-The separate checkout is on `codex/mysql-dbms`. Changes are uncommitted for your review; you decide how to commit and push a secondary branch. Do not merge this DBMS work into main unless you intentionally want the dual-provider code.
+Keep this DBMS folder separate from your original AWS project. Do not replace or merge it into the AWS checkout unless you explicitly intend to maintain both providers together.
 
 Docker keeps demo records in the dedicated `qureflow-dbms_qureflow-mysql-demo` volume. Stopping the service preserves them. The seeded date history is retained rather than silently resetting user actions.
 
 `mysqlServer.ts` is a local demonstration entry point, not a production deployment command. It uses local password authentication for the DBMS demo; the primary project retains Cognito. SQL values are parameterized, sort expressions are whitelisted, and API roles/ownership remain enforced.
 
 Design reference: [MySQL 8.4 stored routines](https://dev.mysql.com/doc/refman/8.4/en/create-procedure.html), [generated-column indexes](https://dev.mysql.com/doc/refman/8.4/en/generated-column-index-optimizations.html).
+
+## Demonstration and Android
+
+[DBMS demonstration guide](docs/DBMS-DEMONSTRATION.md) maps the supplied BCSE302P template to schema, ER relationships, normalization discussion, actual SQL objects, and the 24 automated test cases. It is a demonstration guide, not the course report.
+
+Run `npm run verify:local` to save fresh logs, results, an ER diagram, data dictionary and executed SQL outputs under `docs/verification/local/<UTC timestamp>/`. `local/latest.json` identifies the latest run. The command exits nonzero if any check fails, including unavailable Android tooling; inspect each result rather than treating the overall exit as a MySQL failure. Copied screenshots/logs outside `local/` are historical evidence from the supplied project and do not establish testing on this computer.
+
+[Android instructions](docs/ANDROID.md) cover installation, emulator, USB and LAN networking. The built and signature-verified APK is [artifacts/QureFlow-debug.apk](artifacts/QureFlow-debug.apk). With QureFlow running, a phone on the same Wi-Fi can download the actual APK at `http://172.16.145.76:5001/downloads/qureflow-debug.apk`. The installed app includes a Clinic connection screen for changing the computer address. `npm run android:sync` builds separate mobile assets and updates the Android project; `npm run android:apk` rebuilds the APK using the SDK and Java 21 now installed on this computer.
+
+The `.env` file is private and ignored; Windows may save it as `.env.txt`, which dotenv does not load. `.env.dbms` and `.env.mobile` contain local demonstration settings. Override the mobile API URL in ignored `.env.mobile.local`. Never place database passwords, Cognito client secrets or SMS API keys in any `VITE_` variable, because Vite variables are frontend configuration.
+
+To rerun the retained AWS regression suite without persistent test-container storage:
+
+```powershell
+docker compose -p qureflow-aws-tests -f compose.yaml -f compose.test.yaml up -d
+npm run test:aws
+docker compose -p qureflow-aws-tests -f compose.yaml -f compose.test.yaml stop
+```

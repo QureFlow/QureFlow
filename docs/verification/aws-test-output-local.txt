@@ -1,0 +1,75 @@
+
+> qureflow@1.0.0 test:aws
+> npm run test:aws --prefix backend
+
+
+> qureflow-backend@1.0.0 test:aws
+> tsx tests/backend.test.ts
+
+PASS Test database uses a loopback endpoint and a unique disposable table
+PASS Public doctor and clinic directories are served from DynamoDB
+PASS Health responses omit infrastructure names and set no-store
+PASS Unknown API endpoints return JSON 404 rather than the SPA
+PASS Unauthenticated GET /appointments is rejected
+PASS Unauthenticated GET /queues/all is rejected
+PASS Unauthenticated GET /patients is rejected
+PASS Unauthenticated GET /analytics is rejected
+PASS Unauthenticated booking and queue joins are rejected
+PASS A password cannot be omitted at login
+PASS Wrong passwords and demo aliases cannot bypass authentication
+PASS Identifier lookup never matches blank phone fields
+PASS Forged and expired JWTs are rejected
+PASS Authentication responses omit password hashes and private provider fields
+PASS Weak passwords and impossible birth dates are rejected
+PASS Passwords require a symbol and fit the bcrypt UTF-8 byte limit
+PASS Registration forces the patient role and rejects injected staff fields
+PASS Concurrent registration claims allow only one account per phone
+PASS Profile mass assignment cannot change role, ID, or password hash
+PASS Patients cannot read another patient profile or appointments
+PASS Patients cannot assign priority, change settings, or create doctors
+PASS Staff cannot manage another clinic or queue
+PASS Patient lists never return password hashes
+PASS Queue settings enforce types and preserve omitted settings
+PASS A valid patient profile update persists
+PASS Patient contact updates cannot take over a staff identity
+PASS Fixed recovery codes cannot reset a local account
+PASS Password recovery does not reveal whether an account exists
+PASS Atomic counter allocations produce distinct sequences under concurrency
+PASS Concurrent joins produce one active patient token
+PASS Token metadata stores date, source, version, and correlation ID
+PASS Queue joins reject nonexistent patients without allocating a visit
+PASS Doctor permissions require assignment and restrict patient records
+PASS An active token prevents a duplicate visit with another doctor
+PASS Patients see their own token while other patient details are redacted
+PASS Patients cannot cancel another patient token
+PASS Paused queues reject call-next without changing any token
+PASS Priority tokens are called before earlier normal walk-ins
+PASS Calling next cannot silently complete the current consultation
+PASS Patients cannot self-complete a consultation
+PASS Serving a waiting token or cancelling a current token is rejected
+PASS Completion records served time and rejects a repeated transition
+PASS Concurrent staff calls create at most one current consultation
+PASS Current patients have zero people ahead and zero estimated wait
+PASS Terminal tokens release the active visit claim
+PASS Invalid, past, and out-of-horizon booking dates are rejected
+PASS Booking rejects times outside the doctor schedule
+PASS Slots accommodate long consultations and reject undersized final windows
+PASS Valid bookings atomically store the appointment and linked token
+PASS Future bookings do not appear as active visits today
+PASS Booking on behalf of another patient is rejected
+PASS Failed duplicate booking leaves no orphan appointment
+PASS Concurrent bookings cannot exceed the slot capacity
+PASS Cancellation atomically updates appointment, token, and slot availability
+PASS Audit events include actor, transitions, and request IDs without credentials or contact details
+PASS Analytics is staff-only and restricted to the assigned clinic
+PASS Learning falls back when there are too few completed consultations
+PASS Learned models validate on a chronological holdout before activation
+PASS Invalid consultation durations are excluded from learning
+PASS Models that underperform the configured baseline are rejected
+PASS The Lambda adapter executes actual Express routes
+PASS Hostile origins do not receive CORS permission
+PASS Indexed catalog, clinic visit and appointment reads match existing primary records
+PASS Token transitions atomically update clinic and appointment read models
+PASS Session revocation takes effect on the next request
+
+65 passed, 0 failed. Isolated table deleted.

@@ -1,0 +1,4 @@
+# Override for isolated AWS regression tests. No persistent fixtures are needed.
+services:
+  dynamodb-local:
+    command: -jar DynamoDBLocal.jar -sharedDb -inMemory

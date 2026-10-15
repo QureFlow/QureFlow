@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ConnectionBanner } from './components/common/ConnectionBanner';
+import { AndroidNavigation } from './components/common/AndroidNavigation';
+import { NativeConnectionBar } from './components/common/NativeConnectionBar';
+import { ClinicConnection } from './pages/ClinicConnection';
 import { AuthProvider } from './context/AuthContext';
 import { QueueProvider } from './context/QueueContext';
 import { ToastContainer } from './components/common/ToastContainer';
@@ -34,12 +37,15 @@ import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 export function App() {
   return (
     <Router>
+      <AndroidNavigation />
+      <NativeConnectionBar />
       <AuthProvider>
         <QueueProvider>
           {/* Subtle switcher for easy reviewer testing between Patient & Admin */}
 
           {/* Core Routes */}
           <Routes>
+            <Route path="/connection" element={<ClinicConnection />} />
             {/* Public Landing Page */}
             <Route path="/" element={<LandingPage />} />
 

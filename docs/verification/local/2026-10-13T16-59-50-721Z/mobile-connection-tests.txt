@@ -1,0 +1,14 @@
+✔ phone, emulator and USB addresses retain the server port (2.0174ms)
+✔ server input accepts an API suffix and whitespace without duplicating the path (0.3508ms)
+✔ public hosts and private network lookalikes cannot receive app sessions (0.9048ms)
+✔ embedded credentials, unrelated paths, query strings and fragments are rejected (0.5159ms)
+✔ web configuration ignores a saved phone server (0.4119ms)
+✔ native configuration uses a valid saved server and rejects corrupt stored settings (0.4141ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 711.4447

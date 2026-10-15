@@ -1,0 +1,122 @@
+[
+  {
+    "id": "TC01",
+    "description": "directory joins specialty, clinic and normalized language with SQL ordering",
+    "passed": true
+  },
+  {
+    "id": "TC02",
+    "description": "SQL injection values cannot change search or select arbitrary sort expressions",
+    "passed": true
+  },
+  {
+    "id": "TC03",
+    "description": "empty search and out-of-range pages preserve a correct total",
+    "passed": true
+  },
+  {
+    "id": "TC04",
+    "description": "unauthenticated access and cross-clinic writes remain denied",
+    "passed": true
+  },
+  {
+    "id": "TC05",
+    "description": "simultaneous registrations cannot create two active visits for one patient",
+    "passed": true
+  },
+  {
+    "id": "TC06",
+    "description": "foreign keys reject orphan visits",
+    "passed": true
+  },
+  {
+    "id": "TC07",
+    "description": "emergency priority is selected by SQL before a normal token",
+    "passed": true
+  },
+  {
+    "id": "TC08",
+    "description": "database unique constraint prevents a second simultaneous consultation",
+    "passed": true
+  },
+  {
+    "id": "TC09",
+    "description": "patient queue responses conceal other patient identity",
+    "passed": true
+  },
+  {
+    "id": "TC10",
+    "description": "trigger records state changes and rejects reopening completed visits",
+    "passed": true
+  },
+  {
+    "id": "TC11",
+    "description": "pause is respected and the next call resumes correctly",
+    "passed": true
+  },
+  {
+    "id": "TC12",
+    "description": "appointment and token are created atomically with capacity accounting",
+    "passed": true
+  },
+  {
+    "id": "TC13",
+    "description": "capacity conflicts roll back without orphan appointments",
+    "passed": true
+  },
+  {
+    "id": "TC14",
+    "description": "cancellation trigger updates linked appointment and releases its slot",
+    "passed": true
+  },
+  {
+    "id": "TC15",
+    "description": "unique identities and optimistic profile versions prevent conflicting updates",
+    "passed": true
+  },
+  {
+    "id": "TC16",
+    "description": "a new conflicting identity cannot overwrite an existing account",
+    "passed": true
+  },
+  {
+    "id": "TC17",
+    "description": "staff appointment filters and SQL pagination use the assigned clinic",
+    "passed": true
+  },
+  {
+    "id": "TC18",
+    "description": "stored function, daily procedure, views and cursor return verifiable results",
+    "passed": true
+  },
+  {
+    "id": "TC19",
+    "description": "parameterized patient and appointment filters stay within the clinic",
+    "passed": true
+  },
+  {
+    "id": "TC20",
+    "description": "updated buffer capacity is used when an existing slot gains an opening",
+    "passed": true
+  },
+  {
+    "id": "TC21",
+    "description": "CHECK constraints reject negative fees and impossible slot occupancy",
+    "passed": true
+  },
+  {
+    "id": "TC22",
+    "description": "function returns NULL for missing, reversed and implausible timings",
+    "passed": true
+  },
+  {
+    "id": "TC23",
+    "description": "concurrent bookings from different patients cannot overfill the last slot",
+    "passed": true
+  },
+  {
+    "id": "TC24",
+    "description": "a booking submitted through the HTTP API is visible in SQL and cancels both records",
+    "passed": true
+  }
+]

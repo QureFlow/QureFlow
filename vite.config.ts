@@ -6,11 +6,13 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [react()],
+    build: { outDir: mode === 'mobile' ? 'dist-mobile' : 'dist' },
     server: {
       port: 5173,
       watch: {
         // Backend compilation and verification artifacts must not reset an in-progress booking.
-        ignored: ['**/backend/**', '**/docs/**', '**/dist/**', '**/*.md'],
+        ignored: ['**/backend/**', '**/docs/**', '**/dist/**', '**/dist-mobile/**',
+          '**/android/**', '**/scripts/**', '**/capacitor.config.ts', '**/*.md'],
       },
       proxy: {
         '/api': {

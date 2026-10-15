@@ -1,5 +1,7 @@
 # Executed verification
 
+**Provenance:** content and screenshots below were copied with the supplied project. They are historical results, not evidence from this computer. Fresh local MySQL evidence is under `local/`, identified by [latest run](local/latest.json) and [current MySQL verification](MYSQL.md). The AWS suite rerun on this computer is in `aws-test-output-local.txt` and the timestamped `test-results.json`. Default `npm test` now runs MySQL; use `npm run test:aws` for DynamoDB Local.
+
 The integration suite ran against Amazon DynamoDB Local with a unique disposable `QureFlowTest-*` table. It used explicit local authentication and synthetic accounts. The table was deleted at the end of the run. AWS production data and Cognito provider flows were not exercised.
 
 Run `npm test` with DynamoDB Local available on loopback port 18000. [test-results.json](test-results.json) records each executed case, pass/fail result, duration, and UTC execution timestamp. Latest result: **65 passed, 0 failed**, including activated partition views and atomic appointment mirror updates. Frontend/backend production builds and both full dependency audits passed. An audit result describes known package advisories at the execution time, not an absence of all security defects.

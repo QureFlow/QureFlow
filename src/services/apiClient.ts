@@ -1,10 +1,13 @@
 /**
  * QureFlow Backend API Client
- * Centralized HTTP Client connecting the frontend directly to the AWS DynamoDB-backed API.
+ * Centralized HTTP client for the configured Express API (web or packaged Android).
  */
+import { Capacitor } from '@capacitor/core';
+import { mobileConnectionKey, resolveApiBase } from '../lib/mobileConnection';
 
 const getApiBaseUrl = (): string => {
-  return import.meta.env.VITE_API_GATEWAY_URL || '/api';
+  return resolveApiBase(import.meta.env.VITE_API_GATEWAY_URL, Capacitor.isNativePlatform(),
+    Capacitor.isNativePlatform() ? localStorage.getItem(mobileConnectionKey) : null);
 };
 
 export class ApiError extends Error {

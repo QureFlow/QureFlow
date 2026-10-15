@@ -217,6 +217,7 @@ test('MySQL DBMS integration', async (suite) => {
           "INSERT INTO queue_tokens(id,patientId,doctorId,queueDate,tokenSeq,tokenNumber,status,createdAt,updatedAt) VALUES ('orphan','missing','doc-1',?,500,'A-500','waiting',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
           [today],
         ),
+        (error: any) => error.code === 'ER_NO_REFERENCED_ROW_2',
       );
     });
     await suite.test('emergency priority is selected by SQL before a normal token', async () => {
@@ -481,6 +482,68 @@ test('MySQL DBMS integration', async (suite) => {
         }
       },
     );
+    await suite.test('CHECK constraints reject negative fees and impossible slot occupancy', async () => {
+      await assert.rejects(
+        () => pool.execute('UPDATE doctors SET consultationFee=-1 WHERE id=?', ['doc-1']),
+        (error: any) => error.code === 'ER_CHECK_CONSTRAINT_VIOLATED',
+      );
+      await assert.rejects(
+        () => pool.execute('INSERT INTO appointment_slots(doctorId,slotDate,slotMinute,bookedCount,capacity) VALUES (?,?,?,?,?)',
+          ['doc-1', '2099-12-31', 0, 2, 1]),
+        (error: any) => error.code === 'ER_CHECK_CONSTRAINT_VIOLATED',
+      );
+      assert.equal((await rows("SELECT COUNT(*) n FROM appointment_slots WHERE slotDate='2099-12-31'"))[0].n, 0);
+    });
+    await suite.test('function returns NULL for missing, reversed and implausible timings', async () => {
+      const result = (await rows(`SELECT fn_consultation_minutes(NULL,UTC_TIMESTAMP()) missing,
+        fn_consultation_minutes('2026-10-13 10:00:00','2026-10-13 09:59:00') reversed,
+        fn_consultation_minutes('2026-10-13 10:00:00','2026-10-13 12:00:01') excessive,
+        fn_consultation_minutes('2026-10-13 10:00:00','2026-10-13 10:00:00') zero`))[0];
+      assert.deepEqual({ ...result }, { missing: null, reversed: null, excessive: null, zero: 0 });
+    });
+    await suite.test('concurrent bookings from different patients cannot overfill the last slot', async () => {
+      const settings = await repo.getSettings('clinic-1');
+      await repo.saveSettings({ ...settings, bufferMinutes: 20 }, 'clinic-1');
+      const slot = (await appointments.getDoctorSlotAvailability('doc-1', future)).find((s) => s.available)!;
+      assert.ok(slot);
+      const results = await Promise.allSettled(['patient-1', 'patient-2', 'patient-3'].map((patientId) =>
+        appointments.createAppointment({ patientId, patientName: 'Synthetic concurrency case',
+          patientPhone: '9900000002', doctorId: 'doc-1', date: future, time: slot.time })));
+      const successes = results.filter((r) => r.status === 'fulfilled') as PromiseFulfilledResult<any>[];
+      try {
+        assert.equal(successes.length, 1);
+        assert.equal(results.filter((r) => r.status === 'rejected').length, 2);
+        const occupancy = (await rows(`SELECT bookedCount,capacity FROM appointment_slots
+          WHERE doctorId='doc-1' AND slotDate=? AND slotMinute=(SELECT slotMinute FROM appointments WHERE id=?)`,
+          [future, successes[0].value.appointment.id]))[0];
+        assert.equal(occupancy.bookedCount, 1);
+        assert.equal(occupancy.capacity, 1);
+      } finally {
+        for (const result of successes) await appointments.cancelAppointment(result.value.appointment.id);
+      }
+    });
+    await suite.test('a booking submitted through the HTTP API is visible in SQL and cancels both records', async () => {
+      const slot = (await appointments.getDoctorSlotAvailability('doc-1', future)).find((s) => s.available)!;
+      assert.ok(slot);
+      const response = await api('/appointments', patient.token, 'POST', { doctorId: 'doc-1', date: future, time: slot.time });
+      assert.equal(response.status, 201);
+      const id = response.body.appointment.id;
+      try {
+        const records = await rows(`SELECT a.patientId,a.status,t.status tokenStatus FROM appointments a
+          JOIN queue_tokens t ON t.appointmentId=a.id WHERE a.id=?`, [id]);
+        assert.equal(records.length, 1);
+        assert.equal(records[0].patientId, 'patient-1');
+        assert.equal(records[0].status, 'booked');
+        assert.equal(records[0].tokenStatus, 'waiting');
+        assert.equal((await api(`/appointments/${id}/cancel`, patient.token, 'POST', { reason: 'Synthetic API verification' })).status, 200);
+        const cancelled = (await rows(`SELECT a.status,t.status tokenStatus FROM appointments a
+          JOIN queue_tokens t ON t.appointmentId=a.id WHERE a.id=?`, [id]))[0];
+        assert.equal(cancelled.status, 'cancelled');
+        assert.equal(cancelled.tokenStatus, 'cancelled');
+      } finally {
+        if ((await repo.getAppointmentById(id))?.status !== 'cancelled') await appointments.cancelAppointment(id);
+      }
+    });
   } finally {
     if (server) await new Promise<void>((resolve) => server.close(() => resolve()));
     await pool.end();

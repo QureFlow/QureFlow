@@ -1,0 +1,12 @@
+﻿{
+    "verifiedAt":  "2026-10-13T17:03:36.6215397Z",
+    "apk":  "C:\\Users\\sreya\\Desktop\\DBMS Project\\QureFlow-codex-mysql-dbms\\artifacts\\QureFlow-debug.apk",
+    "bytes":  4997802,
+    "sha256":  "1D602DA17C967CDD1989D6A1D53E9BCEFF0B0014E15551A9F0427D2E50E9DF3F",
+    "package":  "com.qureflow.dbms",
+    "signatureVerified":  true,
+    "packagedFrontendVerified":  true,
+    "mysqlCredentialsAbsent":  true,
+    "defaultPhoneApi":  "http://172.16.145.76:5001/api",
+    "nativeDeviceTested":  false
+}

@@ -1,0 +1,8 @@
+Get-FileHash : The term 'Get-FileHash' is not recognized as the name of a cmdlet, function, script file, or operable 
+program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At C:\Users\sreya\Desktop\DBMS Project\QureFlow-codex-mysql-dbms\scripts\verify-apk.ps1:43 char:15
++     sha256 = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).H ...
++               ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (Get-FileHash:String) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 

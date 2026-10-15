@@ -1,0 +1,109 @@
+--------------
+-- Synthetic disposable records only. The final rollback removes every write.
+--------------
+
+--------------
+-- Run the entire file in ONE Workbench connection; do not commit halfway through.
+--------------
+
+--------------
+SET @patient=CONCAT('sql-demo-',UUID())
+--------------
+
+--------------
+SET @appointment=CONCAT('sql-demo-',UUID())
+--------------
+
+--------------
+SET @token=CONCAT('sql-demo-',UUID())
+--------------
+
+--------------
+SET @demo_date='2099-12-31'
+--------------
+
+--------------
+START TRANSACTION
+--------------
+
+--------------
+INSERT INTO users(id,name,role,metadata,createdAt,updatedAt)
+VALUES (@patient,'Synthetic SQL demonstration','patient',JSON_OBJECT('synthetic',true),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))
+--------------
+
+--------------
+INSERT INTO appointment_slots(doctorId,slotDate,slotMinute,bookedCount,capacity)
+VALUES ('doc-1',@demo_date,480,1,1)
+--------------
+
+--------------
+INSERT INTO appointments(id,patientId,doctorId,date,slotMinute,tokenNumber,status,priority,metadata,createdAt,updatedAt)
+VALUES (@appointment,@patient,'doc-1',@demo_date,480,'SQL-DEMO','booked','normal',JSON_OBJECT('synthetic',true),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))
+--------------
+
+--------------
+SET @seq=(SELECT COALESCE(MAX(tokenSeq),0)+1 FROM queue_tokens WHERE doctorId='doc-1' AND queueDate=@demo_date)
+--------------
+
+--------------
+INSERT INTO queue_tokens(id,appointmentId,patientId,doctorId,queueDate,tokenSeq,tokenNumber,status,metadata,createdAt,updatedAt)
+VALUES (@token,@appointment,@patient,'doc-1',@demo_date,@seq,'SQL-DEMO','waiting',JSON_OBJECT('synthetic',true),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))
+--------------
+
+--------------
+SELECT a.id,a.status appointmentStatus,t.status tokenStatus,s.bookedCount
+FROM appointments a JOIN queue_tokens t ON t.appointmentId=a.id
+JOIN appointment_slots s ON s.doctorId=a.doctorId AND s.slotDate=a.date AND s.slotMinute=a.slotMinute WHERE a.id=@appointment
+--------------
+
++-----------------------------------------------+-------------------+-------------+-------------+
+| id                                            | appointmentStatus | tokenStatus | bookedCount |
++-----------------------------------------------+-------------------+-------------+-------------+
+| sql-demo-d693a337-c721-11f1-93f5-860e3905208b | booked            | waiting     |           1 |
++-----------------------------------------------+-------------------+-------------+-------------+
+--------------
+UPDATE queue_tokens SET status='cancelled',updatedAt=UTC_TIMESTAMP(3) WHERE id=@token
+--------------
+
+--------------
+-- AFTER UPDATE trigger synchronizes the appointment and releases the slot.
+--------------
+
+--------------
+SELECT a.id,a.status appointmentStatus,t.status tokenStatus,s.bookedCount
+FROM appointments a JOIN queue_tokens t ON t.appointmentId=a.id
+JOIN appointment_slots s ON s.doctorId=a.doctorId AND s.slotDate=a.date AND s.slotMinute=a.slotMinute WHERE a.id=@appointment
+--------------
+
++-----------------------------------------------+-------------------+-------------+-------------+
+| id                                            | appointmentStatus | tokenStatus | bookedCount |
++-----------------------------------------------+-------------------+-------------+-------------+
+| sql-demo-d693a337-c721-11f1-93f5-860e3905208b | cancelled         | cancelled   |           0 |
++-----------------------------------------------+-------------------+-------------+-------------+
+--------------
+SELECT action,actorId,details FROM audit_events WHERE entityId=@token ORDER BY timestamp
+--------------
+
++----------------+------------+-------------------------------------------------------------------+
+| action         | actorId    | details                                                           |
++----------------+------------+-------------------------------------------------------------------+
+| created        | sql-client | {"status": "waiting", "queueDate": "2099-12-31"}                  |
+| status_changed | sql-client | {"to": "cancelled", "from": "waiting", "queueDate": "2099-12-31"} |
++----------------+------------+-------------------------------------------------------------------+
+--------------
+ROLLBACK
+--------------
+
+--------------
+SELECT (SELECT COUNT(*) FROM users WHERE id=@patient) remainingUsers,
+ (SELECT COUNT(*) FROM appointments WHERE id=@appointment) remainingAppointments,
+ (SELECT COUNT(*) FROM queue_tokens WHERE id=@token) remainingTokens,
+ (SELECT COUNT(*) FROM audit_events WHERE entityId=@token) remainingAuditEvents
+--------------
+
++----------------+-----------------------+-----------------+----------------------+
+| remainingUsers | remainingAppointments | remainingTokens | remainingAuditEvents |
++----------------+-----------------------+-----------------+----------------------+
+|              0 |                     0 |               0 |                    0 |
++----------------+-----------------------+-----------------+----------------------+
+mysql: [Warning] Using a password on the command line interface can be insecure.

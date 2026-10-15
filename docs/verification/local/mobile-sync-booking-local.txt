@@ -1,0 +1,26 @@
+
+> qureflow@1.0.0 android:sync
+> npm run build:mobile && cap sync android
+
+
+> qureflow@1.0.0 build:mobile
+> tsc && vite build --mode mobile
+
+vite v6.4.3 building for mobile...
+transforming...
+✓ 1954 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-mobile/index.html                   1.13 kB │ gzip:   0.61 kB
+dist-mobile/assets/index-Dd5j8By0.css   63.85 kB │ gzip:  12.42 kB
+dist-mobile/assets/web-DK0XRHEx.js       0.84 kB │ gzip:   0.40 kB
+dist-mobile/assets/index-VeQ8cwox.js   439.05 kB │ gzip: 121.05 kB
+✓ built in 9.07s
+√ Copying web assets from dist-mobile to android\app\src\main\assets\public in 93.93ms
+√ Creating capacitor.config.json in android\app\src\main\assets in 3.00ms
+√ copy android in 214.60ms
+√ Updating Android plugins in 15.68ms
+[info] Found 1 Capacitor plugin for android:
+       @capacitor/app@8.1.2
+√ update android in 153.53ms
+[info] Sync finished in 0.483s

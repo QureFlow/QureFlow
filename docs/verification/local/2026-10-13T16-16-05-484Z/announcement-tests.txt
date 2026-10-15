@@ -1,0 +1,22 @@
+
+> qureflow@1.0.0 test:announcements
+> node backend/node_modules/tsx/dist/cli.mjs --test tests/clinicAnnouncements.test.ts
+
+✔ resumes audio during the click and speaks immediately with an installed English voice (3.8291ms)
+✔ waits for asynchronously loaded voices and removes its listener (0.9066ms)
+✔ reports a missing speech engine rather than silently succeeding (0.8217ms)
+✔ reports a device with no available voices (0.8064ms)
+✔ reports blocked playback independently of queue mutations (0.8139ms)
+✔ detects a speech engine that never starts playback (0.7593ms)
+✔ does not report a timeout after speech starts (1.8364ms)
+✔ replaying replaces the previous utterance without reporting intentional cancellation (0.7746ms)
+✔ handles a synthesis exception and still offers a retry (0.7769ms)
+✔ signing out cancels a delayed announcement before voices become available (0.5239ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 574.5945

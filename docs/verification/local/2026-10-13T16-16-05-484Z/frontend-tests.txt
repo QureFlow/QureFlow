@@ -1,0 +1,16 @@
+✔ daily outcomes and completion percentage use actual recorded visits (86.4658ms)
+✔ zero-volume days have no fabricated rate or invalid chart dimensions (7.5287ms)
+✔ missing history has a clear empty state (1.6439ms)
+✔ uniform historical records are disclosed without manufactured variation (12.4579ms)
+✔ model comparison excludes unavailable validation and reports worse predictions honestly (2.204ms)
+✔ queue display preserves server call order despite inconsistent fixture timestamps (2.5805ms)
+✔ next-call preview excludes future slots but allows due appointments and walk-ins (3.8991ms)
+✔ next-call preview respects server emergency ordering and ignores closed visits (0.9455ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1577.6709
