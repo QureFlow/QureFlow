@@ -19,15 +19,18 @@ import {
   TokenStatus,
 } from '../models/types.js';
 import { operationMetadata } from '../lib/context.js';
-import { clinicDate } from '../lib/time.js';
+import { clinicDate, clockMinutes } from '../lib/time.js';
 import { phoneDigits } from '../lib/validation.js';
 import { AppError } from '../lib/errors.js';
 import { readModelItems } from '../lib/readModels.js';
+import {
+  AppointmentFilters,
+  DoctorFilters,
+  filterAppointments,
+  filterDoctors,
+  page,
+} from '../lib/directory.js';
 type Item = Record<string, any>;
-export const publicUser = (user: User): User => {
-  const { passwordHash, cognitoSub, sessionVersion, ...safe } = user;
-  return safe;
-};
 const clean = <T>(item: Item): T => {
   const {
     pk,
@@ -46,8 +49,18 @@ const clean = <T>(item: Item): T => {
 };
 export class DynamoDbRepository {
   private tableName = DYNAMODB_TABLE_NAME;
+  private readModelsEnabled = false;
   private key(pk: string, sk = 'METADATA') {
     return { pk, sk };
+  }
+  /**
+   * Tables written before the indexed read models were backfilled still need full-table
+   * fallbacks. Once the marker exists it never disappears, so a positive answer is cached.
+   */
+  private async readModels(): Promise<boolean> {
+    if (!this.readModelsEnabled)
+      this.readModelsEnabled = Boolean(await this.get('READ_MODELS', 'V1'));
+    return this.readModelsEnabled;
   }
   private async get(pk: string, sk = 'METADATA'): Promise<Item | null> {
     return (
@@ -141,16 +154,31 @@ export class DynamoDbRepository {
       throw error;
     }
   }
+  private async activeDoctorCounts(): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    for (const d of await this.getDoctors())
+      if (d.status === 'active') counts.set(d.clinicId, (counts.get(d.clinicId) || 0) + 1);
+    return counts;
+  }
   async getClinics(): Promise<Clinic[]> {
-    if (await this.get('READ_MODELS', 'V1'))
-      return (await this.query('CATALOG#CLINICS', '')).map(clean<Clinic>);
-    return (
-      await this.scan('begins_with(pk, :p) AND sk = :m', { ':p': 'CLINIC#', ':m': 'METADATA' })
-    ).map(clean<Clinic>);
+    const [rows, counts] = await Promise.all([
+      (await this.readModels())
+        ? this.query('CATALOG#CLINICS', '')
+        : this.scan('begins_with(pk, :p) AND sk = :m', { ':p': 'CLINIC#', ':m': 'METADATA' }),
+      this.activeDoctorCounts(),
+    ]);
+    return rows
+      .map(clean<Clinic>)
+      .map((c) => ({ ...c, activeDoctorsCount: counts.get(c.id) || 0 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
   async getClinicById(id: string): Promise<Clinic | null> {
     const row = await this.get(`CLINIC#${id}`);
-    return row ? clean<Clinic>(row) : null;
+    if (!row) return null;
+    return {
+      ...clean<Clinic>(row),
+      activeDoctorsCount: (await this.activeDoctorCounts()).get(id) || 0,
+    };
   }
   async saveClinic(clinic: Clinic): Promise<Clinic> {
     const next = { ...clinic, updatedAt: new Date().toISOString() };
@@ -192,12 +220,27 @@ export class DynamoDbRepository {
     ]);
     return settings;
   }
-  async getDoctors(): Promise<Doctor[]> {
-    if (await this.get('READ_MODELS', 'V1'))
-      return (await this.query('CATALOG#DOCTORS', '')).map(clean<Doctor>);
-    return (
-      await this.scan('begins_with(pk, :p) AND sk = :m', { ':p': 'DOCTOR#', ':m': 'METADATA' })
+  async getDoctors(filters?: DoctorFilters): Promise<Doctor[]> {
+    const doctors = (
+      (await this.readModels())
+        ? await this.query('CATALOG#DOCTORS', '')
+        : await this.scan('begins_with(pk, :p) AND sk = :m', { ':p': 'DOCTOR#', ':m': 'METADATA' })
     ).map(clean<Doctor>);
+    return filters ? filterDoctors(doctors, filters) : doctors;
+  }
+  async searchDoctors(filters: DoctorFilters & { page: number; pageSize: number }) {
+    const doctors = await this.getDoctors(filters);
+    return { doctors: page(doctors, filters.page, filters.pageSize), total: doctors.length };
+  }
+  async directoryOptions() {
+    const active = (await this.getDoctors()).filter((d) => d.status === 'active');
+    const distinct = (values: string[]) => [...new Set(values)].sort((a, b) => a.localeCompare(b));
+    return {
+      specialties: distinct(active.map((d) => d.specialization)),
+      languages: distinct(active.flatMap((d) => d.languages || [])),
+      doctorCount: active.length,
+      clinicCount: new Set(active.map((d) => d.clinicId)).size,
+    };
   }
   async getDoctorById(id: string): Promise<Doctor | null> {
     const row = await this.get(`DOCTOR#${id}`);
@@ -238,9 +281,12 @@ export class DynamoDbRepository {
           : { ConditionExpression: 'attribute_not_exists(pk)' },
       ),
     ];
+    // Each identity claim makes a lookup a single GetItem and makes the value unique.
     for (const [kind, value, old] of [
       ['PHONE', phone, previous?.phone ? phoneDigits(previous.phone) : ''],
       ['EMAIL', email, previous?.email?.toLowerCase() || ''],
+      ['STAFF', user.staffId?.trim().toLowerCase() || '', previous?.staffId?.toLowerCase() || ''],
+      ['COGNITO', user.cognitoSub || '', previous?.cognitoSub || ''],
     ]) {
       if (value)
         items.push(
@@ -277,38 +323,63 @@ export class DynamoDbRepository {
     const row = await this.get(`USER#${id}`);
     return row ? clean<User>(row) : null;
   }
+  /** Records a claim found by a legacy scan so the next lookup is a single read. */
+  private async backfillClaim(kind: string, value: string, userId: string) {
+    try {
+      await docClient.send(
+        new PutCommand({
+          TableName: this.tableName,
+          Item: { ...this.key(`IDENTITY#${kind}#${value}`), userId },
+          ConditionExpression: 'attribute_not_exists(pk)',
+        }),
+      );
+    } catch (e: any) {
+      if (e.name !== 'ConditionalCheckFailedException') throw e;
+    }
+  }
   async findUserByIdentifier(identifier: string): Promise<User | null> {
     const id = identifier.trim().toLowerCase(),
       isEmail = id.includes('@'),
       phone = phoneDigits(id);
-    const claim =
-      isEmail || /^\d{10}$/.test(phone)
-        ? await this.get(`IDENTITY#${isEmail ? 'EMAIL' : 'PHONE'}#${isEmail ? id : phone}`)
-        : null;
+    const [kind, value] = isEmail
+      ? ['EMAIL', id]
+      : /^\d{10}$/.test(phone)
+        ? ['PHONE', phone]
+        : ['STAFF', id];
+    const claim = await this.get(`IDENTITY#${kind}#${value}`);
     if (claim) return this.getUserById(claim.userId);
+    // After the backfill migration every identity has a claim, so a miss is final.
+    if (await this.readModels()) return null;
     const users = await this.scan('begins_with(pk, :p) AND sk = :m', {
       ':p': 'USER#',
       ':m': 'METADATA',
     });
     const found = users.find((u) =>
-      isEmail
+      kind === 'EMAIL'
         ? u.email?.toLowerCase() === id
-        : /^\d{10}$/.test(phone)
+        : kind === 'PHONE'
           ? phoneDigits(u.phone || '') === phone
           : u.staffId?.toLowerCase() === id,
     );
-    return found ? clean<User>(found) : null;
+    if (!found) return null;
+    await this.backfillClaim(kind, value, found.id);
+    return clean<User>(found);
   }
   async findUserByCognitoSub(sub: string): Promise<User | null> {
+    const claim = await this.get(`IDENTITY#COGNITO#${sub}`);
+    if (claim) return this.getUserById(claim.userId);
+    if (await this.readModels()) return null;
     const users = await this.scan('begins_with(pk, :p) AND sk = :m AND cognitoSub = :sub', {
       ':p': 'USER#',
       ':m': 'METADATA',
       ':sub': sub,
     });
-    return users[0] ? clean<User>(users[0]) : null;
+    if (!users[0]) return null;
+    await this.backfillClaim('COGNITO', sub, users[0].id);
+    return clean<User>(users[0]);
   }
   async getPatients(search?: string, clinicId?: string): Promise<User[]> {
-    if (await this.get('READ_MODELS', 'V1')) {
+    if (await this.readModels()) {
       const references = await this.query(
         clinicId ? `PATIENTS#CLINIC#${clinicId}` : 'CATALOG#PATIENTS',
         '',
@@ -364,6 +435,25 @@ export class DynamoDbRepository {
     }
     return list;
   }
+  /** Patients a doctor has seen or will see: any visit or appointment with that doctor. */
+  async patientsForDoctor(
+    search: string | undefined,
+    clinicId: string | undefined,
+    doctorId: string,
+  ) {
+    const doctor = await this.getDoctorById(doctorId);
+    if (!doctor) return [];
+    const [patients, appointments, visits] = await Promise.all([
+      this.getPatients(search, clinicId),
+      this.getAppointments({ doctorId }),
+      this.getRecentTokens(doctor.clinicId, 3650),
+    ]);
+    const seen = new Set(appointments.map((a) => a.patientId));
+    for (const t of visits) if (t.doctorId === doctorId && t.patientId) seen.add(t.patientId);
+    for (const t of await this.getAllTokensForQueue(this.getQueueId(doctorId)))
+      if (t.patientId) seen.add(t.patientId);
+    return patients.filter((p) => seen.has(p.id));
+  }
   getQueueId(doctorId: string, date = clinicDate()) {
     return `${date}#${doctorId}`;
   }
@@ -383,6 +473,7 @@ export class DynamoDbRepository {
   async getActivePatientToken(patientId: string, date = clinicDate()): Promise<QueueToken | null> {
     const claim = await this.get(`PATIENT_DAY#${date}#${patientId}`, 'ACTIVE');
     if (claim) return (await this.findTokenById(claim.tokenId))?.token || null;
+    if (await this.readModels()) return null;
     for (const d of await this.getDoctors()) {
       const found = (await this.getAllTokensForQueue(this.getQueueId(d.id, date))).find(
         (t) => t.patientId === patientId && ['waiting', 'current'].includes(t.status),
@@ -553,10 +644,26 @@ export class DynamoDbRepository {
             (b.tokenSeq || Number(b.tokenNumber.split('-').pop())),
       );
   }
+  /**
+   * Emergencies, walk-ins and appointments whose time has arrived are eligible; a future
+   * appointment is never called ahead of its window.
+   */
+  async getNextEligibleToken(queueId: string, minute: number): Promise<QueueToken | null> {
+    const date = queueId.split('#')[0];
+    return (
+      (await this.getWaitingTokens(queueId)).find(
+        (t) =>
+          t.priority === 'emergency' ||
+          t.isWalkIn ||
+          ['Now', 'Walk-in'].includes(t.scheduledTime) ||
+          (date === clinicDate() && clockMinutes(t.scheduledTime) <= minute),
+      ) || null
+    );
+  }
   async findTokenById(id: string): Promise<{ token: QueueToken; pk: string; sk: string } | null> {
     const locator = await this.get(`TOKEN#${id}`);
     let item = locator ? await this.get(locator.queuePk, locator.queueSk) : null;
-    if (!item)
+    if (!item && !(await this.readModels()))
       item =
         (
           await this.scan('begins_with(pk, :p) AND begins_with(sk, :t) AND id = :id', {
@@ -733,18 +840,6 @@ export class DynamoDbRepository {
     await this.write(items);
     return clean<QueueToken>(updated);
   }
-  async getPausedDoctors(): Promise<string[]> {
-    const states = await this.scan('begins_with(pk, :p) AND sk = :a', {
-        ':p': 'QUEUE_STATE#',
-        ':a': 'ACTIVE',
-      }),
-      legacy = await this.get('QUEUE_PAUSES', 'ACTIVE');
-    const migrated = new Set(states.map((s) => s.doctorId));
-    return [
-      ...states.filter((s) => s.isPaused).map((s) => s.doctorId),
-      ...(legacy?.doctorIds || []).filter((id: string) => !migrated.has(id)),
-    ];
-  }
   async isDoctorPaused(doctorId: string): Promise<boolean> {
     const state = await this.get(`QUEUE_STATE#${doctorId}`, 'ACTIVE');
     if (state) return Boolean(state.isPaused);
@@ -774,34 +869,33 @@ export class DynamoDbRepository {
     );
     return apt;
   }
-  async getAppointments(filters?: {
-    patientId?: string;
-    doctorId?: string;
-    date?: string;
-    clinicId?: string;
-  }): Promise<Appointment[]> {
-    const partition = filters?.patientId
+  async getAppointments(filters: AppointmentFilters = {}): Promise<Appointment[]> {
+    const partition = filters.patientId
       ? `APPOINTMENTS#PATIENT#${filters.patientId}`
-      : filters?.doctorId && filters.doctorId !== 'all'
+      : filters.doctorId && filters.doctorId !== 'all'
         ? `APPOINTMENTS#DOCTOR#${filters.doctorId}`
-        : filters?.clinicId
+        : filters.clinicId
           ? `APPOINTMENTS#CLINIC#${filters.clinicId}`
           : undefined;
-    let list =
-      partition && (await this.get('READ_MODELS', 'V1'))
-        ? (await this.query(partition, filters?.date || '')).map(clean<Appointment>)
+    const list =
+      partition && (await this.readModels())
+        ? (await this.query(partition, filters.date || '')).map(clean<Appointment>)
         : (
             await this.scan('begins_with(pk, :p) AND sk = :m', {
               ':p': 'APPOINTMENT#',
               ':m': 'METADATA',
             })
           ).map(clean<Appointment>);
-    if (filters?.patientId) list = list.filter((a) => a.patientId === filters.patientId);
-    if (filters?.doctorId && filters.doctorId !== 'all')
-      list = list.filter((a) => a.doctorId === filters.doctorId);
-    if (filters?.date) list = list.filter((a) => a.date === filters.date);
-    if (filters?.clinicId) list = list.filter((a) => a.clinicId === filters.clinicId);
-    return list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return filterAppointments(list, filters);
+  }
+  async searchAppointments(filters: AppointmentFilters & { page: number; pageSize: number }) {
+    const list = await this.getAppointments(filters);
+    return {
+      appointments: page(list, filters.page, filters.pageSize),
+      total: list.length,
+      page: filters.page,
+      pageSize: filters.pageSize,
+    };
   }
   async getAppointmentById(id: string): Promise<Appointment | null> {
     const row = await this.get(`APPOINTMENT#${id}`);
@@ -822,7 +916,7 @@ export class DynamoDbRepository {
   }
   async getRecentTokens(clinicId: string, days = 30): Promise<QueueToken[]> {
     const cutoff = clinicDate(new Date(Date.now() - days * 86400000));
-    if (await this.get('READ_MODELS', 'V1'))
+    if (await this.readModels())
       return (await this.query(`VISITS#CLINIC#${clinicId}`, ''))
         .map(clean<QueueToken>)
         .filter((t) => (t.queueDate || t.createdAt.slice(0, 10)) >= cutoff);

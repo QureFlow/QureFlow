@@ -1,11 +1,22 @@
 import type { User } from '../models/types.js';
 
-// This capability exists only for the synthetic administrator in the local DBMS entry point.
+const loopback = (endpoint?: string) => {
+  try {
+    return (
+      Boolean(endpoint) && ['localhost', '127.0.0.1', '[::1]'].includes(new URL(endpoint!).hostname)
+    );
+  } catch {
+    return false;
+  }
+};
+
+// This capability exists only for the synthetic administrator of the local DynamoDB demo.
 export const canManageAllDemoClinics = (user: User): boolean =>
-  process.env.DBMS_DEMO_ALL_CLINICS === 'true' &&
-  process.env.DATABASE_PROVIDER === 'mysql' &&
+  process.env.DEMO_ALL_CLINICS === 'true' &&
   process.env.AUTH_PROVIDER === 'local' &&
   ['development', 'test'].includes(process.env.NODE_ENV || '') &&
-  ['127.0.0.1', 'localhost'].includes(process.env.MYSQL_HOST || '127.0.0.1') &&
-  /^qureflow_(dbms|test(?:_[a-f0-9]+)?)$/.test(process.env.MYSQL_DATABASE || 'qureflow_dbms') &&
-  user.id === 'admin-1' && user.role === 'admin' && user.metadata?.synthetic === true;
+  loopback(process.env.DYNAMODB_ENDPOINT) &&
+  /^QureFlow(Demo|Test)/.test(process.env.DYNAMODB_TABLE_NAME || '') &&
+  user.id === 'admin-1' &&
+  user.role === 'admin' &&
+  user.metadata?.synthetic === true;

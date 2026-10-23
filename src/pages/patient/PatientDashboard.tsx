@@ -6,6 +6,7 @@ import { queueService } from '../../services/queueService';
 import { appointmentService } from '../../services/appointmentService';
 import { Appointment, PatientQueueStatus } from '../../types';
 import { clinicDate } from '../../lib/time';
+import { waitRangeText } from '../../lib/queuePresentation';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { MobileNav } from '../../components/layout/MobileNav';
@@ -122,6 +123,12 @@ export const PatientDashboard: React.FC = () => {
                     <span className="text-xs text-brand-200">
                       {active.isPaused ? 'Estimate may change' : 'Estimated waiting time'}
                     </span>
+                    {active.token.status !== 'current' &&
+                      waitRangeText(active.estimatedWaitRange) && (
+                        <span className="text-[11px] text-brand-300 block mt-1">
+                          {waitRangeText(active.estimatedWaitRange)}
+                        </span>
+                      )}
                   </div>
                 </div>
                 <div className="mt-8 pt-5 border-t border-white/15 flex flex-wrap items-center justify-between gap-3">
@@ -140,7 +147,8 @@ export const PatientDashboard: React.FC = () => {
                 </div>
                 {active.prediction && (
                   <p className="text-[11px] text-brand-300 mt-4">
-                    Estimate based on {active.prediction.sampleCount} consultation samples
+                    Estimate based on {active.prediction.sampleCount} recent consultations and the
+                    queue order
                     {active.prediction.syntheticSamples > 0
                       ? ' (includes synthetic demo history)'
                       : ''}

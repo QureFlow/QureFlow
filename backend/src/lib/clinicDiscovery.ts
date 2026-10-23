@@ -7,10 +7,16 @@ import { startLocalDiscovery } from './localDiscovery.js';
 
 let identity: { serverId: string; serverName: string } | undefined;
 
+/** Wi-Fi discovery is for a clinic's local server; cloud deployments leave it off. */
+export const discoveryEnabled = () =>
+  process.env.CLINIC_DISCOVERY === 'true' && !process.env.AWS_LAMBDA_FUNCTION_NAME;
+
 export function clinicIdentity() {
   if (identity) return identity;
-  const identityFile = path.resolve(process.cwd(),
-    process.cwd().endsWith('backend') ? '.qureflow-server.local' : 'backend/.qureflow-server.local');
+  const identityFile = path.resolve(
+    process.cwd(),
+    process.cwd().endsWith('backend') ? '.qureflow-server.local' : 'backend/.qureflow-server.local',
+  );
   let serverId: string;
   try {
     serverId = readFileSync(identityFile, 'utf8').trim();
@@ -20,7 +26,10 @@ export function clinicIdentity() {
     serverId = randomUUID();
     writeFileSync(identityFile, serverId, { flag: 'wx' });
   }
-  identity = { serverId, serverName: (process.env.DBMS_SERVER_NAME || 'QureFlow · ' + hostname()).slice(0, 70) };
+  identity = {
+    serverId,
+    serverName: (process.env.CLINIC_SERVER_NAME || 'QureFlow · ' + hostname()).slice(0, 70),
+  };
   return identity;
 }
 
@@ -35,28 +44,50 @@ export function discoveryInstanceName(name: string, id: string) {
 }
 
 function lanAddresses() {
-  return [...new Set(Object.values(networkInterfaces()).flatMap(entries => entries || [])
-    .filter(entry => entry.family === 'IPv4' && !entry.internal)
-    .map(entry => entry.address)
-    .filter(address => {
-      const parts = address.split('.').map(Number);
-      return parts[0] === 10 || (parts[0] === 192 && parts[1] === 168) ||
-        (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31);
-    }))].sort().slice(0, 14).join(',');
+  return [
+    ...new Set(
+      Object.values(networkInterfaces())
+        .flatMap((entries) => entries || [])
+        .filter((entry) => entry.family === 'IPv4' && !entry.internal)
+        .map((entry) => entry.address)
+        .filter((address) => {
+          const parts = address.split('.').map(Number);
+          return (
+            parts[0] === 10 ||
+            (parts[0] === 192 && parts[1] === 168) ||
+            (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31)
+          );
+        }),
+    ),
+  ]
+    .sort()
+    .slice(0, 14)
+    .join(',');
 }
 
 export function advertiseClinic(port: number, options: { discoveryPort?: number } = {}) {
   const { serverId, serverName } = clinicIdentity();
-  const directDiscovery = startLocalDiscovery({ apiPort: port, serverId }, { port: options.discoveryPort });
+  const directDiscovery = startLocalDiscovery(
+    { apiPort: port, serverId },
+    { port: options.discoveryPort },
+  );
   const bonjour = new Bonjour({}, (error: Error) =>
-    console.warn('[QureFlow Wi-Fi] Discovery unavailable:', error.message));
+    console.warn('[QureFlow Wi-Fi] Discovery unavailable:', error.message),
+  );
   let addresses = lanAddresses();
-  const publish = () => bonjour.publish({
-    name: discoveryInstanceName(serverName, serverId), type: 'qureflow', protocol: 'tcp', port,
-    disableIPv6: true, txt: { project: 'QureFlow', database: 'mysql', id: serverId, version: '1', addresses },
-  });
+  const publish = () =>
+    bonjour.publish({
+      name: discoveryInstanceName(serverName, serverId),
+      type: 'qureflow',
+      protocol: 'tcp',
+      port,
+      disableIPv6: true,
+      txt: { project: 'QureFlow', database: 'dynamodb', id: serverId, version: '1', addresses },
+    });
   let service = publish();
-  service.on('up', () => console.log('[QureFlow Wi-Fi] Automatic Android connection available on this network.'));
+  service.on('up', () =>
+    console.log('[QureFlow Wi-Fi] Automatic Android connection available on this network.'),
+  );
   service.on('error', (error: Error) => console.warn('[QureFlow Wi-Fi]', error.message));
   let stopped = false;
   // Refresh DNS records when DHCP or Wi-Fi changes the computer's addresses.
@@ -75,7 +106,11 @@ export function advertiseClinic(port: number, options: { discoveryPort?: number 
     if (stopped) return;
     stopped = true;
     clearInterval(refresh);
-    try { directDiscovery.close(); } catch { /* It may already be closed after a bind failure. */ }
+    try {
+      directDiscovery.close();
+    } catch {
+      /* It may already be closed after a bind failure. */
+    }
     bonjour.unpublishAll(() => bonjour.destroy());
   };
 }

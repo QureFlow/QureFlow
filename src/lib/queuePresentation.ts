@@ -34,3 +34,7 @@ export const nextCallableToken = (tokens: QueueToken[], now = new Date()) => {
     }) ?? null
   );
 };
+
+/** The likely spread of a wait estimate, e.g. "Usually 8–18 min"; empty when not meaningful. */
+export const waitRangeText = (range?: { low: number; high: number }) =>
+  range && range.high > range.low ? `Usually ${range.low}–${range.high} min` : '';

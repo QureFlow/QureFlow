@@ -7,9 +7,9 @@ import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.j
 import { route } from '../lib/http.js';
 import { accessDoctor, staffClinic, managesAllDemoClinics } from '../lib/access.js';
 import { parse, nameSchema } from '../lib/validation.js';
-import { clinicDate, weekday, clockMinutes } from '../lib/time.js';
+import { clinicDate, clockMinutes } from '../lib/time.js';
+import { withAvailability } from '../lib/directory.js';
 import { AppError } from '../lib/errors.js';
-import { mysqlRepo } from '../repositories/mysqlRepo.js';
 const router = Router();
 const time = z.string().regex(/^(0[1-9]|1[0-2]):[0-5]\d (AM|PM)$/);
 const schema = z
@@ -31,23 +31,13 @@ const schema = z
     avatar: z.string().url().startsWith('https://').optional(),
   })
   .strict();
-const decorate = (d: any) => ({
-  ...d,
-  isAvailableToday: d.status === 'active' && d.consultationDays.includes(weekday(clinicDate())),
-});
 router.get(
   '/doctors/options',
-  route(async (_req, res) => {
-    if (process.env.DATABASE_PROVIDER !== 'mysql')
-      throw new AppError(404, 'SQL directory is available in the DBMS variant.');
-    res.json(await mysqlRepo.directoryOptions());
-  }),
+  route(async (_req, res) => res.json(await db.directoryOptions())),
 );
 router.get(
   '/doctors/search',
   route(async (req, res) => {
-    if (process.env.DATABASE_PROVIDER !== 'mysql')
-      throw new AppError(404, 'SQL directory is available in the DBMS variant.');
     const filters = parse(
       z
         .object({
@@ -63,12 +53,10 @@ router.get(
         .strict(),
       req.query,
     );
-    const result = await mysqlRepo.searchDoctors({
+    const result = await db.searchDoctors({
       ...filters,
       status: 'active',
       availableTodayOnly: filters.availableTodayOnly === 'true',
-      limit: filters.pageSize,
-      offset: (filters.page - 1) * filters.pageSize,
     });
     res.json({ ...result, page: filters.page, pageSize: filters.pageSize });
   }),
@@ -76,32 +64,16 @@ router.get(
 router.get(
   '/doctors',
   route(async (req, res) => {
-    if (process.env.DATABASE_PROVIDER === 'mysql') {
-      res.json(
-        await mysqlRepo.getDoctors({
-          query: typeof req.query.query === 'string' ? req.query.query : undefined,
-          specialization:
-            typeof req.query.specialization === 'string' ? req.query.specialization : undefined,
-          clinicId: typeof req.query.clinicId === 'string' ? req.query.clinicId : undefined,
-          availableTodayOnly: req.query.availableTodayOnly === 'true',
-        }),
-      );
-      return;
-    }
-    let doctors = (await db.getDoctors()).map(decorate);
-    if (typeof req.query.query === 'string') {
-      const q = req.query.query.toLowerCase();
-      doctors = doctors.filter((d) =>
-        `${d.name} ${d.specialization} ${d.clinicName}`.toLowerCase().includes(q),
-      );
-    }
-    if (typeof req.query.specialization === 'string' && req.query.specialization !== 'all')
-      doctors = doctors.filter((d) => d.specialization === req.query.specialization);
-    if (typeof req.query.clinicId === 'string' && req.query.clinicId !== 'all')
-      doctors = doctors.filter((d) => d.clinicId === req.query.clinicId);
-    if (req.query.availableTodayOnly === 'true')
-      doctors = doctors.filter((d) => d.isAvailableToday);
-    res.json(doctors);
+    const text = (key: string) =>
+      typeof req.query[key] === 'string' ? (req.query[key] as string) : undefined;
+    res.json(
+      await db.getDoctors({
+        query: text('query'),
+        specialization: text('specialization'),
+        clinicId: text('clinicId'),
+        availableTodayOnly: req.query.availableTodayOnly === 'true',
+      }),
+    );
   }),
 );
 router.get(
@@ -120,7 +92,7 @@ router.get(
   route(async (req, res) => {
     const doctor = await db.getDoctorById(req.params.id);
     if (!doctor) throw new AppError(404, 'Doctor not found');
-    res.json(decorate(doctor));
+    res.json(withAvailability(doctor));
   }),
 );
 router.post(
@@ -142,7 +114,7 @@ router.post(
       isAvailableToday: false,
       nextAvailableSlot: data.startTime,
     };
-    res.status(201).json(decorate(await db.saveDoctor(doctor)));
+    res.status(201).json(withAvailability(await db.saveDoctor(doctor)));
   }),
 );
 router.patch(
@@ -157,7 +129,7 @@ router.patch(
     const doctor = { ...existing, ...updates };
     if (clockMinutes(doctor.endTime) <= clockMinutes(doctor.startTime))
       throw new AppError(400, 'Closing time must be after opening time.');
-    res.json(decorate(await db.saveDoctor(doctor)));
+    res.json(withAvailability(await db.saveDoctor(doctor)));
   }),
 );
 export default router;

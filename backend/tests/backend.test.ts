@@ -28,14 +28,12 @@ async function run() {
   const { dynamoDbRepo: repo } = await import('../src/repositories/dynamoDbRepo.js');
   const { authService: auth } = await import('../src/services/authService.js');
   const { queueService: queue } = await import('../src/services/queueService.js');
-  const { appointmentService: appointments } = await import(
-    '../src/services/appointmentService.js'
-  );
+  const { appointmentService: appointments } =
+    await import('../src/services/appointmentService.js');
   const { clinicDate } = await import('../src/lib/time.js');
   const { app } = await import('../src/server.js');
-  const { trainDurationModel, predictDuration } = await import(
-    '../src/services/predictionService.js'
-  );
+  const { trainDurationModel, predictDuration } =
+    await import('../src/services/predictionService.js');
   const { DynamoDBClient, DeleteTableCommand } = await import('@aws-sdk/client-dynamodb');
   requireLocalDatabase();
   await seedLocalDemo(false);
@@ -582,11 +580,20 @@ async function run() {
     });
     await check('Learned models validate on a chronological holdout before activation', () => {
       const model = trainDurationModel(samples, 15);
-      assert.equal(model.method, 'ridge_regression');
+      assert.equal(model.method, 'hierarchical_lognormal');
       assert.equal(model.trainingCount, 64);
       assert.equal(model.validationCount, 16);
       assert.ok(model.modelMae! < model.baselineMae!);
-      assert.ok(predictDuration(model, samples[0]) >= 2);
+      assert.ok(predictDuration(model, samples[0]) >= 1);
+      // Walk-in and emergency effects are learned in the right direction.
+      const normal = { ...samples[1], isWalkIn: false, priority: 'normal' as const };
+      assert.ok(
+        predictDuration(model, { ...normal, isWalkIn: true }) > predictDuration(model, normal),
+      );
+      assert.ok(
+        predictDuration(model, { ...normal, priority: 'emergency' }) >
+          predictDuration(model, normal),
+      );
     });
     await check('Invalid consultation durations are excluded from learning', () => {
       const invalid = samples.map((t) => ({ ...t, servedAt: t.calledAt }));
@@ -697,6 +704,250 @@ async function run() {
           );
       },
     );
+    await check(
+      'Doctor directory search filters, orders and pages the DynamoDB catalog',
+      async () => {
+        const general = await api(
+          '/doctors/search?specialization=' + encodeURIComponent('General Medicine'),
+        );
+        assert.equal(general.status, 200);
+        assert.equal(general.body.total, 2);
+        assert.ok(general.body.doctors.every((d: any) => d.specialization === 'General Medicine'));
+        const page = await api('/doctors/search?sort=experience&pageSize=3&page=2');
+        assert.equal(page.body.total, 10);
+        assert.equal(page.body.doctors.length, 3);
+        const all = (await api('/doctors/search?sort=experience&pageSize=50')).body.doctors;
+        assert.ok(
+          all.every((d: any, i: number) => !i || all[i - 1].experienceYears >= d.experienceYears),
+        );
+        assert.deepEqual(
+          page.body.doctors.map((d: any) => d.id),
+          all.slice(3, 6).map((d: any) => d.id),
+        );
+        const byFee = (await api('/doctors/search?sort=fee&pageSize=50')).body.doctors;
+        assert.ok(
+          byFee.every(
+            (d: any, i: number) => !i || byFee[i - 1].consultationFee <= d.consultationFee,
+          ),
+        );
+        assert.deepEqual((await api('/doctors/search?page=999')).body.doctors, []);
+        assert.equal((await api('/doctors/search?page=999')).body.total, 10);
+        assert.equal((await api('/doctors/search?query=sharma')).body.total, 1);
+        assert.equal(
+          (await api('/doctors/search?sort=' + encodeURIComponent('name; DROP'))).status,
+          400,
+        );
+        assert.equal((await api('/doctors/search?pageSize=10000')).status, 400);
+        assert.equal((await api('/doctors/search?unexpected=1')).status, 400);
+      },
+    );
+    await check(
+      'Directory options and clinic doctor counts are derived from active doctors',
+      async () => {
+        const options = (await api('/doctors/options')).body;
+        assert.equal(options.doctorCount, 10);
+        assert.equal(options.clinicCount, 3);
+        assert.ok(options.specialties.includes('Orthopedics'));
+        const clinics = (await api('/clinics')).body;
+        assert.equal(clinics.find((c: any) => c.id === 'clinic-1').activeDoctorsCount, 5);
+        assert.equal((await api('/clinics/clinic-3')).body.activeDoctorsCount, 2);
+      },
+    );
+    await check('Staff appointment search pages results within the assigned clinic', async () => {
+      const cancelled = await api('/appointments/search?status=cancelled&pageSize=1', admin.token);
+      assert.equal(cancelled.status, 200);
+      assert.ok(cancelled.body.total >= 1);
+      assert.equal(cancelled.body.appointments.length, 1);
+      assert.equal(cancelled.body.appointments[0].status, 'cancelled');
+      assert.equal(cancelled.body.appointments[0].clinicId, 'clinic-1');
+      const everything = await api('/appointments/search?pageSize=100', admin.token);
+      assert.ok(everything.body.appointments.every((a: any) => a.clinicId === 'clinic-1'));
+      assert.ok(
+        everything.body.appointments.every(
+          (a: any, i: number, list: any[]) => !i || list[i - 1].date >= a.date,
+        ),
+      );
+      assert.equal(
+        (await api('/appointments/search?query=zz-no-such-patient', admin.token)).body.total,
+        0,
+      );
+      assert.equal((await api('/appointments/search', patient.token)).status, 403);
+      assert.ok(
+        (await api('/appointments/search?pageSize=100', otherAdmin.token)).body.appointments.every(
+          (a: any) => a.clinicId === 'clinic-2',
+        ),
+      );
+    });
+    await check('Cognito subjects and staff IDs resolve through identity claims', async () => {
+      const { docClient, DYNAMODB_TABLE_NAME } = await import('../src/config/aws.js');
+      const { GetCommand } = await import('@aws-sdk/lib-dynamodb');
+      const user = (await repo.getUserById('demo-patient-3'))!;
+      await repo.saveUser({ ...user, cognitoSub: 'test-sub-123' });
+      const claim = await docClient.send(
+        new GetCommand({
+          TableName: DYNAMODB_TABLE_NAME,
+          Key: { pk: 'IDENTITY#COGNITO#test-sub-123', sk: 'METADATA' },
+        }),
+      );
+      assert.equal(claim.Item?.userId, 'demo-patient-3');
+      assert.equal((await repo.findUserByCognitoSub('test-sub-123'))?.id, 'demo-patient-3');
+      assert.equal(await repo.findUserByCognitoSub('unknown-sub'), null);
+      assert.equal((await repo.findUserByIdentifier('demo-admin'))?.id, 'admin-1');
+      const other = (await repo.getUserById('demo-patient-4'))!;
+      await assert.rejects(repo.saveUser({ ...other, cognitoSub: 'test-sub-123' }));
+    });
+    await check('Wait estimates include an 80% range around the expected wait', async () => {
+      const t1 = await join('demo-patient-11', 'doc-8');
+      const t2 = await join('demo-patient-12', 'doc-8');
+      try {
+        const status = (await queue.getPatientActiveStatus('demo-patient-12'))!;
+        assert.equal(status.patientsAhead, 1);
+        assert.ok(status.estimatedWaitMinutes > 0);
+        assert.ok(status.estimatedWaitRange!.low <= status.estimatedWaitMinutes);
+        assert.ok(status.estimatedWaitRange!.high >= status.estimatedWaitMinutes);
+        assert.equal(status.prediction?.modelVersion, 'consultation-lognormal-v2');
+      } finally {
+        await queue.cancelToken(t1.id);
+        await queue.cancelToken(t2.id);
+      }
+    });
+    await check(
+      'The wait projection counts bookings whose time arrives during the wait',
+      async () => {
+        const { estimateWait, trainDurationModel: train } =
+          await import('../src/services/predictionService.js');
+        const model = train([], 10);
+        const now = Date.parse(`${day}T10:00:00+05:30`);
+        const token = (id: string, seq: number, scheduledTime: string, isWalkIn: boolean) => ({
+          ...ownToken,
+          id,
+          tokenSeq: seq,
+          tokenNumber: `T-${seq}`,
+          scheduledTime,
+          isWalkIn,
+          priority: 'normal',
+          status: 'waiting',
+        });
+        const walkIn = token('walk', 5, 'Walk-in', true);
+        const alone = estimateWait({ model, target: walkIn, waiting: [], bufferMinutes: 2, now });
+        const booked = [token('b1', 1, '10:15 AM', false), token('b2', 2, '10:30 AM', false)];
+        const behind = estimateWait({
+          model,
+          target: walkIn,
+          waiting: booked,
+          bufferMinutes: 2,
+          now,
+        });
+        // The walk-in is called at 10:00, before either booking becomes eligible.
+        assert.equal(alone.minutes, 0);
+        assert.equal(behind.minutes, 0);
+        const earlier = [token('w3', 3, 'Walk-in', true), token('w4', 4, 'Walk-in', true)];
+        const walkInsOnly = estimateWait({
+          model,
+          target: walkIn,
+          waiting: earlier,
+          bufferMinutes: 2,
+          now,
+        });
+        const busy = estimateWait({
+          model,
+          target: walkIn,
+          waiting: [...earlier, ...booked],
+          bufferMinutes: 2,
+          now,
+        });
+        // After two earlier walk-ins (about 23 minutes) the 10:15 booking is eligible and goes first.
+        assert.ok(
+          walkInsOnly.minutes >= 22 && walkInsOnly.minutes <= 25,
+          `got ${walkInsOnly.minutes}`,
+        );
+        assert.ok(busy.minutes >= walkInsOnly.minutes + 10, `got ${busy.minutes}`);
+        const later = token('b9', 9, '11:30 AM', false);
+        const bookedWait = estimateWait({
+          model,
+          target: later,
+          waiting: [],
+          bufferMinutes: 2,
+          now,
+        });
+        assert.ok(
+          bookedWait.minutes >= 89,
+          'a booked patient is not called before the appointment',
+        );
+      },
+    );
+    await check(
+      'Concurrent bookings from different patients cannot overfill the last place',
+      async () => {
+        const settings = await repo.getSettings('clinic-3');
+        await repo.saveSettings({ ...settings, bufferMinutes: 20 }, 'clinic-3');
+        try {
+          const slot = (await appointments.getDoctorSlotAvailability('doc-8', future)).find(
+            (s) => s.available,
+          )!;
+          assert.ok(slot);
+          const results = await Promise.allSettled(
+            ['demo-patient-13', 'demo-patient-14', 'demo-patient-15'].map((patientId) =>
+              appointments.createAppointment({
+                patientId,
+                patientName: 'Synthetic concurrency case',
+                patientPhone: '9900000002',
+                doctorId: 'doc-8',
+                date: future,
+                time: slot.time,
+              }),
+            ),
+          );
+          const booked = results.filter(
+            (r) => r.status === 'fulfilled',
+          ) as PromiseFulfilledResult<any>[];
+          assert.equal(booked.length, 1);
+          for (const r of booked) await appointments.cancelAppointment(r.value.appointment.id);
+        } finally {
+          await repo.saveSettings(settings, 'clinic-3');
+        }
+      },
+    );
+    await check('Only the synthetic local administrator can manage all demo clinics', async () => {
+      const { canManageAllDemoClinics } = await import('../src/lib/demoAccess.js');
+      process.env.DEMO_ALL_CLINICS = 'true';
+      try {
+        const session = await api('/auth/login', undefined, 'POST', {
+          identifier: 'demo.staff@example.invalid',
+          password: 'DemoClinic123!',
+        });
+        assert.equal(session.body.user.demoAllClinics, true);
+        const queues = await api('/queues/all', session.body.token);
+        assert.equal(queues.body.length, (await repo.getDoctors()).length);
+        assert.equal(
+          (await api('/analytics?clinicId=clinic-2', session.body.token)).body.clinicId,
+          'clinic-2',
+        );
+        assert.equal((await api('/queues/doctor/doc-1', otherAdmin.token)).status, 403);
+        assert.equal((await api('/settings?clinicId=clinic-1', otherAdmin.token)).status, 403);
+        assert.equal((await api('/auth/me', otherAdmin.token)).body.demoAllClinics, false);
+        assert.equal((await api('/auth/me', patient.token)).body.demoAllClinics, false);
+        const adminUser = (await repo.getUserById('admin-1'))!;
+        const endpoint = process.env.DYNAMODB_ENDPOINT;
+        process.env.DYNAMODB_ENDPOINT = 'https://dynamodb.eu-north-1.amazonaws.com';
+        assert.equal(canManageAllDemoClinics(adminUser), false);
+        process.env.DYNAMODB_ENDPOINT = endpoint;
+        process.env.NODE_ENV = 'production';
+        assert.equal(canManageAllDemoClinics(adminUser), false);
+        process.env.NODE_ENV = 'test';
+        process.env.DEMO_ALL_CLINICS = 'false';
+        assert.equal((await api('/queues/doctor/doc-5', session.body.token)).status, 403);
+      } finally {
+        process.env.NODE_ENV = 'test';
+        delete process.env.DEMO_ALL_CLINICS;
+      }
+    });
+    await check('Staff analytics report replayed wait accuracy for each method', async () => {
+      const r = await api('/analytics', admin.token);
+      assert.equal(r.status, 200);
+      assert.ok(r.body.waitAccuracy.methods.formula);
+      assert.ok(r.body.waitAccuracy.methods.learned);
+    });
     await check('Session revocation takes effect on the next request', async () => {
       const user = (await repo.getUserById('patient-1'))!;
       await repo.saveUser({ ...user, sessionVersion: (user.sessionVersion || 0) + 1 });

@@ -3,7 +3,13 @@
  * Centralized HTTP client for the configured Express API (web or packaged Android).
  */
 import { Capacitor } from '@capacitor/core';
-import { mobileConnectionKey, mobileConnectionLostEvent, mobileConnectionReadyEvent, resolveApiBase } from '../lib/mobileConnection';
+import {
+  cloudApiBase,
+  mobileConnectionKey,
+  mobileConnectionLostEvent,
+  mobileConnectionReadyEvent,
+  resolveApiBase,
+} from '../lib/mobileConnection';
 
 let nativeClinicReady = false;
 const nativeRequests = new Set<AbortController>();
@@ -16,8 +22,11 @@ export function setNativeClinicReady(ready: boolean) {
 }
 
 const getApiBaseUrl = (): string => {
-  return resolveApiBase(import.meta.env.VITE_API_GATEWAY_URL, Capacitor.isNativePlatform(),
-    Capacitor.isNativePlatform() ? localStorage.getItem(mobileConnectionKey) : null);
+  return resolveApiBase(
+    import.meta.env.VITE_API_GATEWAY_URL,
+    Capacitor.isNativePlatform(),
+    Capacitor.isNativePlatform() ? localStorage.getItem(mobileConnectionKey) : null,
+  );
 };
 
 export class ApiError extends Error {
@@ -52,9 +61,9 @@ export const apiClient = {
   },
 
   async request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const native = Capacitor.getPlatform() === 'android';
-    if (native && !nativeClinicReady)
-      throw new ClinicConnectionPending();
+    const native =
+      Capacitor.getPlatform() === 'android' && !cloudApiBase(import.meta.env.VITE_API_GATEWAY_URL);
+    if (native && !nativeClinicReady) throw new ClinicConnectionPending();
     const baseUrl = getApiBaseUrl();
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const url = `${baseUrl}${cleanEndpoint}`;
@@ -111,12 +120,16 @@ export const apiClient = {
     } catch (err: any) {
       if (err instanceof ApiError) throw err;
       if (controller.signal.reason === connectionCheckReason)
-        throw new ClinicConnectionPending('The clinic connection is being checked. Check your appointments or queue before repeating an action.');
+        throw new ClinicConnectionPending(
+          'The clinic connection is being checked. Check your appointments or queue before repeating an action.',
+        );
       // Reconnect separately; never replay a booking or other mutation after a network failure.
       if (native && nativeClinicReady && !options.signal?.aborted)
         window.dispatchEvent(new Event(mobileConnectionLostEvent));
       if (native && !options.signal?.aborted)
-        throw new ClinicConnectionPending(`Network error connecting to QureFlow API: ${err.message}`);
+        throw new ClinicConnectionPending(
+          `Network error connecting to QureFlow API: ${err.message}`,
+        );
       throw new Error(`Network error connecting to QureFlow API: ${err.message}`);
     } finally {
       clearTimeout(timeout);

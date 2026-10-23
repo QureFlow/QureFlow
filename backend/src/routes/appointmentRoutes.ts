@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { appointmentService } from '../services/appointmentService.js';
 import { db } from '../repositories/repository.js';
-import { mysqlRepo } from '../repositories/mysqlRepo.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
 import { accessDoctor, staffClinicFilter } from '../lib/access.js';
 import { parse, bookingDateSchema } from '../lib/validation.js';
@@ -14,8 +13,6 @@ router.get(
   authenticateToken,
   requireRoles('admin', 'health_worker', 'doctor'),
   route(async (req, res) => {
-    if (process.env.DATABASE_PROVIDER !== 'mysql')
-      throw new AppError(404, 'SQL search is available in the DBMS variant.');
     const filters = parse(
       z
         .object({
@@ -48,7 +45,7 @@ router.get(
       await accessDoctor(req, doctorId);
     }
     res.json(
-      await mysqlRepo.searchAppointments({ ...filters, clinicId: staffClinicFilter(req), doctorId }),
+      await db.searchAppointments({ ...filters, clinicId: staffClinicFilter(req), doctorId }),
     );
   }),
 );

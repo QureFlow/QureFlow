@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   Stethoscope,
 } from 'lucide-react';
+import { waitRangeText } from '../../lib/queuePresentation';
 
 export const TokenScreen: React.FC = () => {
   const { user } = useAuth();
@@ -239,8 +240,11 @@ export const TokenScreen: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
-                  {activeData.prediction?.method === 'ridge_regression'
-                    ? `Estimate learned from ${activeData.prediction.sampleCount} completed consultations`
+                  {!isNowServing && waitRangeText(activeData.estimatedWaitRange) && (
+                    <>{waitRangeText(activeData.estimatedWaitRange)}. </>
+                  )}
+                  {activeData.prediction && activeData.prediction.method !== 'configured'
+                    ? `Estimate learned from ${activeData.prediction.sampleCount} completed consultations and the queue order`
                     : 'Estimate based on the configured consultation duration and queue order'}
                   {Boolean(activeData.prediction?.syntheticSamples) && ' • Synthetic demo history'}.
                   Actual consultation times may vary.

@@ -1,7 +1,10 @@
 services:
   dynamodb-local:
     image: amazon/dynamodb-local:latest
+    # The image's default user cannot write to a freshly created named volume.
+    user: root
     command: -jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data
+    working_dir: /home/dynamodblocal
     ports:
       - "127.0.0.1:18000:8000"
     volumes:

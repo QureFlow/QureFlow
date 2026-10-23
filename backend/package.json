@@ -1,32 +1,28 @@
 {
   "name": "qureflow-backend",
   "version": "1.0.0",
-  "description": "Smart cloud-based queue management backend for rural healthcare",
+  "description": "QureFlow API: clinic queues, bookings and waiting-time estimates on Amazon DynamoDB and Cognito",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/mysqlServer.ts",
+    "dev": "tsx watch src/server.ts",
     "dev:demo": "tsx watch src/demoServer.ts",
     "build": "tsc",
-    "start": "node dist/mysqlServer.js",
-    "seed": "tsx src/dbms/setup.ts",
+    "start": "node dist/server.js",
+    "seed": "tsx src/seed.ts",
+    "migrate:backfill": "tsx src/migrations/backfillIndexes.ts",
     "verify:aws": "tsx src/verifyAws.ts",
     "verify:demo": "tsx src/demo/verifyDataset.ts",
-    "test": "tsx --test tests/mysql.test.ts",
-    "dev:dbms": "tsx watch src/mysqlServer.ts",
-    "test:dbms": "tsx --test tests/mysql.test.ts",
-    "test:discovery": "tsx --test tests/discovery.test.ts tests/localDiscovery.test.ts",
-    "verify:dbms": "tsx src/dbms/verify.ts",
-    "start:aws": "node dist/server.js",
-    "seed:aws": "tsx src/seed.ts",
-    "seed:dbms": "tsx src/dbms/setup.ts",
-    "dev:aws": "tsx watch src/server.ts",
-    "test:aws": "tsx tests/backend.test.ts"
+    "demo:reset": "tsx src/demo/resetLocalDemo.ts",
+    "evaluate:model": "tsx src/evaluation/evaluateWaitModel.ts",
+    "test": "tsx tests/backend.test.ts",
+    "test:discovery": "tsx --test tests/discovery.test.ts tests/localDiscovery.test.ts"
   },
   "keywords": [
     "healthcare",
     "queue",
     "aws",
-    "dynamodb"
+    "dynamodb",
+    "cognito"
   ],
   "author": "QureFlow Team",
   "license": "MIT",
@@ -43,7 +39,6 @@
     "express-rate-limit": "^8.7.1",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.24.5",
     "serverless-http": "^4.0.0",
     "uuid": "^11.0.3",
     "zod": "^4.6.5"

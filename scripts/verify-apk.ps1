@@ -30,8 +30,8 @@ try {
     foreach ($entry in $assets) {
         $reader = [System.IO.StreamReader]::new($entry.Open())
         try { $text = $reader.ReadToEnd() } finally { $reader.Dispose() }
-        if ($text.Contains('qureflow_local_only') -or $text.Contains('qureflow_local_root_only')) {
-            throw 'MySQL credentials were found in packaged frontend assets.'
+        if ($text -match 'AKIA[0-9A-Z]{16}' -or $text.Contains('COGNITO_CLIENT_SECRET') -or $text.Contains('AWS_SECRET_ACCESS_KEY')) {
+            throw 'Backend credentials were found in packaged frontend assets.'
         }
         if ($text.Contains($expectedApi)) { $containsPhoneApi = $true }
         if ($text.Contains('qureflow_mobile_server_id') -and $text.Contains('Finding your clinic')) { $containsDiscoveryUi = $true }
@@ -64,12 +64,12 @@ $report = [ordered]@{
     apk = $apkPath
     bytes = (Get-Item -LiteralPath $apkPath).Length
     sha256 = $apkSha256
-    package = 'com.qureflow.dbms'
+    package = 'com.qureflow.app'
     signatureVerified = $true
     packagedFrontendVerified = $true
     nativeDiscoveryPackaged = $true
     hotspotDiscoveryPackaged = $true
-    mysqlCredentialsAbsent = $true
+    backendSecretsAbsent = $true
     defaultPhoneApi = $expectedApi
     nativeDeviceTested = $false
 }

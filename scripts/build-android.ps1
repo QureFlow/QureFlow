@@ -34,7 +34,7 @@ $artifactDir = Join-Path (Get-Location) 'artifacts'
 New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
 Copy-Item -LiteralPath $apkPath -Destination (Join-Path $artifactDir 'QureFlow-debug.apk') -Force
 Write-Host "Debug APK: $apkPath"
-Write-Host "Phone download: http://<computer-address>:5001/downloads/qureflow-debug.apk"
+Write-Host "Phone download: http://<computer-address>:5000/downloads/qureflow-debug.apk"
 if ($Install) {
     & (Join-Path $sdkPath 'platform-tools\adb.exe') install -r $apkPath
     if ($LASTEXITCODE -ne 0) { throw 'APK installation failed. Check the connected device.' }

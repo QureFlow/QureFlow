@@ -1,7 +1,6 @@
 import { AuthenticatedRequest } from '../middlewares/authMiddleware.js';
 import { db } from '../repositories/repository.js';
 import { AppError } from './errors.js';
-import { mysqlRepo } from '../repositories/mysqlRepo.js';
 export const managesAllDemoClinics = (req: AuthenticatedRequest): boolean =>
   req.user?.demoAllClinics === true;
 export const staffClinicFilter = (req: AuthenticatedRequest): string | undefined =>
@@ -9,8 +8,10 @@ export const staffClinicFilter = (req: AuthenticatedRequest): string | undefined
 export async function selectedStaffClinic(req: AuthenticatedRequest): Promise<string> {
   const assigned = staffClinic(req);
   if (req.query.clinicId === undefined) return assigned;
-  if (typeof req.query.clinicId !== 'string' ||
-      (!managesAllDemoClinics(req) && req.query.clinicId !== assigned))
+  if (
+    typeof req.query.clinicId !== 'string' ||
+    (!managesAllDemoClinics(req) && req.query.clinicId !== assigned)
+  )
     throw new AppError(403, 'This clinic is outside your workspace.');
   if (!(await db.getClinicById(req.query.clinicId))) throw new AppError(404, 'Clinic not found.');
   return req.query.clinicId;
@@ -23,7 +24,11 @@ export const staffClinic = (req: AuthenticatedRequest): string => {
 export async function accessDoctor(req: AuthenticatedRequest, id: string) {
   const doctor = await db.getDoctorById(id);
   if (!doctor) throw new AppError(404, 'Doctor not found');
-  if (req.user?.role !== 'patient' && !managesAllDemoClinics(req) && doctor.clinicId !== staffClinic(req))
+  if (
+    req.user?.role !== 'patient' &&
+    !managesAllDemoClinics(req) &&
+    doctor.clinicId !== staffClinic(req)
+  )
     throw new AppError(403, 'This doctor belongs to another clinic.');
   if (req.user?.role === 'doctor' && (req.user as any).doctorId !== id)
     throw new AppError(403, 'You can only manage your assigned queue.');
@@ -39,31 +44,11 @@ export async function accessPatient(req: AuthenticatedRequest, id: string) {
     throw new AppError(403, 'This patient is outside your clinic.');
 }
 export async function accessiblePatients(req: AuthenticatedRequest, search?: string) {
-  if (process.env.DATABASE_PROVIDER === 'mysql') {
-    const clinicId = staffClinicFilter(req);
-    if (req.user?.role === 'doctor') {
-      if (!req.user.doctorId) throw new AppError(403, 'An assigned doctor is required.');
-      await accessDoctor(req, req.user.doctorId);
-    }
-    return mysqlRepo.patientsForDoctor(
-      search,
-      clinicId,
-      req.user?.role === 'doctor' ? req.user.doctorId : undefined,
-    );
-  }
-  const clinicId = staffClinic(req),
-    patients = await db.getPatients(search, clinicId);
-  if (req.user?.role !== 'doctor') return patients;
+  const clinicId = staffClinicFilter(req);
+  if (req.user?.role !== 'doctor') return db.getPatients(search, clinicId);
   if (!req.user.doctorId) throw new AppError(403, 'An assigned doctor is required.');
   await accessDoctor(req, req.user.doctorId);
-  const seen = new Set(
-    (await db.getAppointments({ doctorId: req.user.doctorId }))
-      .filter((a) => a.clinicId === clinicId)
-      .map((a) => a.patientId),
-  );
-  for (const token of await db.getAllTokensForQueue(db.getQueueId(req.user.doctorId)))
-    if (token.patientId) seen.add(token.patientId);
-  return patients.filter((patient) => seen.has(patient.id));
+  return db.patientsForDoctor(search, clinicId, req.user.doctorId);
 }
 export async function accessToken(req: AuthenticatedRequest, id: string) {
   const found = await db.findTokenById(id);

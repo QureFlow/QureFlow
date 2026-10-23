@@ -1,9 +1,0 @@
-
-> qureflow@1.0.0 seed
-> npm run seed:dbms --prefix backend
-
-
-> qureflow-backend@1.0.0 seed:dbms
-> tsx src/dbms/setup.ts
-
-[QureFlow] Local MySQL database is ready.

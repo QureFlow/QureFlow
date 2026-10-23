@@ -1,6 +1,6 @@
 # DynamoDB data model
 
-QureFlow uses an Amazon DynamoDB single-table design with string keys `pk` and `sk`. DynamoDB is retained for the AWS course. Relational normalization, SQL stored procedures, PL/SQL packages, and cursors are not claimed as implemented in this version; those requirements belong to the later DBMS copy.
+QureFlow uses an Amazon DynamoDB single-table design with string keys `pk` and `sk`. Every access path is a primary-key read or a partition query; no global secondary index is required.
 
 ## Keys and relationships
 
@@ -9,7 +9,7 @@ QureFlow uses an Amazon DynamoDB single-table design with string keys `pk` and `
 | `CLINIC#<id>` | `METADATA` | Clinic directory record |
 | `DOCTOR#<id>` | `METADATA` | Schedule, consultation length, assigned clinic |
 | `USER#<id>` | `METADATA` | Application profile, role, identity link, session version |
-| `IDENTITY#PHONE#<normalized number>` / `IDENTITY#EMAIL#<email>` | `METADATA` | Unique identity claim pointing to a user |
+| `IDENTITY#PHONE#<normalized number>` / `IDENTITY#EMAIL#<email>` / `IDENTITY#STAFF#<staff id>` / `IDENTITY#COGNITO#<sub>` | `METADATA` | Unique identity claim pointing to a user; makes sign-in and token verification a single read |
 | `SETTINGS#<clinicId>` | `METADATA` | Clinic-specific queue rules; legacy GLOBAL fallback |
 | `QUEUE#<YYYY-MM-DD>#<doctorId>` | `COUNTER` | Atomic daily token sequence |
 | Same queue partition | `TOKEN#<8-digit sequence>` | Ordered visit tokens |
@@ -26,7 +26,7 @@ QureFlow uses an Amazon DynamoDB single-table design with string keys `pk` and `
 | `PATIENTS#CLINIC#<clinicId>` | `<patientId>` | Patient membership from registration and clinic visits |
 | `APPOINTMENTS#PATIENT#<id>` / `APPOINTMENTS#DOCTOR#<id>` / `APPOINTMENTS#CLINIC#<id>` | `<date>#<appointmentId>` | Scoped appointment views updated with booking and status transactions |
 | `VISITS#CLINIC#<clinicId>` | `<date>#<tokenId>` | Clinic analytics visit view updated in token transactions |
-| `READ_MODELS` | `V1` | Explicit backfill activation marker, enabled only in the local demo so far |
+| `READ_MODELS` | `V1` | Activation marker written by the backfill migration (and the local demo) once every index exists |
 
 Names and clinic details are deliberately snapshotted into visits for readable history; IDs preserve the logical relationships. These are application-level references, not relational foreign-key constraints. Identity claims enforce uniqueness for new records. Legacy records require reconciliation before a live rollout.
 
@@ -48,13 +48,13 @@ Token metadata includes `source`, `createdBy`, `requestId`, `timeZone`, `schemaV
 
 User metadata distinguishes demo fixtures and unclaimed reception registrations. Internal identity links and password hashes remain backend-only. Audit entries omit credential, name, and contact snapshots; actor/entity IDs are still sensitive operational identifiers requiring controlled retention.
 
-Model metadata includes algorithm/version, training timestamp, sample counts, chronological training/validation split, coefficients, configured baseline, baseline/model mean absolute error, and synthetic sample count. Only completed observations with valid consultation durations from 2 to 60 minutes train the model. A minimum of 40 observations is required; the latest 20% validate the earlier 80%. A model activates only if it beats the configured baseline. It predicts operational duration, never diagnosis or clinical triage. Model refreshes persist metadata and their audit event; normal inference recomputes/cache-checks a model for up to 60 seconds.
+Model metadata includes the method, version (`consultation-lognormal-v2`), training timestamp, sample counts, the chronological training/validation split, feature names and coefficients, residual spread, the recency half-life, smoothed no-show and walk-in leave rates, and the held-out error of every candidate (configured average, doctor's recent typical duration, learned model). Completed consultations from 1 to 90 minutes are used. The most recent 20% of each doctor's consultations validate models fitted on the earlier 80%; a method is chosen only if it is strictly more accurate than the simpler ones. Doctors with fewer than 10 consultations use the clinic-wide model when the clinic has enough history. Models estimate operational duration, never diagnosis or clinical triage. Normal inference retrains from the last 90 days at most once a minute per clinic; refreshing persists the metadata with an audit event.
 
 ## Query limits
 
 Queue operations query the date/doctor partition with strongly consistent reads. Direct user, doctor, clinic, appointment, and token-locator lookups use primary keys. Identity claims eliminate a lookup scan for migrated profiles. New read models query catalog and scoped appointment/visit partitions; patient directory queries read membership references and batch-fetch authoritative profiles. Booking and token transitions update all appointment views and the clinic visit view atomically. All partition queries paginate.
 
-Existing AWS data stays on compatible paginated scan paths until a verified backfill creates the activation marker. The V3 local fixture generator performs that backfill only for the loopback demo table. Global unfiltered appointment reads and legacy identity fallbacks still use scans. Clinic visit queries currently retrieve the clinic partition before applying the history cutoff; add bounded date queries, API pagination, migration verification and AWS load testing before multi-hospital scale. Partition views are application read models, not relational tables or SQL stored routines.
+Tables without the activation marker use compatible paginated scan paths; a scan that finds a legacy identity records its claim so the next lookup is a single read. `npm run migrate:backfill --prefix backend` builds every index and claim from the primary records (dry run by default) and then sets the marker, after which missing claims are final and no lookup scans. Global unfiltered appointment reads (all clinics) still scan. Clinic visit queries currently retrieve the clinic partition before applying the history cutoff; add bounded date queries, API pagination, migration verification and AWS load testing before multi-hospital scale. Partition views are application read models, not relational tables or SQL stored routines.
 
 ## Expanded demonstration metadata
 

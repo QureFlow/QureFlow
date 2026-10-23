@@ -2,12 +2,7 @@ export type UserRole = 'patient' | 'doctor' | 'health_worker' | 'admin';
 export type TokenStatus = 'waiting' | 'current' | 'completed' | 'skipped' | 'cancelled';
 export type QueuePriority = 'normal' | 'emergency';
 export type AppointmentStatus =
-  | 'booked'
-  | 'waiting'
-  | 'in_consultation'
-  | 'completed'
-  | 'cancelled'
-  | 'no_show';
+  'booked' | 'waiting' | 'in_consultation' | 'completed' | 'cancelled' | 'no_show';
 
 export interface User {
   demoAllClinics?: boolean;
@@ -146,12 +141,15 @@ export interface PatientQueueStatus {
   currentServingToken: string | null;
   patientsAhead: number;
   estimatedWaitMinutes: number;
+  /** 80% range for the wait, in minutes. */
+  estimatedWaitRange?: { low: number; high: number };
   isPaused: boolean;
   prediction?: {
     method: string;
     sampleCount: number;
     syntheticSamples: number;
     validationMaeMinutes: number | null;
+    noShowRate?: number;
     modelVersion: string;
     isEstimate: boolean;
   };

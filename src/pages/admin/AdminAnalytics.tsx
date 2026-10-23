@@ -8,6 +8,7 @@ import { apiClient } from '../../services/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import { FlowInsights } from '../../components/admin/FlowInsights';
 import { ModelErrorComparison } from '../../components/admin/ModelErrorComparison';
+import { WaitAccuracy, type WaitAccuracySummary } from '../../components/admin/WaitAccuracy';
 import { useQueue } from '../../context/QueueContext';
 import { Select } from '../../components/common/Select';
 interface Analytics {
@@ -25,6 +26,7 @@ interface Analytics {
     noShowCount: number;
   };
   trend: { date: string; total: number; completed: number; cancelled: number; noShow: number }[];
+  waitAccuracy?: WaitAccuracySummary;
   doctors: {
     id: string;
     name: string;
@@ -51,11 +53,18 @@ interface Analytics {
     details: Record<string, unknown>;
   }[];
 }
+const methodLabels: Record<string, string> = {
+  configured: 'Configured average',
+  doctor_history: 'Recent typical duration',
+  hierarchical_lognormal: 'Learned duration',
+};
 export const AdminAnalytics = () => {
   const { user } = useAuth();
   const { clinics } = useQueue();
   const [selectedClinicId, setSelectedClinicId] = useState(user?.clinicId || '');
-  const clinicQuery = user?.demoAllClinics ? '?clinicId=' + encodeURIComponent(selectedClinicId) : '';
+  const clinicQuery = user?.demoAllClinics
+    ? '?clinicId=' + encodeURIComponent(selectedClinicId)
+    : '';
   const loadVersion = useRef(0);
   const [data, setData] = useState<Analytics | null>(null),
     [error, setError] = useState(''),
@@ -78,7 +87,9 @@ export const AdminAnalytics = () => {
   }, [clinicQuery]);
   useEffect(() => {
     load();
-    return () => { loadVersion.current++; };
+    return () => {
+      loadVersion.current++;
+    };
   }, [load]);
   const refresh = async () => {
     setLoading(true);
@@ -124,9 +135,12 @@ export const AdminAnalytics = () => {
             subtitle="Consultation trends, model validation, and a traceable record of clinic activity."
           />
           {user?.demoAllClinics && (
-            <Select label="Clinic insights" value={selectedClinicId}
+            <Select
+              label="Clinic insights"
+              value={selectedClinicId}
               onChange={(event) => setSelectedClinicId(event.target.value)}
-              options={clinics.map((clinic) => ({ value: clinic.id, label: clinic.name }))} />
+              options={clinics.map((clinic) => ({ value: clinic.id, label: clinic.name }))}
+            />
           )}
           {error && (
             <p
@@ -188,6 +202,7 @@ export const AdminAnalytics = () => {
                     </Button>
                   )}
                 </div>
+                <WaitAccuracy summary={data.waitAccuracy} />
                 <ModelErrorComparison doctors={data.doctors} />
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left">
@@ -216,11 +231,9 @@ export const AdminAnalytics = () => {
                           </td>
                           <td className="px-5 py-4">
                             <span
-                              className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${d.model.method === 'ridge_regression' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${d.model.method === 'configured' ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'}`}
                             >
-                              {d.model.method === 'ridge_regression'
-                                ? 'Learned duration'
-                                : 'Configured baseline'}
+                              {methodLabels[d.model.method] || d.model.method}
                             </span>
                           </td>
                           <td className="px-5 py-4">{d.model.sampleCount}</td>
@@ -233,10 +246,12 @@ export const AdminAnalytics = () => {
                   </table>
                 </div>
                 <p className="px-5 py-4 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed">
-                  The latest 20% of consultations are held out for validation. At least 40 valid
-                  samples are required. A learned model is used only when its mean absolute error
-                  beats the configured baseline. Estimates can change with late arrivals, pauses,
-                  and consultation length.
+                  Each doctor's most recent 20% of consultations are held out. The configured
+                  average, the doctor's recent typical duration and the learned model are compared
+                  there, and a method is used only if it is more accurate than the simpler ones.
+                  Doctors with little history borrow from the clinic-wide model; recent weeks count
+                  more than older ones. Estimates can change with late arrivals, pauses and
+                  emergencies.
                 </p>
               </section>
               <section className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-subtle">

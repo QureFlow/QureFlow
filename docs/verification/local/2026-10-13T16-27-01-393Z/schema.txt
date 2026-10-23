@@ -1,1 +1,0 @@
-{"version":{"version":"8.4.11","databaseName":"qureflow_dbms"},"columns":199,"relationships":18,"destination":"C:\\Users\\sreya\\Desktop\\DBMS Project\\QureFlow-codex-mysql-dbms\\docs\\verification\\local\\2026-10-13T16-27-01-393Z"}

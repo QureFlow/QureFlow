@@ -12,7 +12,7 @@ compiled._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
 const { normalizeMobileServer, resolveApiBase } = compiled.exports;
 const { findClinicServers, probeClinicServer } = compiled.exports;
 const healthy = (serverId = 'clinic-a') => ({ status: 'healthy', project: 'QureFlow',
-  database: 'mysql', discoveryVersion: 1, serverId, serverName: 'QureFlow Clinic' });
+  database: 'dynamodb', discoveryVersion: 1, serverId, serverName: 'QureFlow Clinic' });
 
 function nativeClient(context) {
   const originals = {};
@@ -36,7 +36,7 @@ function nativeClient(context) {
   };
   // The test host supplies Vite's build-time configuration; all request code is the real client.
   const source = fs.readFileSync(clientFilename, 'utf8')
-    .replace('import.meta.env.VITE_API_GATEWAY_URL', JSON.stringify('/api'));
+    .replaceAll('import.meta.env.VITE_API_GATEWAY_URL', JSON.stringify('/api'));
   clientModule._compile(ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   }).outputText, clientFilename);
@@ -240,7 +240,7 @@ test('discovery rejects public URLs, wrong databases and mismatched advertised i
     { apiBase: 'http://192.168.1.9:5001', serverId: 'clinic-b' },
   ], async url => {
     requests++;
-    return { ok: true, json: async () => url.includes('.8:') ? { ...healthy(), database: 'dynamodb' } : healthy() };
+    return { ok: true, json: async () => url.includes('.8:') ? { ...healthy(), database: 'other-database' } : healthy() };
   });
   assert.equal(requests, 2);
   assert.deepEqual(found, []);

@@ -18,7 +18,7 @@ Frontend `VITE_API_GATEWAY_URL=/api` supports the Vite proxy and unified Express
 
 The DynamoDB table requires string partition key `pk` and string sort key `sk`. Core queue correctness uses strong primary-table reads, conditional writes, and transactions; the new implementation does not require the legacy GSIs. Before introducing this schema into an existing populated table, reconcile legacy records and establish claims and counters described in `docs/RELEASE_READINESS.md`.
 
-The backend role needs table-scoped `GetItem`, `BatchGetItem`, `Query`, `Scan`, `PutItem`, `UpdateItem`, `DeleteItem`, and `ConditionCheckItem` permissions. DynamoDB transactions use the underlying item-operation permissions; their condition checks require `dynamodb:ConditionCheckItem`. See [AWS transaction IAM documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis-iam.html). Local demo tooling additionally creates its dedicated local table and writes synthetic batches. Do not grant deployed application roles table creation/deletion rights for demo tooling. The expanded local dataset explicitly enables backfilled read models; do not create the `READ_MODELS/V1` activation marker in AWS until catalog, appointment, clinic visit and patient membership backfills have been reconciled.
+The backend role needs table-scoped `GetItem`, `BatchGetItem`, `Query`, `Scan`, `PutItem`, `UpdateItem`, `DeleteItem`, and `ConditionCheckItem` permissions. DynamoDB transactions use the underlying item-operation permissions; their condition checks require `dynamodb:ConditionCheckItem`. See [AWS transaction IAM documentation](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis-iam.html). Local demo tooling additionally creates its dedicated local table and writes synthetic batches. Do not grant deployed application roles table creation/deletion rights for demo tooling. The expanded local dataset explicitly enables backfilled read models. In AWS, `npm run migrate:backfill --prefix backend` builds the catalog, appointment, clinic visit and patient membership views and the identity claims, and sets the `READ_MODELS/V1` marker only after a clean apply; run it as a dry run first.
 
 ## API surface
 
@@ -27,11 +27,11 @@ All paths below start with `/api`. Sensitive routes require `Authorization: Bear
 | Area | Routes | Access |
 | --- | --- | --- |
 | Authentication | `POST /auth/login`, `/auth/register`, `/auth/confirm-registration`, `/auth/forgot-password`, `/auth/confirm-forgot-password`; `GET /auth/me` | Public flows; verified session for `/me` |
-| Directories | `GET /clinics`, `/doctors`, `/doctors/:id`, `/doctors/:id/slots?date=YYYY-MM-DD` | Public |
+| Directories | `GET /clinics`, `/doctors`, `/doctors/search` (filters, sort, pages), `/doctors/options`, `/doctors/:id`, `/doctors/:id/slots?date=YYYY-MM-DD` | Public |
 | Clinic configuration | `PATCH /clinics/:id`; `GET /settings`; `PUT /settings` | Assigned staff; admin-only edits |
 | Doctor administration | `POST /doctors`; `PATCH /doctors/:id` | Assigned clinic administrator |
 | Patients | `GET /patients`, `/patients/:id`, `/patients/me/status`; `PATCH /patients/:id` | Self or assigned staff; doctor patient scope |
-| Appointments | `GET /appointments`; `POST /appointments`; `POST /appointments/:id/cancel` | Patient ownership or assigned staff; self-booking only |
+| Appointments | `GET /appointments`, `/appointments/search` (staff; filters and pages); `POST /appointments`; `POST /appointments/:id/cancel` | Patient ownership or assigned staff; self-booking only |
 | Queues | `GET /queues/all`, `/queues/doctor/:doctorId`; `POST /queues/join`, `/queues/call-next`, `/queues/pause` | Redacted patient view; assigned staff actions |
 | Token transitions | `POST /tokens/:id/serve`, `/skip`, `/cancel` | Assigned staff; patients may cancel their own waiting token |
 | Analytics | `GET /analytics`; `POST /analytics/models/refresh` | Assigned admin/health worker; admin-only model refresh |

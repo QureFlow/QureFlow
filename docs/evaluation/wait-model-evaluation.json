@@ -1,0 +1,179 @@
+{
+  "generatedAt": "2026-10-23T20:51:13.395Z",
+  "dataset": {
+    "description": "Simulated outpatient sessions (synthetic; no real patient data).",
+    "clinics": 6,
+    "doctors": 48,
+    "days": 60,
+    "evaluationDays": 21,
+    "visits": 35447,
+    "completedConsultations": 33017,
+    "noShows": 1162,
+    "cancellations": 1268,
+    "walkIns": 21173,
+    "emergencies": 653,
+    "configuredMinutes": 12,
+    "bufferMinutes": 2
+  },
+  "waitTimeBacktest": {
+    "formula_original": {
+      "cases": 11588,
+      "maeMinutes": 17.53,
+      "medianAbsoluteErrorMinutes": 12.5,
+      "rmseMinutes": 30.1,
+      "meanBiasMinutes": -10.29,
+      "withinFiveMinutes": 0.24,
+      "withinTenMinutes": 0.44,
+      "rangeCoverage80": null
+    },
+    "ridge_v1": {
+      "cases": 11588,
+      "maeMinutes": 11.76,
+      "medianAbsoluteErrorMinutes": 9,
+      "rmseMinutes": 17.06,
+      "meanBiasMinutes": -2.79,
+      "withinFiveMinutes": 0.32,
+      "withinTenMinutes": 0.55,
+      "rangeCoverage80": null
+    },
+    "queue_projection_configured_durations": {
+      "cases": 11588,
+      "maeMinutes": 16.12,
+      "medianAbsoluteErrorMinutes": 8.72,
+      "rmseMinutes": 28.93,
+      "meanBiasMinutes": -1.09,
+      "withinFiveMinutes": 0.35,
+      "withinTenMinutes": 0.53,
+      "rangeCoverage80": null
+    },
+    "lognormal_v2_without_no_show": {
+      "cases": 11588,
+      "maeMinutes": 9.88,
+      "medianAbsoluteErrorMinutes": 5.23,
+      "rmseMinutes": 16.48,
+      "meanBiasMinutes": 1.53,
+      "withinFiveMinutes": 0.49,
+      "withinTenMinutes": 0.68,
+      "rangeCoverage80": 0.83
+    },
+    "lognormal_v2_parametric_range": {
+      "cases": 11588,
+      "maeMinutes": 9.75,
+      "medianAbsoluteErrorMinutes": 5.13,
+      "rmseMinutes": 16.53,
+      "meanBiasMinutes": 0.38,
+      "withinFiveMinutes": 0.49,
+      "withinTenMinutes": 0.68,
+      "rangeCoverage80": 0.49
+    },
+    "lognormal_v2": {
+      "cases": 11588,
+      "maeMinutes": 9.75,
+      "medianAbsoluteErrorMinutes": 5.13,
+      "rmseMinutes": 16.53,
+      "meanBiasMinutes": 0.38,
+      "withinFiveMinutes": 0.49,
+      "withinTenMinutes": 0.68,
+      "rangeCoverage80": 0.83
+    },
+    "lognormal_v2_history_3_days": {
+      "cases": 11588,
+      "maeMinutes": 10.22,
+      "medianAbsoluteErrorMinutes": 5.36,
+      "rmseMinutes": 17.65,
+      "meanBiasMinutes": 0.06,
+      "withinFiveMinutes": 0.48,
+      "withinTenMinutes": 0.68,
+      "rangeCoverage80": 0.81
+    },
+    "lognormal_v2_history_7_days": {
+      "cases": 11588,
+      "maeMinutes": 9.88,
+      "medianAbsoluteErrorMinutes": 5.13,
+      "rmseMinutes": 17.02,
+      "meanBiasMinutes": 0.04,
+      "withinFiveMinutes": 0.49,
+      "withinTenMinutes": 0.69,
+      "rangeCoverage80": 0.82
+    },
+    "lognormal_v2_history_14_days": {
+      "cases": 11588,
+      "maeMinutes": 9.74,
+      "medianAbsoluteErrorMinutes": 4.94,
+      "rmseMinutes": 16.81,
+      "meanBiasMinutes": -0.07,
+      "withinFiveMinutes": 0.5,
+      "withinTenMinutes": 0.69,
+      "rangeCoverage80": 0.82
+    }
+  },
+  "waitTimeByArrival": {
+    "formula_original": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 21.25,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 10.83
+    },
+    "ridge_v1": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 13.16,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 9.26
+    },
+    "queue_projection_configured_durations": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 22.07,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 5.43
+    },
+    "lognormal_v2_without_no_show": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 13.11,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 4.08
+    },
+    "lognormal_v2_parametric_range": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 12.94,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 4.01
+    },
+    "lognormal_v2": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 12.94,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 4.01
+    },
+    "lognormal_v2_history_3_days": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 13.63,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 4.09
+    },
+    "lognormal_v2_history_7_days": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 13.15,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 4
+    },
+    "lognormal_v2_history_14_days": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 12.96,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 3.95
+    }
+  },
+  "consultationDuration": {
+    "doctors": 48,
+    "selected": {
+      "hierarchical_lognormal": 42,
+      "configured": 6
+    },
+    "maeByCandidate": {
+      "ridge_v1": 3.28,
+      "configured": 5.45,
+      "doctor_history": 3.79,
+      "hierarchical_lognormal": 2.78
+    }
+  }
+}

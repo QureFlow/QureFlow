@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { randomUUID } from 'node:crypto';
 import { requestContext } from './lib/context.js';
-import { advertiseClinic, clinicIdentity } from './lib/clinicDiscovery.js';
+import { advertiseClinic, clinicIdentity, discoveryEnabled } from './lib/clinicDiscovery.js';
 import { PORT, AWS_REGION, DYNAMODB_TABLE_NAME } from './config/aws.js';
 import authRoutes from './routes/authRoutes.js';
 import clinicRoutes from './routes/clinicRoutes.js';
@@ -137,8 +137,8 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'healthy',
     project: 'QureFlow',
-    database: process.env.DATABASE_PROVIDER === 'mysql' ? 'mysql' : 'dynamodb',
-    ...(process.env.DATABASE_PROVIDER === 'mysql' ? { ...clinicIdentity(), discoveryVersion: 1 } : {}),
+    database: 'dynamodb',
+    ...(discoveryEnabled() ? { ...clinicIdentity(), discoveryVersion: 1 } : {}),
     timestamp: new Date().toISOString(),
   });
 });
@@ -147,12 +147,17 @@ app.use('/api', (_req, res) => {
 });
 
 // Serve static frontend assets from dist (Unified single-port hosting)
-if (process.env.DATABASE_PROVIDER === 'mysql' && process.env.NODE_ENV === 'development') {
+if (discoveryEnabled() && process.env.NODE_ENV === 'development') {
   app.get('/downloads/qureflow-debug.apk', (_req, res) => {
-    const apkPath = path.resolve(process.cwd(),
-      process.cwd().endsWith('backend') ? '../artifacts/QureFlow-debug.apk' : 'artifacts/QureFlow-debug.apk');
+    const apkPath = path.resolve(
+      process.cwd(),
+      process.cwd().endsWith('backend')
+        ? '../artifacts/QureFlow-debug.apk'
+        : 'artifacts/QureFlow-debug.apk',
+    );
     res.download(apkPath, 'QureFlow-debug.apk', (error) => {
-      if (error && !res.headersSent) res.status(404).json({ error: 'The Android APK has not been built yet.' });
+      if (error && !res.headersSent)
+        res.status(404).json({ error: 'The Android APK has not been built yet.' });
     });
   });
 }
@@ -173,16 +178,14 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   const status = err.status || 500,
     requestId = requestContext.getStore()?.requestId;
   if (status >= 500) console.error('[QureFlow]', { requestId, errorType: err.name || 'Error' });
-  res
-    .status(status)
-    .json({
-      error:
-        status >= 500
-          ? 'The service could not complete this request. Please try again.'
-          : err.message || 'Invalid request',
-      code: err.code || 'REQUEST_FAILED',
-      requestId,
-    });
+  res.status(status).json({
+    error:
+      status >= 500
+        ? 'The service could not complete this request. Please try again.'
+        : err.message || 'Invalid request',
+    code: err.code || 'REQUEST_FAILED',
+    requestId,
+  });
 });
 
 if (process.env.NODE_ENV !== 'test' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
@@ -190,17 +193,17 @@ if (process.env.NODE_ENV !== 'test' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
     console.log(`[QureFlow Unified Server] Running at http://localhost:${PORT}`);
     console.log(`[QureFlow Unified Server] Frontend & Backend active on port ${PORT}`);
     console.log(
-      process.env.DATABASE_PROVIDER==='mysql' ? '[QureFlow DBMS] MySQL relational database connected.' :
       `[QureFlow Unified Server] AWS Region: ${AWS_REGION}, DynamoDB: ${DYNAMODB_TABLE_NAME}`,
     );
-    if (process.env.DATABASE_PROVIDER === 'mysql') {
+    if (discoveryEnabled()) {
       const stopDiscovery = advertiseClinic(Number(PORT));
       httpServer.once('close', stopDiscovery);
-      for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => {
-        stopDiscovery();
-        httpServer.close(() => process.exit(0));
-        setTimeout(() => process.exit(0), 1500).unref();
-      });
+      for (const signal of ['SIGINT', 'SIGTERM'] as const)
+        process.once(signal, () => {
+          stopDiscovery();
+          httpServer.close(() => process.exit(0));
+          setTimeout(() => process.exit(0), 1500).unref();
+        });
     }
   });
 }

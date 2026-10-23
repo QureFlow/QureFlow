@@ -1,102 +1,125 @@
-# QureFlow — MySQL DBMS variant
+# QureFlow
 
-This separate local folder uses **MySQL 8.4** for the SQL-focused DBMS submission. The AWS DynamoDB/Cognito implementation is retained. This supplied folder is not a Git checkout; no commits, pushes, deployment or cloud database writes were performed during this setup.
+QureFlow is a queue and appointment platform for outpatient clinics and hospitals. Patients book
+a slot or are registered at reception, then follow their place in the doctor's queue and an
+estimated waiting time from their phone instead of waiting in a crowded hall. Staff run the
+queue — call next, skip, pause, register walk-ins and emergencies — and see how accurate the
+estimates have been.
 
-## Run this version
+- **Patient portal:** doctor directory with search and filters, live slot availability,
+  booking and cancellation, a live token with patients ahead, the doctor's current token and an
+  estimated wait with its likely range.
+- **Staff portal:** per-doctor queues, walk-in and emergency registration, appointment search,
+  patient directory, clinic settings, analytics and an audit trail.
+- **Android app:** the same interface packaged with Capacitor ([docs/ANDROID.md](docs/ANDROID.md)).
 
-Open a terminal in this checkout:
+## Architecture
+
+```text
+React (Vite) web / Android ──► Express API ──► Amazon DynamoDB (single table)
+                               (or API Gateway → Lambda)
+                                    └────────► Amazon Cognito (patient identity)
+```
+
+- **Amazon DynamoDB** holds every record in one table. Bookings, queue transitions and
+  cancellations are `TransactWriteItems` with condition checks, so a slot cannot be overbooked,
+  a patient cannot hold two active visits, and a doctor cannot have two current consultations.
+  Directory, appointment, patient and visit views are partition-queried read models kept in sync
+  inside the same transactions. See [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
+- **Amazon Cognito** handles patient sign-up, verification, sign-in and password recovery. The
+  API verifies Cognito access tokens with `aws-jwt-verify` and resolves the profile through an
+  identity claim (a single read).
+- **Clinic isolation and privacy:** every route checks the role and clinic server-side; patients
+  see other patients only as token numbers; audit events exclude credentials and contact details.
+
+## Waiting-time estimation
+
+Each doctor's consultation durations are modelled as log-normal, learned from that doctor's
+completed consultations with recency weighting (recent weeks count more) and shrinkage toward a
+clinic-wide model (new doctors borrow from colleagues). Features are walk-in, emergency, first
+visit vs. follow-up, and time of day. A patient's wait is then projected by replaying QureFlow's
+own calling rule forward — emergency first, then token order among patients who are eligible at
+each moment — so bookings whose time arrives during the wait are counted. Patients ahead are
+weighted by the chance they are actually seen, the running consultation's remaining time is a
+conditional expectation, and the 80% range is calibrated on the clinic's own recent errors.
+
+Every method is checked before it is used: the most recent 20% of each doctor's consultations
+are held out, and the learned model replaces the configured average only if it is more accurate.
+Staff analytics replays the last week to show each method's actual error. Estimates never affect
+clinical priority.
+
+Offline evaluation on simulated sessions (6 clinics, 48 doctors, 60 days, rolling-origin
+backtest; synthetic data, not a clinical study):
 
 ```powershell
-cd 'C:\Users\sreya\Desktop\DBMS Project\QureFlow-codex-mysql-dbms'
+npm run evaluate:model
+```
+
+Results are written to [docs/evaluation/wait-model-evaluation.json](docs/evaluation/wait-model-evaluation.json).
+
+## Run locally with synthetic data
+
+Requires Node.js 20+ and Docker Desktop.
+
+```powershell
 npm ci
 npm ci --prefix backend
-docker compose -p qureflow-dbms -f compose.dbms.yaml up -d --wait
-npm run dev:dbms
+npm run db:up
+npm run dev:demo
 ```
 
-Open **http://localhost:5174**. The API is on port 5001 and MySQL is on loopback port 3307. First startup creates the schema, routines and synthetic demo data automatically. Subsequent starts retain records and skip a completed seed. No AWS account, Cognito pool or cloud keys are required for this variant.
+Open http://localhost:5173. The demo uses DynamoDB Local on loopback port 18000 with the table
+`QureFlowDemo` and local password authentication; it never touches AWS. The first start builds a
+synthetic dataset (6 fictional clinics, 48 doctors, 12 specialties, ~740 patients, 14 days of
+simulated sessions, today's queues and three booked future days); this takes several minutes.
 
-- Staff: `demo.staff@example.invalid` / `DemoClinic123!`
-- Patient: `demo.patient@example.invalid` / `DemoPatient123!`
-- Other clinics: `demo.staff2@example.invalid` through `demo.staff6@example.invalid`, same staff password.
-- Assigned doctor: `demo.doctor@example.invalid` / `DemoClinic123!`
-- Reception: `demo.reception@example.invalid` / `DemoClinic123!`
+| Account | Email | Password |
+| --- | --- | --- |
+| Administrator (all demo clinics) | demo.staff@example.invalid | DemoClinic123! |
+| Administrator, clinic 2–6 | demo.staff2@example.invalid … demo.staff6@example.invalid | DemoClinic123! |
+| Doctor | demo.doctor@example.invalid | DemoClinic123! |
+| Reception | demo.reception@example.invalid | DemoClinic123! |
+| Patient | demo.patient@example.invalid | DemoPatient123! |
 
-The seeded database contains 6 fictional clinics, 48 doctors, 12 specialties, 737 patient profiles and 6,195 linked appointment/token records. Historical daily volumes vary; today has active queues and three future days contain appointments. Records are synthetic and explicitly labelled.
+These synthetic accounts exist only in the local demo table. `npm run demo:reset --prefix backend`
+deletes that local table so the next start rebuilds it.
 
-## What SQL does
+## Run against AWS
 
-There is no ORM and no whole-entity JSON storage. Core entities use relational columns and foreign keys. Optional provenance metadata remains JSON.
-
-- `WHERE`, `JOIN`, `EXISTS`: doctor specialty, clinic, language, availability and text search.
-- Whitelisted `ORDER BY` and parameterized `LIMIT/OFFSET`: fee, experience and name sorting; doctor and staff appointment pagination.
-- Patient membership and doctor assignment use scoped SQL queries.
-- Appointment search, doctor/date/status filters and queue priority/token ordering run in SQL.
-- `GROUP BY`, `COUNT`, `SUM`, `AVG`: daily flow and consultation statistics.
-- InnoDB transactions and row locks protect booking capacity, token numbering and queue transitions.
-- Foreign keys, checks and generated-column unique indexes prevent orphan visits, duplicate active patient visits and multiple current consultations for a doctor.
-- A stored function computes valid consultation duration; a stored procedure produces the 14-day chart; triggers validate queue transitions, synchronize appointment state, release slots and record audit events.
-- A read-only cursor procedure returns clinic doctor workload for the course demonstration. Set-based queries remain the default for normal operations.
-
-SQL files:
-1. [Relational schema and views](backend/sql/001_schema.sql)
-2. [Function, procedures, triggers and cursor](backend/sql/002_routines.sql)
-3. [Executable demonstration queries](backend/sql/003_demonstration_queries.sql)
-
-MySQL uses stored routines; this version does not claim to implement Oracle PL/SQL packages. No course report has been generated.
-
-## Inspect the database
-
-MySQL Workbench connection: host `127.0.0.1`, port `3307`, user `qureflow`, password `qureflow_local_only`, schema `qureflow_dbms`. These credentials are exclusively for the loopback-only local demonstration.
-
-Or open its terminal:
+Configure `backend/.env` from [backend/.env.example](backend/.env.example): region, table name,
+Cognito user pool and app client (plus the client secret if the client has one), a strong
+`JWT_SECRET`, and the allowed frontend origins. Use the AWS credential chain or an IAM role;
+never put AWS keys or the Cognito secret in a `VITE_*` variable.
 
 ```powershell
-docker compose -p qureflow-dbms -f compose.dbms.yaml exec mysql mysql -uqureflow -p qureflow_dbms
+npm run verify:aws --prefix backend      # read-only infrastructure check
+npm run migrate:backfill --prefix backend # dry run: indexes and identity claims to create
+npm run dev
 ```
 
-Enter `qureflow_local_only` when prompted. Run the queries in `backend/sql/003_demonstration_queries.sql`. Workbench can reverse-engineer the schema into an ER diagram directly from its foreign keys.
+Tables created before the indexed read models fall back to scans until the backfill is applied
+(`npm run migrate:backfill --prefix backend -- --apply --confirm-table=<table>`). For a single
+host, `npm run build` then `npm start`; for serverless, the Lambda handler is
+`backend/dist/lambda.handler`. More detail: [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md).
 
-## Verify
+## Tests
 
 ```powershell
-npm test
+npm run db:up
+npm test                 # API integration tests on a disposable DynamoDB Local table
+npm run test:frontend    # mobile connection, insights and announcement tests
+npm run test:discovery   # Wi-Fi discovery
 npm run build
-node --test tests/frontend-insights.test.cjs
-npm run test:announcements
-npm run verify:dbms --prefix backend
 ```
 
-MySQL tests create a uniquely named `qureflow_test_...` database through the local Compose service, verify actual API/SQL behavior, and delete only that database. They leave the demonstration database intact.
+The integration suite creates a uniquely named `QureFlowTest-*` table and deletes it afterwards.
+It covers authentication, ownership, clinic isolation, concurrent bookings and queue
+transitions, slot capacity, read-model consistency, directory and appointment search, identity
+claims, the waiting-time model and the Lambda adapter. Results:
+[docs/verification/test-results.json](docs/verification/test-results.json).
 
-The retained AWS path can be regression-tested against isolated DynamoDB Local on port 18000 using `npm run test:aws`. Use the original `main` checkout for your AWS project, not this DBMS frontend.
+## Status
 
-Default `npm run dev`, `npm run dev:demo`, `npm run seed`, `npm test` and `npm start` all select MySQL in this checkout. To run the compiled app, use `npm run build` followed by `npm start`, then open http://localhost:5001. Seeding is idempotent and the default seed command refuses remote databases.
-
-## Local-only safeguards and limitations
-
-Keep this DBMS folder separate from your original AWS project. Do not replace or merge it into the AWS checkout unless you explicitly intend to maintain both providers together.
-
-Docker keeps demo records in the dedicated `qureflow-dbms_qureflow-mysql-demo` volume. Stopping the service preserves them. The seeded date history is retained rather than silently resetting user actions.
-
-`mysqlServer.ts` is a local demonstration entry point, not a production deployment command. It uses local password authentication for the DBMS demo; the primary project retains Cognito. SQL values are parameterized, sort expressions are whitelisted, and API roles/ownership remain enforced.
-
-Design reference: [MySQL 8.4 stored routines](https://dev.mysql.com/doc/refman/8.4/en/create-procedure.html), [generated-column indexes](https://dev.mysql.com/doc/refman/8.4/en/generated-column-index-optimizations.html).
-
-## Demonstration and Android
-
-[DBMS demonstration guide](docs/DBMS-DEMONSTRATION.md) maps the supplied BCSE302P template to schema, ER relationships, normalization discussion, actual SQL objects, and the 24 automated test cases. It is a demonstration guide, not the course report.
-
-Run `npm run verify:local` to save fresh logs, results, an ER diagram, data dictionary and executed SQL outputs under `docs/verification/local/<UTC timestamp>/`. `local/latest.json` identifies the latest run. The command exits nonzero if any check fails, including unavailable Android tooling; inspect each result rather than treating the overall exit as a MySQL failure. Copied screenshots/logs outside `local/` are historical evidence from the supplied project and do not establish testing on this computer.
-
-[Android instructions](docs/ANDROID.md) cover installation, emulator, USB and LAN networking. The built and signature-verified APK is [artifacts/QureFlow-debug.apk](artifacts/QureFlow-debug.apk). With QureFlow running, a phone on the same Wi-Fi can download the actual APK at `http://172.16.145.76:5001/downloads/qureflow-debug.apk`. The installed app includes a Clinic connection screen for changing the computer address. `npm run android:sync` builds separate mobile assets and updates the Android project; `npm run android:apk` rebuilds the APK using the SDK and Java 21 now installed on this computer.
-
-The `.env` file is private and ignored; Windows may save it as `.env.txt`, which dotenv does not load. `.env.dbms` and `.env.mobile` contain local demonstration settings. Override the mobile API URL in ignored `.env.mobile.local`. Never place database passwords, Cognito client secrets or SMS API keys in any `VITE_` variable, because Vite variables are frontend configuration.
-
-To rerun the retained AWS regression suite without persistent test-container storage:
-
-```powershell
-docker compose -p qureflow-aws-tests -f compose.yaml -f compose.test.yaml up -d
-npm run test:aws
-docker compose -p qureflow-aws-tests -f compose.yaml -f compose.test.yaml stop
-```
+QureFlow is a tested development build, not a certified medical device or a finished commercial
+release. Read [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) before using it with real
+patient records.

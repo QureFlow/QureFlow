@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../repositories/repository.js';
-import { mysqlRepo } from '../repositories/mysqlRepo.js';
 import {
   QueueToken,
   QueuePriority,
@@ -9,9 +8,10 @@ import {
   Appointment,
 } from '../models/types.js';
 import { clinicDate, clinicNowMinutes, clockMinutes } from '../lib/time.js';
+import { byQueueOrder, patientsAhead } from '../lib/queueOrder.js';
 import { AppError } from '../lib/errors.js';
 import { analyticsService } from './analyticsService.js';
-import { predictDuration } from './predictionService.js';
+import { estimateWait } from './predictionService.js';
 export const doctorPrefix = (id: string) =>
   ({
     'doc-1': 'A',
@@ -25,6 +25,7 @@ export const doctorPrefix = (id: string) =>
     'doc-9': 'T',
     'doc-10': 'K',
   })[id] ||
+  (/^doc-\d+$/.test(id) ? `D${id.slice(4)}` : '') ||
   `Q${id
     .replace(/[^a-z0-9]/gi, '')
     .slice(-4)
@@ -87,18 +88,10 @@ export class QueueService {
     const doc = await db.getDoctorById(doctorId);
     if (!doc) throw new AppError(404, 'Doctor not found');
     const tokens = await db.getAllTokensForQueue(db.getQueueId(doctorId, date));
-    const waiting = tokens
-      .filter((t) => t.status === 'waiting')
-      .sort(
-        (a, b) =>
-          (a.priority === 'emergency' ? 0 : 1) - (b.priority === 'emergency' ? 0 : 1) ||
-          (a.tokenSeq || Number(a.tokenNumber.split('-').pop())) -
-            (b.tokenSeq || Number(b.tokenNumber.split('-').pop())),
-      );
-    const ordered =
-      process.env.DATABASE_PROVIDER === 'mysql'
-        ? tokens
-        : [...tokens.filter((t) => t.status !== 'waiting'), ...waiting];
+    const ordered = [
+      ...tokens.filter((t) => t.status !== 'waiting'),
+      ...tokens.filter((t) => t.status === 'waiting').sort(byQueueOrder),
+    ];
     return {
       doctorId,
       doctorName: doc.name,
@@ -117,18 +110,8 @@ export class QueueService {
         409,
         'Complete or skip the current consultation before calling the next patient.',
       );
-    const waiting = await db.getWaitingTokens(db.getQueueId(doctorId, date));
     // Future appointments must never be called as walk-ins ahead of their appointment window.
-    const token =
-      process.env.DATABASE_PROVIDER === 'mysql'
-        ? await mysqlRepo.getNextEligibleToken(db.getQueueId(doctorId, date), clinicNowMinutes())
-        : waiting.find(
-            (t) =>
-              t.priority === 'emergency' ||
-              t.isWalkIn ||
-              ['Now', 'Walk-in'].includes(t.scheduledTime) ||
-              (date === clinicDate() && clockMinutes(t.scheduledTime) <= clinicNowMinutes()),
-          );
+    const token = await db.getNextEligibleToken(db.getQueueId(doctorId, date), clinicNowMinutes());
     if (!token) return null;
     const found = await db.findTokenById(token.id);
     if (!found) return null;
@@ -158,52 +141,46 @@ export class QueueService {
     if (!token) return null;
     const queue = await this.getDoctorQueue(token.doctorId),
       settings = await db.getSettings(token.clinicId);
-    const waiting = (await db.getWaitingTokens(db.getQueueId(token.doctorId))).filter(
-      (t) =>
-        t.priority === 'emergency' ||
-        t.isWalkIn ||
-        ['Now', 'Walk-in'].includes(t.scheduledTime) ||
-        clockMinutes(t.scheduledTime) <=
-          Math.max(
-            clinicNowMinutes(),
-            ['Now', 'Walk-in'].includes(token.scheduledTime)
-              ? 0
-              : clockMinutes(token.scheduledTime),
-          ),
-    );
     const current = queue.tokens.find((t) => t.status === 'current');
     const ahead =
       token.status === 'current'
-        ? 0
-        : Math.max(
-            0,
-            waiting.findIndex((t) => t.id === token.id),
+        ? []
+        : patientsAhead(
+            queue.tokens.filter((t) => t.status === 'waiting'),
+            token,
+            clinicNowMinutes(),
           );
-    const model = (await analyticsService.getModels(token.clinicId)).get(token.doctorId)!;
-    const buffer = settings.bufferMinutes ?? 2;
-    const remaining = current
-      ? Math.max(
-          1,
-          predictDuration(model, current) -
-            (Date.now() - Date.parse(current.calledAt || current.createdAt)) / 60000,
-        )
-      : 0;
-    const aheadMinutes = waiting
-      .slice(0, ahead)
-      .reduce((sum, t) => sum + predictDuration(model, t) + buffer, 0);
-    const wait =
-      token.status === 'current' ? 0 : Math.ceil(aheadMinutes + remaining + (current ? buffer : 0));
+    let clinic = await analyticsService.getClinicModels(token.clinicId);
+    // A doctor added since the cached training run needs a fresh one.
+    if (!clinic.models.has(token.doctorId))
+      clinic = await analyticsService.getClinicModels(token.clinicId, true);
+    const model = clinic.models.get(token.doctorId)!;
+    const estimate =
+      token.status === 'current'
+        ? { minutes: 0, low: 0, high: 0 }
+        : estimateWait({
+            model,
+            current,
+            target: token,
+            waiting: queue.tokens.filter((t) => t.status === 'waiting'),
+            bufferMinutes: settings.bufferMinutes ?? 2,
+            now: Date.now(),
+            returningPatients: clinic.returning.get(token.doctorId),
+            calibration: clinic.calibration,
+          });
     return {
       token,
       currentServingToken: current?.tokenNumber || null,
-      patientsAhead: token.status === 'current' ? 0 : ahead + (current ? 1 : 0),
-      estimatedWaitMinutes: wait,
+      patientsAhead: token.status === 'current' ? 0 : ahead.length + (current ? 1 : 0),
+      estimatedWaitMinutes: estimate.minutes,
+      estimatedWaitRange: { low: estimate.low, high: estimate.high },
       isPaused: queue.isPaused,
       prediction: {
         method: model.method,
         sampleCount: model.sampleCount,
         syntheticSamples: model.syntheticSamples,
         validationMaeMinutes: model.modelMae,
+        noShowRate: Math.round(model.noShowRate * 100) / 100,
         modelVersion: model.modelVersion,
         isEstimate: true,
       },

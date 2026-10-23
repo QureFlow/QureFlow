@@ -31,3 +31,7 @@ backend/.env
 backend/dist
 dist-mobile
 artifacts/*.apk
+
+# Local build outputs and private documents
+/QureFlow-debug.apk
+/paper/

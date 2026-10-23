@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">QureFlow DBMS</string>
-    <string name="title_activity_main">QureFlow DBMS</string>
-    <string name="package_name">com.qureflow.dbms</string>
-    <string name="custom_url_scheme">com.qureflow.dbms</string>
+    <string name="app_name">QureFlow</string>
+    <string name="title_activity_main">QureFlow</string>
+    <string name="package_name">com.qureflow.app</string>
+    <string name="custom_url_scheme">com.qureflow.app</string>
 </resources>
