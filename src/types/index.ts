@@ -1,6 +1,7 @@
 export type UserRole = 'patient' | 'admin' | 'health_worker' | 'doctor';
 
 export interface User {
+  demoAllClinics?: boolean;
   metadata?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;

@@ -3,7 +3,17 @@
  * Centralized HTTP client for the configured Express API (web or packaged Android).
  */
 import { Capacitor } from '@capacitor/core';
-import { mobileConnectionKey, resolveApiBase } from '../lib/mobileConnection';
+import { mobileConnectionKey, mobileConnectionLostEvent, mobileConnectionReadyEvent, resolveApiBase } from '../lib/mobileConnection';
+
+let nativeClinicReady = false;
+const nativeRequests = new Set<AbortController>();
+const connectionCheckReason = 'QUREFLOW_CONNECTION_CHECK';
+export function setNativeClinicReady(ready: boolean) {
+  const restored = ready && !nativeClinicReady;
+  nativeClinicReady = ready;
+  if (!ready) for (const controller of nativeRequests) controller.abort(connectionCheckReason);
+  if (restored) window.dispatchEvent(new Event(mobileConnectionReadyEvent));
+}
 
 const getApiBaseUrl = (): string => {
   return resolveApiBase(import.meta.env.VITE_API_GATEWAY_URL, Capacitor.isNativePlatform(),
@@ -16,6 +26,13 @@ export class ApiError extends Error {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+  }
+}
+
+export class ClinicConnectionPending extends ApiError {
+  constructor(message = 'QureFlow is checking the clinic connection. Please wait.') {
+    super(message, 503);
+    this.name = 'ClinicConnectionPending';
   }
 }
 
@@ -35,6 +52,9 @@ export const apiClient = {
   },
 
   async request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const native = Capacitor.getPlatform() === 'android';
+    if (native && !nativeClinicReady)
+      throw new ClinicConnectionPending();
     const baseUrl = getApiBaseUrl();
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const url = `${baseUrl}${cleanEndpoint}`;
@@ -50,11 +70,17 @@ export const apiClient = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const controller = new AbortController();
+    const abort = () => controller.abort(options.signal?.reason);
+    options.signal?.addEventListener('abort', abort, { once: true });
+    if (options.signal?.aborted) abort();
+    const timeout = setTimeout(() => controller.abort(new Error('Request timed out')), 20000);
+    if (native) nativeRequests.add(controller);
     try {
       const response = await fetch(url, {
         ...options,
         headers,
-        signal: options.signal || AbortSignal.timeout(20000),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -84,7 +110,18 @@ export const apiClient = {
       return await response.json();
     } catch (err: any) {
       if (err instanceof ApiError) throw err;
+      if (controller.signal.reason === connectionCheckReason)
+        throw new ClinicConnectionPending('The clinic connection is being checked. Check your appointments or queue before repeating an action.');
+      // Reconnect separately; never replay a booking or other mutation after a network failure.
+      if (native && nativeClinicReady && !options.signal?.aborted)
+        window.dispatchEvent(new Event(mobileConnectionLostEvent));
+      if (native && !options.signal?.aborted)
+        throw new ClinicConnectionPending(`Network error connecting to QureFlow API: ${err.message}`);
       throw new Error(`Network error connecting to QureFlow API: ${err.message}`);
+    } finally {
+      clearTimeout(timeout);
+      options.signal?.removeEventListener('abort', abort);
+      nativeRequests.delete(controller);
     }
   },
 

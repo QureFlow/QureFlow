@@ -11,6 +11,8 @@ npm run dev:dbms
 
 Open http://localhost:5174. Staff: `demo.staff@example.invalid` / `DemoClinic123!`. Patient: `demo.patient@example.invalid` / `DemoPatient123!`. Doctor and reception use `demo.doctor@example.invalid` and `demo.reception@example.invalid`, with the staff password.
 
+For the classroom demonstration, the default synthetic staff administrator manages all six local clinics: all patients, doctors, appointments and today's queues are visible in that one session. The sidebar says "All demo clinics". Use the doctor selector in Live Queue Manager, and the clinic selectors in Queue Settings and Operations & Insights. Other clinic administrator, doctor and reception accounts retain their assigned-clinic restrictions. This capability is explicitly enabled by the local MySQL entry point; set `DBMS_DEMO_ALL_CLINICS=false` before starting it to disable the classroom override. It is unavailable in AWS or production mode. Refresh or sign in again after restarting the backend to receive the current session capabilities.
+
 Workbench: Standard TCP/IP, host `127.0.0.1`, port `3307`, username `qureflow`, password `qureflow_local_only`, schema `qureflow_dbms`. Or run `npm run db:shell` and enter that password. `npm run db:stop` preserves the named Docker volume. Do not use `down -v` during preparation or demonstrations.
 
 ## Template coverage

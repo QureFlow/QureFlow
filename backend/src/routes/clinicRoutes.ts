@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '../repositories/repository.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
 import { route } from '../lib/http.js';
-import { staffClinic } from '../lib/access.js';
+import { selectedStaffClinic, staffClinic, managesAllDemoClinics } from '../lib/access.js';
 import { parse, settingsSchema } from '../lib/validation.js';
 import { AppError } from '../lib/errors.js';
 const router = Router();
@@ -24,7 +24,7 @@ router.patch(
   authenticateToken,
   requireRoles('admin'),
   route(async (req, res) => {
-    if (req.params.id !== staffClinic(req))
+    if (!managesAllDemoClinics(req) && req.params.id !== staffClinic(req))
       throw new AppError(403, 'You can only edit your own clinic.');
     const fields = z
       .object({
@@ -48,7 +48,9 @@ router.patch(
 router.get(
   '/settings',
   authenticateToken,
-  route(async (req, res) => res.json(await db.getSettings(req.user.clinicId))),
+  route(async (req, res) => res.json(await db.getSettings(
+    req.user.role === 'patient' ? req.user.clinicId : await selectedStaffClinic(req),
+  ))),
 );
 router.put(
   '/settings',
@@ -56,7 +58,7 @@ router.put(
   requireRoles('admin'),
   route(async (req, res) => {
     const updates = parse(settingsSchema, req.body),
-      clinicId = staffClinic(req),
+      clinicId = await selectedStaffClinic(req),
       settings = await db.getSettings(clinicId);
     if (updates.notifyOnTwoAhead === true)
       throw new AppError(

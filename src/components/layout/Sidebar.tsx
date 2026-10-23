@@ -60,10 +60,12 @@ export const Sidebar = ({ isOpen = false, onClose }: Props) => {
             )}
           </div>
           <p className="font-semibold text-sm mt-3 leading-snug">
-            {clinic?.name || 'Assigned facility'}
+            {user?.demoAllClinics ? 'All demo clinics' : clinic?.name || 'Assigned facility'}
           </p>
           <p className="text-[11px] text-[#94a3b8] mt-1">
-            {clinic?.district || 'Clinic workspace'}
+            {user?.demoAllClinics
+              ? `${clinics.length} facilities · demonstration administrator`
+              : clinic?.district || 'Clinic workspace'}
           </p>
         </div>
         <p className="text-[9px] tracking-[.18em] text-[#94a3b8] font-semibold mx-7 mt-7 mb-3">

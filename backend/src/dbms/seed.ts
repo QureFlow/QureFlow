@@ -93,7 +93,7 @@ export async function seedMysqlDemo() {
         state: 'West Bengal',
         phone: `99000700${String(i + 1).padStart(2, '0')}`,
         email: `reception${i + 1}@example.invalid`,
-        openingHours: '08:00 AM – 06:00 PM',
+        openingHours: '08:00 AM – 10:00 PM',
         activeDoctorsCount: 8,
         metadata: {
           synthetic: true,
@@ -138,7 +138,7 @@ export async function seedMysqlDemo() {
       experienceYears: 5 + (i % 22),
       consultationFee: 250 + (i % 7) * 100,
       startTime: timeLabel(480 + (i % 3) * 30),
-      endTime: timeLabel(1020 + (i % 2) * 30),
+      endTime: '10:00 PM',
       slotDurationMinutes: [8, 10, 12, 15, 20, 25][i % 6],
       consultationDays: allDays,
       status: 'active',

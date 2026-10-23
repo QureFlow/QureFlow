@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { Button } from '../components/common/Button';
 import { apiClient } from '../services/apiClient';
 import { storage } from '../services/storage';
-import { mobileConnectionKey, normalizeMobileServer, resolveApiBase } from '../lib/mobileConnection';
+import { mobileConnectionKey, mobileServerIdKey, normalizeMobileServer, probeClinicServer, resolveApiBase } from '../lib/mobileConnection';
 
 export function ClinicConnection() {
   const [address, setAddress] = useState(() => resolveApiBase(import.meta.env.VITE_API_GATEWAY_URL,
@@ -19,14 +19,13 @@ export function ClinicConnection() {
     setPending(true);
     try {
       const base = normalizeMobileServer(address);
-      // A new computer is probed without the current session's credentials.
-      const response = await fetch(base + '/health', { signal: AbortSignal.timeout(8000) });
-      const health = await response.json();
-      if (!response.ok || health.project !== 'QureFlow' || health.database !== 'mysql' || health.status !== 'healthy')
+      const health = await probeClinicServer(base, fetch, 8000);
+      if (!health)
         throw new Error('This address did not return a healthy QureFlow MySQL server.');
       apiClient.clearAuthToken();
       storage.setActiveUser(null);
       localStorage.setItem(mobileConnectionKey, base);
+      localStorage.setItem(mobileServerIdKey, health.serverId);
       window.location.replace('/');
     } catch (err) {
       setError(err instanceof TypeError ? 'Could not connect. Keep the clinic computer running and connect both devices to the same Wi-Fi, or use the USB connection.' :
@@ -35,7 +34,7 @@ export function ClinicConnection() {
   };
   return <main className="min-h-screen qf-shell p-6 flex items-center justify-center">
     <div className="qf-panel max-w-md w-full p-6 space-y-5">
-      <h1 className="qf-title text-2xl">Clinic connection</h1>
+      <h1 className="qf-title text-2xl">Advanced connection</h1>
       <p className="text-sm text-slate-600">Connect this app to the computer running your clinic. Keep that computer and its database running while you use the app.</p>
       <form onSubmit={connect} className="space-y-4">
         <label className="block text-sm font-semibold" htmlFor="clinic-computer">Computer address</label>
@@ -46,7 +45,7 @@ export function ClinicConnection() {
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
         <Button type="submit" className="w-full" isLoading={pending}>Test and connect</Button>
       </form>
-      <Link to="/" className="block text-sm text-brand-700">Back to QureFlow</Link>
+      <Link to="/" className="block text-sm text-brand-700">Find my clinic automatically</Link>
     </div>
   </main>;
 }

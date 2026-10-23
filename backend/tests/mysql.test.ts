@@ -544,6 +544,59 @@ test('MySQL DBMS integration', async (suite) => {
         if ((await repo.getAppointmentById(id))?.status !== 'cancelled') await appointments.cancelAppointment(id);
       }
     });
+    await suite.test('local demo administrator manages all clinics without expanding other staff access', async () => {
+      const previous = process.env.DBMS_DEMO_ALL_CLINICS;
+      process.env.DBMS_DEMO_ALL_CLINICS = 'true';
+      try {
+        const session = await api('/auth/login', undefined, 'POST', {
+          identifier: 'demo.staff@example.invalid', password: 'DemoClinic123!',
+        });
+        assert.equal(session.body.user.demoAllClinics, true);
+        const allQueues = await api('/queues/all', session.body.token);
+        assert.equal(allQueues.body.length, (await repo.getDoctors()).length);
+        assert.equal((await api('/patients', session.body.token)).body.length, (await repo.getPatients()).length);
+        const otherDoctor = (await repo.getDoctors()).find((d) => d.clinicId !== 'clinic-1')!;
+        assert.equal((await api('/doctors/' + otherDoctor.id, session.body.token, 'PATCH',
+          { consultationFee: otherDoctor.consultationFee })).status, 200);
+        const joined = await api('/queues/join', session.body.token, 'POST', {
+          doctorId: otherDoctor.id, patientName: 'Synthetic all-clinic demonstration',
+          patientPhone: '9900099999', isWalkIn: true,
+        });
+        assert.equal(joined.status, 201);
+        assert.equal((await repo.getUserById(joined.body.patientId))?.clinicId, otherDoctor.clinicId);
+        assert.equal((await api('/queues/doctor/' + otherDoctor.id, session.body.token)).body.tokens
+          .some((t: any) => t.id === joined.body.id), true);
+        assert.equal((await api('/appointments/search?pageSize=100', session.body.token)).body.total,
+          (await repo.getAppointments()).length);
+        const settings = await api('/settings?clinicId=' + otherDoctor.clinicId, session.body.token);
+        assert.equal(settings.status, 200);
+        assert.equal((await api('/settings?clinicId=' + otherDoctor.clinicId, session.body.token, 'PUT',
+          { averageConsultationMinutes: settings.body.averageConsultationMinutes })).status, 200);
+        assert.equal((await api('/analytics?clinicId=' + otherDoctor.clinicId, session.body.token)).body.clinicId,
+          otherDoctor.clinicId);
+        assert.equal((await api('/queues/doctor/doc-1', other.token)).status, 403);
+        assert.equal((await api('/settings?clinicId=clinic-1', other.token)).status, 403);
+        assert.equal((await api('/auth/me', other.token)).body.demoAllClinics, false);
+        assert.equal((await api('/auth/me', patient.token)).body.demoAllClinics, false);
+        process.env.DBMS_DEMO_ALL_CLINICS = 'false';
+        assert.equal((await api('/auth/me', session.body.token)).body.demoAllClinics, false);
+        assert.equal((await api('/queues/doctor/' + otherDoctor.id, session.body.token)).status, 403);
+        process.env.DBMS_DEMO_ALL_CLINICS = 'true';
+        const { canManageAllDemoClinics } = await import('../src/lib/demoAccess.js');
+        const user = (await repo.getUserById('admin-1'))!;
+        const oldProvider = process.env.DATABASE_PROVIDER;
+        process.env.DATABASE_PROVIDER = 'dynamodb';
+        assert.equal(canManageAllDemoClinics(user), false);
+        process.env.DATABASE_PROVIDER = oldProvider;
+        const oldMode = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'production';
+        assert.equal(canManageAllDemoClinics(user), false);
+        process.env.NODE_ENV = oldMode;
+      } finally {
+        if (previous === undefined) delete process.env.DBMS_DEMO_ALL_CLINICS;
+        else process.env.DBMS_DEMO_ALL_CLINICS = previous;
+      }
+    });
   } finally {
     if (server) await new Promise<void>((resolve) => server.close(() => resolve()));
     await pool.end();

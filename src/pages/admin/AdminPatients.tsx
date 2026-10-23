@@ -5,6 +5,7 @@ import { Modal } from '../../components/common/Modal';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { patientService } from '../../services/patientService';
 import { User } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 import {
   Menu,
   Search,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export const AdminPatients: React.FC = () => {
+  const { user } = useAuth();
   const { appointments } = useQueue();
   const [sidebar, setSidebar] = useState(false);
   const [patients, setPatients] = useState<User[]>([]);
@@ -80,7 +82,7 @@ export const AdminPatients: React.FC = () => {
                 Your patient directory.
               </h1>
               <p className="mt-3 text-slate-500">
-                Registered profiles and appointment history for this clinic.
+                Registered profiles and appointment history {user?.demoAllClinics ? 'across all demo clinics' : 'for this clinic'}.
               </p>
             </div>
             <div className="flex items-center gap-3 rounded-2xl bg-brand-100 px-5 py-4">

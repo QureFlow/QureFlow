@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { queueService } from '../services/queueService.js';
 import { db } from '../repositories/repository.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
-import { accessDoctor, staffClinic } from '../lib/access.js';
+import { accessDoctor, staffClinic, managesAllDemoClinics } from '../lib/access.js';
 import { parse, nameSchema, phoneSchema } from '../lib/validation.js';
 import { route } from '../lib/http.js';
 import { AppError } from '../lib/errors.js';
@@ -49,7 +49,7 @@ router.get(
     if (req.user.role !== 'patient')
       doctors = doctors.filter(
         (d) =>
-          d.clinicId === staffClinic(req) &&
+          (managesAllDemoClinics(req) || d.clinicId === staffClinic(req)) &&
           (req.user.role !== 'doctor' || d.id === req.user.doctorId),
       );
     res.json(
@@ -76,7 +76,7 @@ router.post(
         .strict(),
       req.body,
     );
-    await accessDoctor(req, data.doctorId);
+    const doctor = await accessDoctor(req, data.doctorId);
     let patient = await db.findUserByIdentifier(data.patientPhone);
     if (patient && patient.role !== 'patient')
       throw new AppError(409, 'This phone belongs to a staff account.');
@@ -87,7 +87,7 @@ router.post(
         phone: data.patientPhone,
         email: '',
         role: 'patient',
-        clinicId: staffClinic(req),
+        clinicId: doctor.clinicId,
         createdAt: new Date().toISOString(),
         metadata: { source: 'walk_in', accountStatus: 'unclaimed' },
       });

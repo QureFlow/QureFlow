@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { randomUUID } from 'node:crypto';
 import { requestContext } from './lib/context.js';
+import { advertiseClinic, clinicIdentity } from './lib/clinicDiscovery.js';
 import { PORT, AWS_REGION, DYNAMODB_TABLE_NAME } from './config/aws.js';
 import authRoutes from './routes/authRoutes.js';
 import clinicRoutes from './routes/clinicRoutes.js';
@@ -137,6 +138,7 @@ app.get('/api/health', (_req, res) => {
     status: 'healthy',
     project: 'QureFlow',
     database: process.env.DATABASE_PROVIDER === 'mysql' ? 'mysql' : 'dynamodb',
+    ...(process.env.DATABASE_PROVIDER === 'mysql' ? { ...clinicIdentity(), discoveryVersion: 1 } : {}),
     timestamp: new Date().toISOString(),
   });
 });
@@ -184,12 +186,21 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 if (process.env.NODE_ENV !== 'test' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
-  app.listen(PORT, () => {
+  const httpServer = app.listen(PORT, () => {
     console.log(`[QureFlow Unified Server] Running at http://localhost:${PORT}`);
     console.log(`[QureFlow Unified Server] Frontend & Backend active on port ${PORT}`);
     console.log(
       process.env.DATABASE_PROVIDER==='mysql' ? '[QureFlow DBMS] MySQL relational database connected.' :
       `[QureFlow Unified Server] AWS Region: ${AWS_REGION}, DynamoDB: ${DYNAMODB_TABLE_NAME}`,
     );
+    if (process.env.DATABASE_PROVIDER === 'mysql') {
+      const stopDiscovery = advertiseClinic(Number(PORT));
+      httpServer.once('close', stopDiscovery);
+      for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => {
+        stopDiscovery();
+        httpServer.close(() => process.exit(0));
+        setTimeout(() => process.exit(0), 1500).unref();
+      });
+    }
   });
 }

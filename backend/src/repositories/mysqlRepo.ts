@@ -695,7 +695,7 @@ export class MysqlRepository {
     ).map(appointmentRow);
   }
   async searchAppointments(f: {
-    clinicId: string;
+    clinicId?: string;
     doctorId?: string;
     date?: string;
     status?: string;

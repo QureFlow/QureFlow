@@ -4,7 +4,7 @@ import { appointmentService } from '../services/appointmentService.js';
 import { db } from '../repositories/repository.js';
 import { mysqlRepo } from '../repositories/mysqlRepo.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
-import { accessDoctor, staffClinic } from '../lib/access.js';
+import { accessDoctor, staffClinicFilter } from '../lib/access.js';
 import { parse, bookingDateSchema } from '../lib/validation.js';
 import { route } from '../lib/http.js';
 import { AppError } from '../lib/errors.js';
@@ -48,7 +48,7 @@ router.get(
       await accessDoctor(req, doctorId);
     }
     res.json(
-      await mysqlRepo.searchAppointments({ ...filters, clinicId: staffClinic(req), doctorId }),
+      await mysqlRepo.searchAppointments({ ...filters, clinicId: staffClinicFilter(req), doctorId }),
     );
   }),
 );
@@ -75,13 +75,13 @@ router.get(
           ? req.query.doctorId
           : undefined;
     let list = await appointmentService.getAppointments({
-      ...(req.user.role !== 'patient' ? { clinicId: staffClinic(req) } : {}),
+      ...(req.user.role !== 'patient' ? { clinicId: staffClinicFilter(req) } : {}),
       patientId,
       doctorId,
       date: typeof req.query.date === 'string' ? req.query.date : undefined,
     });
-    if (req.user.role !== 'patient')
-      list = list.filter((a: any) => a.clinicId === staffClinic(req));
+    const clinicId = req.user.role !== 'patient' ? staffClinicFilter(req) : undefined;
+    if (clinicId) list = list.filter((a: any) => a.clinicId === clinicId);
     res.json(list);
   }),
 );

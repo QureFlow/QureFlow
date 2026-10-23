@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService.js';
 import { UserRole } from '../models/types.js';
 import { requestContext } from '../lib/context.js';
+import { canManageAllDemoClinics } from '../lib/demoAccess.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -13,6 +14,7 @@ export interface AuthenticatedRequest extends Request {
     clinicId?: string;
     staffId?: string;
     doctorId?: string;
+    demoAllClinics?: boolean;
   };
 }
 
@@ -44,6 +46,7 @@ export const authenticateToken = async (
     clinicId: payload.clinicId,
     staffId: payload.staffId,
     doctorId: payload.doctorId,
+    demoAllClinics: canManageAllDemoClinics(payload),
   };
   const context = requestContext.getStore();
   if (context) context.actorId = payload.id;
