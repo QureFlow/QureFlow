@@ -22,6 +22,8 @@ export interface QueueSnapshot {
   /** Completed patients of this doctor before the day, for the follow-up feature. */
   returningPatients: Set<string>;
   notBefore?: number;
+  /** All of this doctor's tokens on the same day, for delay-history estimators. */
+  dayTokens: QueueToken[];
 }
 export type WaitPredictor = (snapshot: QueueSnapshot) => WaitEstimate;
 /** Builds a predictor from the history available before an evaluation day. */
@@ -98,6 +100,7 @@ export function snapshots(
       ahead: patientsAhead(waiting, target, istMinute(at)),
       returningPatients,
       notBefore: scheduled ? slotTime(target.queueDate!, target.scheduledTime) : undefined,
+      dayTokens,
     });
   }
   return result;
@@ -139,7 +142,7 @@ const predictWith =
     });
 
 /** Snapshots of the most recent days of a clinic's history, grouped by doctor and day. */
-function recentSnapshots(tokens: QueueToken[], days: number) {
+export function recentSnapshots(tokens: QueueToken[], days: number) {
   const dates = [...new Set(tokens.map((t) => t.queueDate!).filter(Boolean))].sort().slice(-days);
   const result: QueueSnapshot[] = [];
   for (const date of dates)

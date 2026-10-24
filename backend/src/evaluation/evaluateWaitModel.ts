@@ -22,6 +22,12 @@ async function evaluate() {
   const { trainClinicModels, consultationSamples } =
     await import('../services/predictionService.js');
   const { legacyTrainDurationModel, legacyPredictDuration } = await import('./legacyRidge.js');
+  const {
+    queueLengthPredictor,
+    queueLengthWithFeedbackPredictor,
+    lastToEnterServicePredictor,
+    rollingAveragePredictor,
+  } = await import('./practiceBaselines.js');
   type QueueToken = import('../models/types.js').QueueToken;
   type PredictorFactory = import('../services/waitBacktest.js').PredictorFactory;
 
@@ -89,6 +95,13 @@ async function evaluate() {
     };
   const learned = learnedPredictor(CONFIGURED_MINUTES, BUFFER);
   const predictors: Record<string, PredictorFactory> = {
+    // Estimators documented as used in practice (see practiceBaselines.ts for sources).
+    practice_queue_length: queueLengthPredictor(CONFIGURED_MINUTES, BUFFER),
+    practice_queue_length_feedback: queueLengthWithFeedbackPredictor(CONFIGURED_MINUTES, BUFFER),
+    practice_last_to_enter_service: lastToEnterServicePredictor(CONFIGURED_MINUTES, BUFFER),
+    practice_rolling_average_1h: rollingAveragePredictor(1, CONFIGURED_MINUTES, BUFFER),
+    practice_rolling_average_2h: rollingAveragePredictor(2, CONFIGURED_MINUTES, BUFFER),
+    practice_rolling_average_4h: rollingAveragePredictor(4, CONFIGURED_MINUTES, BUFFER),
     formula_original: formulaPredictor(CONFIGURED_MINUTES, BUFFER),
     // The service trained the previous model on the last 30 days of visits.
     ridge_v1: recent(30, ridgeV1),
