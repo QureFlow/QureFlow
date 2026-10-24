@@ -150,6 +150,7 @@ export interface PatientQueueStatus {
     syntheticSamples: number;
     validationMaeMinutes: number | null;
     noShowRate?: number;
+    learnedCorrection?: boolean;
     modelVersion: string;
     isEstimate: boolean;
   };

@@ -1,8 +1,8 @@
 {
-  "executedAt": "2026-10-24T06:41:29.655Z",
+  "executedAt": "2026-10-24T10:29:16.692Z",
   "database": "Amazon DynamoDB Local",
   "isolatedTableDeleted": true,
-  "passed": 74,
+  "passed": 75,
   "failed": 0,
   "results": [
     {
@@ -13,7 +13,7 @@
     {
       "name": "Public doctor and clinic directories are served from DynamoDB",
       "passed": true,
-      "durationMs": 83
+      "durationMs": 85
     },
     {
       "name": "Health responses omit infrastructure names and set no-store",
@@ -28,7 +28,7 @@
     {
       "name": "Unauthenticated GET /appointments is rejected",
       "passed": true,
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "name": "Unauthenticated GET /queues/all is rejected",
@@ -43,12 +43,12 @@
     {
       "name": "Unauthenticated GET /analytics is rejected",
       "passed": true,
-      "durationMs": 2
+      "durationMs": 1
     },
     {
       "name": "Unauthenticated booking and queue joins are rejected",
       "passed": true,
-      "durationMs": 21
+      "durationMs": 162
     },
     {
       "name": "A password cannot be omitted at login",
@@ -58,17 +58,17 @@
     {
       "name": "Wrong passwords and demo aliases cannot bypass authentication",
       "passed": true,
-      "durationMs": 341
+      "durationMs": 306
     },
     {
       "name": "Identifier lookup never matches blank phone fields",
       "passed": true,
-      "durationMs": 16
+      "durationMs": 15
     },
     {
       "name": "Forged and expired JWTs are rejected",
       "passed": true,
-      "durationMs": 12
+      "durationMs": 16
     },
     {
       "name": "Authentication responses omit password hashes and private provider fields",
@@ -78,12 +78,12 @@
     {
       "name": "Weak passwords and impossible birth dates are rejected",
       "passed": true,
-      "durationMs": 13
+      "durationMs": 17
     },
     {
       "name": "Passwords require a symbol and fit the bcrypt UTF-8 byte limit",
       "passed": true,
-      "durationMs": 7
+      "durationMs": 6
     },
     {
       "name": "Registration forces the patient role and rejects injected staff fields",
@@ -93,7 +93,7 @@
     {
       "name": "Concurrent registration claims allow only one account per phone",
       "passed": true,
-      "durationMs": 759
+      "durationMs": 745
     },
     {
       "name": "Profile mass assignment cannot change role, ID, or password hash",
@@ -103,57 +103,57 @@
     {
       "name": "Patients cannot read another patient profile or appointments",
       "passed": true,
-      "durationMs": 13
+      "durationMs": 15
     },
     {
       "name": "Patients cannot assign priority, change settings, or create doctors",
       "passed": true,
-      "durationMs": 14
+      "durationMs": 19
     },
     {
       "name": "Staff cannot manage another clinic or queue",
       "passed": true,
-      "durationMs": 27
+      "durationMs": 26
     },
     {
       "name": "Patient lists never return password hashes",
       "passed": true,
-      "durationMs": 87
+      "durationMs": 74
     },
     {
       "name": "Queue settings enforce types and preserve omitted settings",
       "passed": true,
-      "durationMs": 36
+      "durationMs": 24
     },
     {
       "name": "A valid patient profile update persists",
       "passed": true,
-      "durationMs": 30
+      "durationMs": 27
     },
     {
       "name": "Patient contact updates cannot take over a staff identity",
       "passed": true,
-      "durationMs": 20
+      "durationMs": 19
     },
     {
       "name": "Fixed recovery codes cannot reset a local account",
       "passed": true,
-      "durationMs": 360
+      "durationMs": 359
     },
     {
       "name": "Password recovery does not reveal whether an account exists",
       "passed": true,
-      "durationMs": 7
+      "durationMs": 5
     },
     {
       "name": "Atomic counter allocations produce distinct sequences under concurrency",
       "passed": true,
-      "durationMs": 72
+      "durationMs": 61
     },
     {
       "name": "Concurrent joins produce one active patient token",
       "passed": true,
-      "durationMs": 112
+      "durationMs": 94
     },
     {
       "name": "Token metadata stores date, source, version, and correlation ID",
@@ -163,92 +163,92 @@
     {
       "name": "Queue joins reject nonexistent patients without allocating a visit",
       "passed": true,
-      "durationMs": 6
+      "durationMs": 8
     },
     {
       "name": "Doctor permissions require assignment and restrict patient records",
       "passed": true,
-      "durationMs": 802
+      "durationMs": 329
     },
     {
       "name": "An active token prevents a duplicate visit with another doctor",
       "passed": true,
-      "durationMs": 29
+      "durationMs": 19
     },
     {
       "name": "Patients see their own token while other patient details are redacted",
       "passed": true,
-      "durationMs": 29
+      "durationMs": 22
     },
     {
       "name": "Patients cannot cancel another patient token",
       "passed": true,
-      "durationMs": 16
+      "durationMs": 12
     },
     {
       "name": "Paused queues reject call-next without changing any token",
       "passed": true,
-      "durationMs": 53
+      "durationMs": 45
     },
     {
       "name": "Priority tokens are called before earlier normal walk-ins",
       "passed": true,
-      "durationMs": 54
+      "durationMs": 50
     },
     {
       "name": "Calling next cannot silently complete the current consultation",
       "passed": true,
-      "durationMs": 21
+      "durationMs": 18
     },
     {
       "name": "Patients cannot self-complete a consultation",
       "passed": true,
-      "durationMs": 8
+      "durationMs": 7
     },
     {
       "name": "Serving a waiting token or cancelling a current token is rejected",
       "passed": true,
-      "durationMs": 23
+      "durationMs": 19
     },
     {
       "name": "Completion records served time and rejects a repeated transition",
       "passed": true,
-      "durationMs": 39
+      "durationMs": 41
     },
     {
       "name": "Concurrent staff calls create at most one current consultation",
       "passed": true,
-      "durationMs": 60
+      "durationMs": 50
     },
     {
       "name": "Current patients have zero people ahead and zero estimated wait",
       "passed": true,
-      "durationMs": 57
+      "durationMs": 49
     },
     {
       "name": "Terminal tokens release the active visit claim",
       "passed": true,
-      "durationMs": 68
+      "durationMs": 51
     },
     {
       "name": "Invalid, past, and out-of-horizon booking dates are rejected",
       "passed": true,
-      "durationMs": 30
+      "durationMs": 24
     },
     {
       "name": "Booking rejects times outside the doctor schedule",
       "passed": true,
-      "durationMs": 42
+      "durationMs": 32
     },
     {
       "name": "Slots accommodate long consultations and reject undersized final windows",
       "passed": true,
-      "durationMs": 48
+      "durationMs": 42
     },
     {
       "name": "Valid bookings atomically store the appointment and linked token",
       "passed": true,
-      "durationMs": 155
+      "durationMs": 143
     },
     {
       "name": "Future bookings do not appear as active visits today",
@@ -258,32 +258,32 @@
     {
       "name": "Booking on behalf of another patient is rejected",
       "passed": true,
-      "durationMs": 6
+      "durationMs": 8
     },
     {
       "name": "Failed duplicate booking leaves no orphan appointment",
       "passed": true,
-      "durationMs": 114
+      "durationMs": 87
     },
     {
       "name": "Concurrent bookings cannot exceed the slot capacity",
       "passed": true,
-      "durationMs": 484
+      "durationMs": 349
     },
     {
       "name": "Cancellation atomically updates appointment, token, and slot availability",
       "passed": true,
-      "durationMs": 80
+      "durationMs": 69
     },
     {
       "name": "Audit events include actor, transitions, and request IDs without credentials or contact details",
       "passed": true,
-      "durationMs": 10
+      "durationMs": 7
     },
     {
       "name": "Analytics is staff-only and restricted to the assigned clinic",
       "passed": true,
-      "durationMs": 68
+      "durationMs": 49
     },
     {
       "name": "Learning falls back when there are too few completed consultations",
@@ -308,47 +308,47 @@
     {
       "name": "The Lambda adapter executes actual Express routes",
       "passed": true,
-      "durationMs": 37
+      "durationMs": 520
     },
     {
       "name": "Hostile origins do not receive CORS permission",
       "passed": true,
-      "durationMs": 1
+      "durationMs": 2
     },
     {
       "name": "Indexed catalog, clinic visit and appointment reads match existing primary records",
       "passed": true,
-      "durationMs": 98
+      "durationMs": 95
     },
     {
       "name": "Token transitions atomically update clinic and appointment read models",
       "passed": true,
-      "durationMs": 524
+      "durationMs": 516
     },
     {
       "name": "Doctor directory search filters, orders and pages the DynamoDB catalog",
       "passed": true,
-      "durationMs": 88
+      "durationMs": 75
     },
     {
       "name": "Directory options and clinic doctor counts are derived from active doctors",
       "passed": true,
-      "durationMs": 24
+      "durationMs": 17
     },
     {
       "name": "Staff appointment search pages results within the assigned clinic",
       "passed": true,
-      "durationMs": 52
+      "durationMs": 36
     },
     {
       "name": "Cognito subjects and staff IDs resolve through identity claims",
       "passed": true,
-      "durationMs": 54
+      "durationMs": 49
     },
     {
       "name": "Wait estimates include an 80% range around the expected wait",
       "passed": true,
-      "durationMs": 136
+      "durationMs": 121
     },
     {
       "name": "The wait projection counts bookings whose time arrives during the wait",
@@ -358,22 +358,27 @@
     {
       "name": "Concurrent bookings from different patients cannot overfill the last place",
       "passed": true,
-      "durationMs": 184
+      "durationMs": 158
     },
     {
       "name": "Only the synthetic local administrator can manage all demo clinics",
       "passed": true,
-      "durationMs": 477
+      "durationMs": 458
+    },
+    {
+      "name": "The learned correction trains on recorded visits and adjusts the projection",
+      "passed": true,
+      "durationMs": 539
     },
     {
       "name": "Staff analytics report replayed wait accuracy for each method",
       "passed": true,
-      "durationMs": 22
+      "durationMs": 30
     },
     {
       "name": "Session revocation takes effect on the next request",
       "passed": true,
-      "durationMs": 21
+      "durationMs": 22
     }
   ]
 }

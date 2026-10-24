@@ -942,10 +942,53 @@ async function run() {
         delete process.env.DEMO_ALL_CLINICS;
       }
     });
+    await check(
+      'The learned correction trains on recorded visits and adjusts the projection',
+      async () => {
+        const { buildDemoDirectory, PATIENTS_PER_CLINIC } =
+          await import('../src/demo/demoDirectory.js');
+        const { simulateDay } = await import('../src/demo/simulation.js');
+        const { trainCorrection, applyCorrection } =
+          await import('../src/services/waitCorrection.js');
+        const { learnedPredictor, recentSnapshots } =
+          await import('../src/services/waitBacktest.js');
+        const { doctors, patients } = buildDemoDirectory();
+        const clinicDoctors = doctors.filter((d) => d.clinicId === 'clinic-1').slice(0, 2);
+        const history = clinicDoctors.flatMap((doctor) => {
+          const seen = new Set<string>();
+          return Array.from(
+            { length: 40 },
+            (_, i) =>
+              simulateDay({
+                doctor,
+                date: clinicDate(new Date(Date.now() - (40 - i) * 86400000)),
+                dayIndex: i,
+                patients: patients.slice(0, PATIENTS_PER_CLINIC),
+                seenBefore: seen,
+                idPrefix: 'test',
+              }).tokens,
+          ).flat();
+        });
+        const ids = clinicDoctors.map((d) => d.id);
+        assert.equal(trainCorrection(history.slice(0, 20), ids, 12, 2), null);
+        const correction = trainCorrection(history, ids, 12, 2);
+        assert.ok(correction && correction.trainedOn >= 50);
+        const projection = learnedPredictor(12, 2)(history, ids);
+        const snapshot = recentSnapshots(history, 1)[0];
+        const projected = projection(snapshot);
+        const corrected = applyCorrection(correction!, snapshot, projected, 12, 2);
+        assert.ok(
+          corrected.minutes >= 0 &&
+            corrected.low <= corrected.minutes &&
+            corrected.high >= corrected.minutes,
+        );
+        assert.equal(corrected.high - corrected.minutes, projected.high - projected.minutes);
+      },
+    );
     await check('Staff analytics report replayed wait accuracy for each method', async () => {
       const r = await api('/analytics', admin.token);
       assert.equal(r.status, 200);
-      assert.ok(r.body.waitAccuracy.methods.formula);
+      assert.ok(r.body.waitAccuracy.methods.queueLength);
       assert.ok(r.body.waitAccuracy.methods.learned);
     });
     await check('Session revocation takes effect on the next request', async () => {

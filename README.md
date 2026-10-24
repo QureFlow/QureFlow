@@ -42,6 +42,9 @@ own calling rule forward — emergency first, then token order among patients wh
 each moment — so bookings whose time arrives during the wait are counted. Patients ahead are
 weighted by the chance they are actually seen, the running consultation's remaining time is a
 conditional expectation, and the 80% range is calibrated on the clinic's own recent errors.
+Once a clinic has recorded at least 50 called patients, gradient-boosted trees that take the
+projected wait as an input learn what the projection misses (for example emergencies that
+arrive later) and correct it; the correction is retrained every 30 minutes.
 
 Every method is checked before it is used: the most recent 20% of each doctor's consultations
 are held out, and the learned model replaces the configured average only if it is more accurate.
@@ -49,7 +52,8 @@ Staff analytics replays the last week to show each method's actual error. Estima
 clinical priority.
 
 Offline evaluation on simulated sessions (6 clinics, 48 doctors, 60 days, rolling-origin
-backtest; synthetic data, not a clinical study):
+backtest; synthetic data, not a clinical study) compares it with estimators used by queue
+systems and hospitals and with learned predictors from the literature:
 
 ```powershell
 npm run evaluate:model

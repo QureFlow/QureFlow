@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-24T06:39:38.479Z",
+  "generatedAt": "2026-10-24T10:26:13.462Z",
   "dataset": {
     "description": "Simulated outpatient sessions (synthetic; no real patient data).",
     "clinics": 6,
@@ -75,6 +75,46 @@
       "withinFiveMinutes": 0.26,
       "withinTenMinutes": 0.49,
       "rangeCoverage80": null
+    },
+    "research_q_lasso": {
+      "cases": 11588,
+      "maeMinutes": 9.82,
+      "medianAbsoluteErrorMinutes": 6.53,
+      "rmseMinutes": 15.1,
+      "meanBiasMinutes": -0.07,
+      "withinFiveMinutes": 0.41,
+      "withinTenMinutes": 0.67,
+      "rangeCoverage80": null
+    },
+    "research_quantile_regression": {
+      "cases": 11588,
+      "maeMinutes": 9.31,
+      "medianAbsoluteErrorMinutes": 5.09,
+      "rmseMinutes": 15.56,
+      "meanBiasMinutes": -2.05,
+      "withinFiveMinutes": 0.5,
+      "withinTenMinutes": 0.71,
+      "rangeCoverage80": null
+    },
+    "research_gradient_boosting": {
+      "cases": 11588,
+      "maeMinutes": 7.45,
+      "medianAbsoluteErrorMinutes": 4,
+      "rmseMinutes": 12.85,
+      "meanBiasMinutes": 0.27,
+      "withinFiveMinutes": 0.58,
+      "withinTenMinutes": 0.78,
+      "rangeCoverage80": null
+    },
+    "proposed_projection_boosting": {
+      "cases": 11588,
+      "maeMinutes": 6.59,
+      "medianAbsoluteErrorMinutes": 3.31,
+      "rmseMinutes": 11.85,
+      "meanBiasMinutes": -0.57,
+      "withinFiveMinutes": 0.63,
+      "withinTenMinutes": 0.81,
+      "rangeCoverage80": 0.88
     },
     "formula_original": {
       "cases": 11588,
@@ -203,6 +243,30 @@
       "walkInMaeMinutes": 27.4,
       "bookedCases": 4141,
       "bookedMaeMinutes": 9.55
+    },
+    "research_q_lasso": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 11.88,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 6.1
+    },
+    "research_quantile_regression": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 11.62,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 5.15
+    },
+    "research_gradient_boosting": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 9.21,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 4.27
+    },
+    "proposed_projection_boosting": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 8.04,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 3.98
     },
     "formula_original": {
       "walkInCases": 7447,

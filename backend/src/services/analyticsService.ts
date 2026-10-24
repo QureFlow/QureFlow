@@ -1,7 +1,9 @@
 import { db } from '../repositories/repository.js';
 import { clinicDate } from '../lib/time.js';
 import { trainClinicModels, DurationModel, WaitCalibration } from './predictionService.js';
-import { backtestWaits, calibrateWaits } from './waitBacktest.js';
+import { backtestWaits, calibrateWaits, learnedPredictor } from './waitBacktest.js';
+import { applyCorrection, trainCorrection, WaitCorrection } from './waitCorrection.js';
+import { queueLengthEstimate } from './waitFeatures.js';
 import { QueueSettings, QueueToken } from '../models/types.js';
 
 interface ClinicModels {
@@ -10,8 +12,13 @@ interface ClinicModels {
   /** Per doctor, the patients with a completed consultation; kept in memory only. */
   returning: Map<string, Set<string>>;
   calibration: WaitCalibration;
+  /** Learned correction of the projection; null until the clinic has enough history. */
+  correction: WaitCorrection | null;
 }
 const modelCache = new Map<string, ClinicModels>();
+// Boosted trees take a moment to train, so the correction is refreshed less often.
+const correctionCache = new Map<string, { expires: number; correction: WaitCorrection | null }>();
+const CORRECTION_TTL = 30 * 60000;
 const accuracyCache = new Map<
   string,
   { expires: number; summary: ReturnType<typeof backtestWaits>['summary'] }
@@ -37,16 +44,30 @@ export const analyticsService = {
       db.getDoctors(),
       db.getSettings(clinicId),
     ]);
-    const models = trainClinicModels(
-      tokens,
-      doctors.filter((d) => d.clinicId === clinicId).map((d) => d.id),
-      settings.averageConsultationMinutes,
-    );
+    const doctorIds = doctors.filter((d) => d.clinicId === clinicId).map((d) => d.id);
+    const models = trainClinicModels(tokens, doctorIds, settings.averageConsultationMinutes);
+    const buffer = settings.bufferMinutes ?? 2;
+    let corrected = correctionCache.get(clinicId);
+    if (!corrected || corrected.expires <= Date.now() || refresh) {
+      // Train on completed days only; today's queue is still in progress.
+      const history = tokens.filter((t) => (t.queueDate || '') < clinicDate());
+      corrected = {
+        expires: Date.now() + CORRECTION_TTL,
+        correction: trainCorrection(
+          history,
+          doctorIds,
+          settings.averageConsultationMinutes,
+          buffer,
+        ),
+      };
+      correctionCache.set(clinicId, corrected);
+    }
     const entry = {
       expires: Date.now() + 60000,
       models,
       returning: returningPatients(tokens),
-      calibration: calibrateWaits(tokens, models, settings.bufferMinutes ?? 2),
+      calibration: calibrateWaits(tokens, models, buffer),
+      correction: corrected.correction,
     };
     modelCache.set(clinicId, entry);
     return entry;
@@ -123,10 +144,29 @@ export const analyticsService = {
   async waitAccuracy(clinicId: string, tokens: QueueToken[], settings: QueueSettings) {
     const cached = accuracyCache.get(clinicId);
     if (cached && cached.expires > Date.now()) return cached.summary;
+    const defaultMinutes = settings.averageConsultationMinutes,
+      bufferMinutes = settings.bufferMinutes ?? 2;
     const summary = backtestWaits(tokens, {
-      defaultMinutes: settings.averageConsultationMinutes,
-      bufferMinutes: settings.bufferMinutes ?? 2,
+      defaultMinutes,
+      bufferMinutes,
       evaluationDays: 7,
+      predictors: {
+        // The common industry estimate: patients ahead × recent mean consultation time.
+        queueLength: queueLengthEstimate(defaultMinutes, bufferMinutes),
+        learned: (history, doctorIds) => {
+          const current = learnedPredictor(defaultMinutes, bufferMinutes)(history, doctorIds);
+          const correction = trainCorrection(
+            history,
+            doctorIds,
+            defaultMinutes,
+            bufferMinutes,
+            current,
+          );
+          return correction
+            ? (s) => applyCorrection(correction, s, current(s), defaultMinutes, bufferMinutes)
+            : current;
+        },
+      },
     }).summary;
     accuracyCache.set(clinicId, { expires: Date.now() + 10 * 60000, summary });
     return summary;

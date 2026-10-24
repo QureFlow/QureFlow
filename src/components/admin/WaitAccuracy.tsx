@@ -13,8 +13,8 @@ const percent = (value: number | null | undefined) =>
   value === null || value === undefined ? '—' : `${Math.round(value * 100)}%`;
 const minutes = (value: number | null) => (value === null ? '—' : `${value.toFixed(1)} min`);
 const labels: Record<string, string> = {
-  formula: 'Fixed average formula',
-  learned: 'Learned estimate (current)',
+  queueLength: 'People ahead × average time',
+  learned: 'QureFlow estimate (current)',
 };
 
 /** Replayed accuracy: what each method would have told patients versus their actual wait. */

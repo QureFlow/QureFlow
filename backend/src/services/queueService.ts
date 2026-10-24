@@ -12,6 +12,7 @@ import { byQueueOrder, patientsAhead } from '../lib/queueOrder.js';
 import { AppError } from '../lib/errors.js';
 import { analyticsService } from './analyticsService.js';
 import { estimateWait } from './predictionService.js';
+import { applyCorrection } from './waitCorrection.js';
 export const doctorPrefix = (id: string) =>
   ({
     'doc-1': 'A',
@@ -155,19 +156,44 @@ export class QueueService {
     if (!clinic.models.has(token.doctorId))
       clinic = await analyticsService.getClinicModels(token.clinicId, true);
     const model = clinic.models.get(token.doctorId)!;
-    const estimate =
+    const now = Date.now(),
+      buffer = settings.bufferMinutes ?? 2,
+      waiting = queue.tokens.filter((t) => t.status === 'waiting' && t.id !== token.id);
+    const projected =
       token.status === 'current'
         ? { minutes: 0, low: 0, high: 0 }
         : estimateWait({
             model,
             current,
             target: token,
-            waiting: queue.tokens.filter((t) => t.status === 'waiting'),
-            bufferMinutes: settings.bufferMinutes ?? 2,
-            now: Date.now(),
+            waiting,
+            bufferMinutes: buffer,
+            now,
             returningPatients: clinic.returning.get(token.doctorId),
             calibration: clinic.calibration,
           });
+    const scheduled = !(token.isWalkIn || ['Now', 'Walk-in'].includes(token.scheduledTime));
+    const estimate =
+      token.status === 'current' || !clinic.correction
+        ? projected
+        : applyCorrection(
+            clinic.correction,
+            {
+              target: token,
+              at: now,
+              current,
+              waiting,
+              ahead,
+              returningPatients: clinic.returning.get(token.doctorId) || new Set(),
+              notBefore: scheduled
+                ? now + (clockMinutes(token.scheduledTime) - clinicNowMinutes()) * 60000
+                : undefined,
+              dayTokens: queue.tokens,
+            },
+            projected,
+            settings.averageConsultationMinutes,
+            buffer,
+          );
     return {
       token,
       currentServingToken: current?.tokenNumber || null,
@@ -180,6 +206,7 @@ export class QueueService {
         sampleCount: model.sampleCount,
         syntheticSamples: model.syntheticSamples,
         validationMaeMinutes: model.modelMae,
+        learnedCorrection: Boolean(clinic.correction),
         noShowRate: Math.round(model.noShowRate * 100) / 100,
         modelVersion: model.modelVersion,
         isEstimate: true,

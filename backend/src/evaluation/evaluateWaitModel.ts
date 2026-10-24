@@ -28,6 +28,12 @@ async function evaluate() {
     lastToEnterServicePredictor,
     rollingAveragePredictor,
   } = await import('./practiceBaselines.js');
+  const {
+    qLassoPredictor,
+    quantileRegressionPredictor,
+    gradientBoostingPredictor,
+    projectionBoostingPredictor,
+  } = await import('./researchBaselines.js');
   type QueueToken = import('../models/types.js').QueueToken;
   type PredictorFactory = import('../services/waitBacktest.js').PredictorFactory;
 
@@ -102,6 +108,11 @@ async function evaluate() {
     practice_rolling_average_1h: rollingAveragePredictor(1, CONFIGURED_MINUTES, BUFFER),
     practice_rolling_average_2h: rollingAveragePredictor(2, CONFIGURED_MINUTES, BUFFER),
     practice_rolling_average_4h: rollingAveragePredictor(4, CONFIGURED_MINUTES, BUFFER),
+    // Learned predictors from the research literature (see researchBaselines.ts for sources).
+    research_q_lasso: qLassoPredictor(CONFIGURED_MINUTES, BUFFER),
+    research_quantile_regression: quantileRegressionPredictor(CONFIGURED_MINUTES, BUFFER),
+    research_gradient_boosting: gradientBoostingPredictor(CONFIGURED_MINUTES, BUFFER),
+    proposed_projection_boosting: projectionBoostingPredictor(CONFIGURED_MINUTES, BUFFER),
     formula_original: formulaPredictor(CONFIGURED_MINUTES, BUFFER),
     // The service trained the previous model on the last 30 days of visits.
     ridge_v1: recent(30, ridgeV1),
@@ -157,9 +168,10 @@ async function evaluate() {
           meanBiasMinutes: round(list.reduce((s, e) => s + e.error, 0) / list.length),
           withinFiveMinutes: round(list.filter((e) => Math.abs(e.error) <= 5).length / list.length),
           withinTenMinutes: round(list.filter((e) => Math.abs(e.error) <= 10).length / list.length),
-          rangeCoverage80: name.startsWith('lognormal')
-            ? round(list.filter((e) => e.inRange).length / list.length)
-            : null,
+          rangeCoverage80:
+            name.startsWith('lognormal') || name.startsWith('proposed')
+              ? round(list.filter((e) => e.inRange).length / list.length)
+              : null,
         },
       ];
     }),

@@ -216,6 +216,8 @@ export function backtestWaits(tokens: QueueToken[], options: BacktestOptions) {
   };
   const days = [...new Set(tokens.map((t) => t.queueDate!).filter(Boolean))].sort();
   const evaluated = days.slice(-options.evaluationDays);
+  // Interval coverage is reported only for methods that give a range at all.
+  const ranged = new Set<string>();
   const errors: Record<string, { error: number; inRange: boolean; walkIn: boolean }[]> =
     Object.fromEntries(Object.keys(predictors).map((name) => [name, []]));
   const doctorIds = [...new Set(tokens.map((t) => t.doctorId))];
@@ -237,6 +239,7 @@ export function backtestWaits(tokens: QueueToken[], options: BacktestOptions) {
         const actual = (Date.parse(snapshot.target.calledAt!) - snapshot.at) / 60000;
         for (const [name, predict] of Object.entries(prepared)) {
           const estimate = predict(snapshot);
+          if (estimate.high > estimate.low) ranged.add(name);
           errors[name].push({
             error: estimate.minutes - actual,
             inRange: actual >= estimate.low - 0.5 && actual <= estimate.high + 0.5,
@@ -264,7 +267,7 @@ export function backtestWaits(tokens: QueueToken[], options: BacktestOptions) {
     summary: {
       evaluationDays: evaluated.length,
       methods: Object.fromEntries(
-        Object.entries(errors).map(([name, list]) => [name, score(list, name !== 'formula')]),
+        Object.entries(errors).map(([name, list]) => [name, score(list, ranged.has(name))]),
       ) as Record<string, MethodScore>,
     },
     errors,
