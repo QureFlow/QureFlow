@@ -877,15 +877,27 @@ export class DynamoDbRepository {
         : filters.clinicId
           ? `APPOINTMENTS#CLINIC#${filters.clinicId}`
           : undefined;
+    const indexed = await this.readModels();
+    // Without a scope, read every clinic's partition rather than scanning the whole table.
     const list =
-      partition && (await this.readModels())
-        ? (await this.query(partition, filters.date || '')).map(clean<Appointment>)
-        : (
-            await this.scan('begins_with(pk, :p) AND sk = :m', {
-              ':p': 'APPOINTMENT#',
-              ':m': 'METADATA',
-            })
-          ).map(clean<Appointment>);
+      !partition && indexed
+        ? (
+            await Promise.all(
+              (await this.query('CATALOG#CLINICS', '')).map((c) =>
+                this.query(`APPOINTMENTS#CLINIC#${c.id}`, filters.date || ''),
+              ),
+            )
+          )
+            .flat()
+            .map(clean<Appointment>)
+        : partition && indexed
+          ? (await this.query(partition, filters.date || '')).map(clean<Appointment>)
+          : (
+              await this.scan('begins_with(pk, :p) AND sk = :m', {
+                ':p': 'APPOINTMENT#',
+                ':m': 'METADATA',
+              })
+            ).map(clean<Appointment>);
     return filterAppointments(list, filters);
   }
   async searchAppointments(filters: AppointmentFilters & { page: number; pageSize: number }) {
