@@ -90,7 +90,8 @@ async function evaluate() {
   const learned = learnedPredictor(CONFIGURED_MINUTES, BUFFER);
   const predictors: Record<string, PredictorFactory> = {
     formula_original: formulaPredictor(CONFIGURED_MINUTES, BUFFER),
-    ridge_v1: ridgeV1,
+    // The service trained the previous model on the last 30 days of visits.
+    ridge_v1: recent(30, ridgeV1),
     queue_projection_configured_durations: learnedPredictor(CONFIGURED_MINUTES, BUFFER, {
       adjust: (m) => ({ ...m, method: 'configured' }),
     }),
@@ -158,24 +159,34 @@ async function evaluate() {
     maeByCandidate: {} as Record<string, number>,
   };
   const sums: Record<string, { total: number; n: number }> = {};
+  const observedMeans: { method: string; meanMinutes: number }[] = [];
   let samples = 0;
   for (const [clinicId, tokens] of byClinic) {
     const ids = doctors.filter((d) => d.clinicId === clinicId).map((d) => d.id);
     samples += consultationSamples(tokens).length;
+    // The previous model is scored on exactly the same held-out consultations as the others:
+    // it is trained on each doctor's first 80% of consultations, as trainDurationModel splits.
     for (const id of ids) {
+      const doctorSamples = consultationSamples(tokens.filter((t) => t.doctorId === id));
+      if (doctorSamples.length < 10) continue;
+      const split = Math.floor(doctorSamples.length * 0.8);
       const legacy = legacyTrainDurationModel(
-        tokens.filter((t) => t.doctorId === id),
+        doctorSamples.slice(0, split).map((s) => s.token),
         CONFIGURED_MINUTES,
       );
-      const legacyMae = legacy.method === 'ridge_regression' ? legacy.modelMae : legacy.baselineMae;
-      if (legacyMae !== null) {
-        sums.ridge_v1 ||= { total: 0, n: 0 };
-        sums.ridge_v1.total += legacyMae * legacy.validationCount;
-        sums.ridge_v1.n += legacy.validationCount;
-      }
+      const validation = doctorSamples.slice(split);
+      sums.ridge_v1 ||= { total: 0, n: 0 };
+      for (const s of validation)
+        sums.ridge_v1.total += Math.abs(s.y - legacyPredictDuration(legacy, s.token));
+      sums.ridge_v1.n += validation.length;
     }
-    for (const model of trainClinicModels(tokens, ids, CONFIGURED_MINUTES).values()) {
+    for (const [id, model] of trainClinicModels(tokens, ids, CONFIGURED_MINUTES)) {
       durationStudy.doctors++;
+      const own = consultationSamples(tokens.filter((t) => t.doctorId === id));
+      observedMeans.push({
+        method: model.method,
+        meanMinutes: own.reduce((sum, x) => sum + x.y, 0) / own.length,
+      });
       durationStudy.selected[model.method] = (durationStudy.selected[model.method] || 0) + 1;
       for (const [method, mae] of Object.entries(model.candidateMae)) {
         sums[method] ||= { total: 0, n: 0 };
@@ -186,6 +197,20 @@ async function evaluate() {
   }
   for (const [method, { total, n }] of Object.entries(sums))
     durationStudy.maeByCandidate[method] = round(total / n);
+  // Observed mean consultation length of the doctors for whom each method was selected.
+  const observedMeanByMethod = Object.fromEntries(
+    [...new Set(observedMeans.map((o) => o.method))].map((method) => {
+      const list = observedMeans.filter((o) => o.method === method).map((o) => o.meanMinutes);
+      return [
+        method,
+        {
+          doctors: list.length,
+          minMinutes: round(Math.min(...list)),
+          maxMinutes: round(Math.max(...list)),
+        },
+      ];
+    }),
+  );
   const allTokens = [...byClinic.values()].flat();
   const report = {
     generatedAt: new Date().toISOString(),
@@ -206,7 +231,7 @@ async function evaluate() {
     },
     waitTimeBacktest: scores,
     waitTimeByArrival: byArrival,
-    consultationDuration: durationStudy,
+    consultationDuration: { ...durationStudy, observedMeanByMethod },
   };
   const dir = path.resolve(
     process.cwd(),

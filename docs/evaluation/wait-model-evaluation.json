@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T20:51:13.395Z",
+  "generatedAt": "2026-10-24T06:21:49.179Z",
   "dataset": {
     "description": "Simulated outpatient sessions (synthetic; no real patient data).",
     "clinics": 6,
@@ -18,22 +18,22 @@
   "waitTimeBacktest": {
     "formula_original": {
       "cases": 11588,
-      "maeMinutes": 17.53,
-      "medianAbsoluteErrorMinutes": 12.5,
-      "rmseMinutes": 30.1,
-      "meanBiasMinutes": -10.29,
-      "withinFiveMinutes": 0.24,
-      "withinTenMinutes": 0.44,
+      "maeMinutes": 28.58,
+      "medianAbsoluteErrorMinutes": 19.73,
+      "rmseMinutes": 40.09,
+      "meanBiasMinutes": 11.93,
+      "withinFiveMinutes": 0.16,
+      "withinTenMinutes": 0.29,
       "rangeCoverage80": null
     },
     "ridge_v1": {
       "cases": 11588,
-      "maeMinutes": 11.76,
-      "medianAbsoluteErrorMinutes": 9,
-      "rmseMinutes": 17.06,
-      "meanBiasMinutes": -2.79,
-      "withinFiveMinutes": 0.32,
-      "withinTenMinutes": 0.55,
+      "maeMinutes": 11.51,
+      "medianAbsoluteErrorMinutes": 8.83,
+      "rmseMinutes": 16.96,
+      "meanBiasMinutes": -3.99,
+      "withinFiveMinutes": 0.34,
+      "withinTenMinutes": 0.57,
       "rangeCoverage80": null
     },
     "queue_projection_configured_durations": {
@@ -110,15 +110,15 @@
   "waitTimeByArrival": {
     "formula_original": {
       "walkInCases": 7447,
-      "walkInMaeMinutes": 21.25,
+      "walkInMaeMinutes": 36.31,
       "bookedCases": 4141,
-      "bookedMaeMinutes": 10.83
+      "bookedMaeMinutes": 14.67
     },
     "ridge_v1": {
       "walkInCases": 7447,
-      "walkInMaeMinutes": 13.16,
+      "walkInMaeMinutes": 12.71,
       "bookedCases": 4141,
-      "bookedMaeMinutes": 9.26
+      "bookedMaeMinutes": 9.34
     },
     "queue_projection_configured_durations": {
       "walkInCases": 7447,
@@ -170,10 +170,22 @@
       "configured": 6
     },
     "maeByCandidate": {
-      "ridge_v1": 3.28,
+      "ridge_v1": 3.64,
       "configured": 5.45,
       "doctor_history": 3.79,
       "hierarchical_lognormal": 2.78
+    },
+    "observedMeanByMethod": {
+      "hierarchical_lognormal": {
+        "doctors": 42,
+        "minMinutes": 5.25,
+        "maxMinutes": 28.77
+      },
+      "configured": {
+        "doctors": 6,
+        "minMinutes": 12.8,
+        "maxMinutes": 20.65
+      }
     }
   }
 }

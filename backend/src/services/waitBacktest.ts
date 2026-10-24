@@ -1,5 +1,5 @@
 import type { QueueToken } from '../models/types.js';
-import { patientsAhead } from '../lib/queueOrder.js';
+import { byQueueOrder, patientsAhead } from '../lib/queueOrder.js';
 import { clockMinutes } from '../lib/time.js';
 import {
   calibrationFrom,
@@ -103,14 +103,18 @@ export function snapshots(
   return result;
 }
 
-/** The fixed formula QureFlow first used: t_active + (p − 1)·t_avg + buffer. */
+/**
+ * The fixed formula QureFlow first used: t_active + (p − 1)·t_avg + buffer, where p counts the
+ * running consultation and every waiting patient ahead in calling order (as it did then, with
+ * no appointment-time eligibility filter).
+ */
 export const formulaPredictor =
   (defaultMinutes: number, bufferMinutes: number): PredictorFactory =>
   () =>
   (s) => {
     const elapsed = s.current ? Math.floor((s.at - Date.parse(s.current.calledAt!)) / 60000) : 0;
     const active = s.current ? Math.max(1, defaultMinutes - elapsed) : 0;
-    const p = s.ahead.length + (s.current ? 1 : 0);
+    const p = s.waiting.filter((t) => byQueueOrder(t, s.target) < 0).length + (s.current ? 1 : 0);
     const minutes =
       p <= 0 ? 0 : Math.max(1, Math.round(active + (p - 1) * defaultMinutes + bufferMinutes));
     return { minutes, low: minutes, high: minutes };
