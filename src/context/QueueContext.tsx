@@ -6,6 +6,7 @@ import { doctorService } from '../services/doctorService';
 import { clinicService } from '../services/clinicService';
 import { useAuth } from './AuthContext';
 import { announceClinic, prepareClinicAudio, stopClinicAnnouncements } from '../lib/clinicAnnouncements';
+import { mobileConnectionReadyEvent } from '../lib/mobileConnection';
 
 export interface ToastMessage {
   id: string;
@@ -116,7 +117,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       if (docsRes.status === 'fulfilled' && Array.isArray(docsRes.value)) {
         setDoctors(
-          user && user.role !== 'patient'
+          user && user.role !== 'patient' && !user.demoAllClinics
             ? docsRes.value.filter(
                 (d) =>
                   d.clinicId === user.clinicId &&
@@ -127,7 +128,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       if (clinicsRes.status === 'fulfilled' && Array.isArray(clinicsRes.value)) {
         setClinics(
-          user && user.role !== 'patient'
+          user && user.role !== 'patient' && !user.demoAllClinics
             ? clinicsRes.value.filter((c) => c.id === user.clinicId)
             : clinicsRes.value,
         );
@@ -145,7 +146,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } finally {
       if (isSyncingRef.current === sessionKey) isSyncingRef.current = null;
     }
-  }, [user?.id, isLoading]);
+  }, [user?.id, user?.demoAllClinics, isLoading]);
 
   const refreshState = useCallback(() => {
     syncRemoteData();
@@ -165,9 +166,16 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const handleSync = () => {
       syncRemoteData();
     };
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+    const handleReconnect = () => {
+      clearTimeout(reconnectTimer);
+      // Let aborted requests release the in-flight sync guard before refreshing.
+      reconnectTimer = setTimeout(handleSync, 0);
+    };
 
     window.addEventListener('queless-state-change', handleSync);
     window.addEventListener('storage', handleSync);
+    window.addEventListener(mobileConnectionReadyEvent, handleReconnect);
 
     // Periodic gentle refresh every 15s to keep queues and tokens updated
     const interval = setInterval(() => {
@@ -178,6 +186,8 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       clearInterval(interval);
       window.removeEventListener('queless-state-change', handleSync);
       window.removeEventListener('storage', handleSync);
+      window.removeEventListener(mobileConnectionReadyEvent, handleReconnect);
+      clearTimeout(reconnectTimer);
     };
   }, [syncRemoteData]);
 

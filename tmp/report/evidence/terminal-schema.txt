@@ -1,0 +1,22 @@
+--------------
+SELECT DATABASE() AS databaseName, VERSION() AS mysqlVersion
+--------------
+
++---------------+--------------+
+| databaseName  | mysqlVersion |
++---------------+--------------+
+| qureflow_dbms | 8.4.11       |
++---------------+--------------+
+--------------
+SELECT 'doctors' AS entity, COUNT(*) AS total FROM doctors
+UNION ALL SELECT 'appointments',COUNT(*) FROM appointments
+UNION ALL SELECT 'queue_tokens',COUNT(*) FROM queue_tokens
+--------------
+
++--------------+-------+
+| entity       | total |
++--------------+-------+
+| doctors      |    48 |
+| appointments |  6196 |
+| queue_tokens |  6196 |
++--------------+-------+

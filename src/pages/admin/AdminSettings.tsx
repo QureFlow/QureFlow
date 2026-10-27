@@ -5,10 +5,18 @@ import { Sidebar } from '../../components/layout/Sidebar';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { Select } from '../../components/common/Select';
+import { useAuth } from '../../context/AuthContext';
 import { Menu, Sliders, Bell, Check } from 'lucide-react';
 
 export const AdminSettings: React.FC = () => {
-  const { settings, refreshState, showToast } = useQueue();
+  const { settings, clinics, refreshState, showToast } = useQueue();
+  const { user } = useAuth();
+  const [selectedClinicId, setSelectedClinicId] = useState(user?.clinicId || '');
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsError, setSettingsError] = useState('');
+  const [settingsLoadVersion, setSettingsLoadVersion] = useState(0);
+  const settingsSource = user?.demoAllClinics ? null : settings;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [avgTime, setAvgTime] = useState(settings.averageConsultationMinutes.toString());
@@ -21,13 +29,30 @@ export const AdminSettings: React.FC = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   useEffect(() => {
-    setAvgTime(String(settings.averageConsultationMinutes));
-    setAllowWalkIns(settings.allowWalkIns);
-    setAllowEmergency(settings.allowEmergencyPriority);
-    setNotifyTwoAhead(false);
-    setClinicName(settings.clinicName);
-    setContactNumber(settings.contactNumber);
-  }, [settings]);
+    let current = true;
+    setSettingsLoading(true);
+    setSettingsError('');
+    const load = async () => {
+      try {
+        const values = user?.demoAllClinics
+          ? await clinicService.getSettings(selectedClinicId) : settingsSource!;
+        if (!current) return;
+        setAvgTime(String(values.averageConsultationMinutes));
+        setAllowWalkIns(values.allowWalkIns);
+        setAllowEmergency(values.allowEmergencyPriority);
+        setNotifyTwoAhead(false);
+        setClinicName(values.clinicName);
+        setContactNumber(values.contactNumber);
+        setIsSaved(false);
+      } catch {
+        if (current) setSettingsError('Settings could not be loaded. Retry to continue.');
+      } finally {
+        if (current) setSettingsLoading(false);
+      }
+    };
+    load();
+    return () => { current = false; };
+  }, [settingsSource, selectedClinicId, user?.demoAllClinics, settingsLoadVersion]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +65,7 @@ export const AdminSettings: React.FC = () => {
         notifyOnTwoAhead: notifyTwoAhead,
         clinicName,
         contactNumber,
-      });
+      }, user?.demoAllClinics ? selectedClinicId : undefined);
       refreshState();
       setIsSaved(true);
       showToast('Queue configuration saved successfully', 'success');
@@ -75,6 +100,17 @@ export const AdminSettings: React.FC = () => {
             subtitle="Configure clinic OPD queue intervals, walk-in tolerances, priority triage rules, and notification policies."
           />
 
+          {user?.demoAllClinics && (
+            <Select label="Clinic to configure" value={selectedClinicId}
+              disabled={isSaving}
+              onChange={(event) => setSelectedClinicId(event.target.value)}
+              options={clinics.map((clinic) => ({ value: clinic.id, label: clinic.name }))} />
+          )}
+          {settingsError && <div role="alert" className="flex items-center gap-3 text-sm text-red-800">
+            <p>{settingsError}</p>
+            <Button variant="outline" size="sm" onClick={() => setSettingsLoadVersion((value) => value + 1)}>Retry</Button>
+          </div>}
+          {settingsLoading && <p role="status" className="text-sm text-slate-600">Loading clinic settings…</p>}
           {isSaved && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded text-xs font-semibold text-emerald-800 flex items-center gap-2">
               <Check className="w-4 h-4 text-emerald-600" />
@@ -83,6 +119,7 @@ export const AdminSettings: React.FC = () => {
           )}
 
           <form onSubmit={handleSave} className="space-y-6">
+            <fieldset disabled={settingsLoading || Boolean(settingsError) || isSaving} className="space-y-6">
             {/* Section 1: Queue Parameters */}
             <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-subtle space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
@@ -185,6 +222,7 @@ export const AdminSettings: React.FC = () => {
                 Save Settings
               </Button>
             </div>
+            </fieldset>
           </form>
         </main>
       </div>

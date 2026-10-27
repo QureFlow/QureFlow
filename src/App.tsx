@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ConnectionBanner } from './components/common/ConnectionBanner';
 import { AndroidNavigation } from './components/common/AndroidNavigation';
 import { NativeConnectionBar } from './components/common/NativeConnectionBar';
+import { NativeClinicGate } from './components/common/NativeClinicGate';
 import { ClinicConnection } from './pages/ClinicConnection';
 import { AuthProvider } from './context/AuthContext';
 import { QueueProvider } from './context/QueueContext';
@@ -38,6 +39,7 @@ export function App() {
   return (
     <Router>
       <AndroidNavigation />
+      <NativeClinicGate>
       <NativeConnectionBar />
       <AuthProvider>
         <QueueProvider>
@@ -181,6 +183,7 @@ export function App() {
           <ConnectionBanner />
         </QueueProvider>
       </AuthProvider>
+      </NativeClinicGate>
     </Router>
   );
 }

@@ -1,0 +1,168 @@
+{
+  "input": "C:\\Users\\ASUS\\.codex\\worktrees\\mysql-dbms\\QureFlow\\output\\report\\BCSE302P_Project_QureFlow.docx",
+  "fonts_by_char_count": {},
+  "direct_run_formatting_runs": 156,
+  "direct_paragraph_formatting_paragraphs": 930,
+  "heading_like_paragraphs_not_heading_style": [
+    {
+      "para_index": 1,
+      "text": "VELLORE INSTITUTE OF TECHNOLOGY VELLORE",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 5,
+      "text": "MINI PROJECT REPORT",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 16,
+      "text": "Dr. G. M. Karthik",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 20,
+      "text": "Date of Submission: 19 October 2026",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 23,
+      "text": "Declaration of originality",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 28,
+      "text": "Signature of the Faculty",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 118,
+      "text": "Table 3.1 clinics",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 120,
+      "text": "Table 3.2 specialties",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 122,
+      "text": "Table 3.3 languages",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 124,
+      "text": "Table 3.4 doctors",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 126,
+      "text": "Table 3.5 doctor_days",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 128,
+      "text": "Table 3.6 doctor_languages",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 130,
+      "text": "Table 3.7 doctor_interests",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 132,
+      "text": "Table 3.8 users",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 134,
+      "text": "Table 3.9 clinic_settings",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 136,
+      "text": "Table 3.10 queue_counters",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 138,
+      "text": "Table 3.11 queue_state",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 140,
+      "text": "Table 3.12 appointment_slots",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 142,
+      "text": "Table 3.13 appointments",
+      "style": "Normal1"
+    },
+    {
+      "para_index": 144,
+      "text": "Table 3.14 queue_tokens",
+      "style": "Normal1"
+    }
+  ],
+  "examples": {
+    "direct_paragraph_formatting": [
+      {
+        "para_index": 1,
+        "text": "VELLORE INSTITUTE OF TECHNOLOGY VELLORE",
+        "style": "Normal1"
+      },
+      {
+        "para_index": 2,
+        "text": "School of Computer Science and Engineering (SCOPE)",
+        "style": "Normal1"
+      },
+      {
+        "para_index": 5,
+        "text": "MINI PROJECT REPORT",
+        "style": "Normal1"
+      },
+      {
+        "para_index": 7,
+        "text": "QureFlow Clinic Queue and Appointment Management Using MySQL",
+        "style": "Title"
+      },
+      {
+        "para_index": 9,
+        "text": "BCSE302P Database Systems Laboratory",
+        "style": "Normal1"
+      }
+    ],
+    "direct_run_formatting": [
+      {
+        "para_index": 1,
+        "run_text": "VELLORE INSTITUTE OF TECHNOLOGY VELLORE",
+        "style": "Normal1"
+      },
+      {
+        "para_index": 5,
+        "run_text": "MINI PROJECT REPORT",
+        "style": "Normal1"
+      },
+      {
+        "para_index": 12,
+        "run_text": "Submitted by",
+        "style": "Normal1"
+      },
+      {
+        "para_index": 15,
+        "run_text": "Under the guidance of",
+        "style": "Normal1"
+      },
+      {
+        "para_index": 16,
+        "run_text": "Dr. G. M. Karthik",
+        "style": "Normal1"
+      }
+    ]
+  },
+  "notes": [
+    "Direct formatting is not always wrong, but it often causes inconsistent output when templates change.",
+    "Heading-like paragraphs not using Heading styles can break TOC and accessibility."
+  ]
+}

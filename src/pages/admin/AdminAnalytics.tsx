@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Clock, Database, RefreshCw, ShieldCheck, Menu, Users } from 'lucide-react';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { PageHeader } from '../../components/layout/PageHeader';
@@ -8,6 +8,8 @@ import { apiClient } from '../../services/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import { FlowInsights } from '../../components/admin/FlowInsights';
 import { ModelErrorComparison } from '../../components/admin/ModelErrorComparison';
+import { useQueue } from '../../context/QueueContext';
+import { Select } from '../../components/common/Select';
 interface Analytics {
   generatedAt: string;
   windowDays: number;
@@ -51,29 +53,38 @@ interface Analytics {
 }
 export const AdminAnalytics = () => {
   const { user } = useAuth();
+  const { clinics } = useQueue();
+  const [selectedClinicId, setSelectedClinicId] = useState(user?.clinicId || '');
+  const clinicQuery = user?.demoAllClinics ? '?clinicId=' + encodeURIComponent(selectedClinicId) : '';
+  const loadVersion = useRef(0);
   const [data, setData] = useState<Analytics | null>(null),
     [error, setError] = useState(''),
     [loading, setLoading] = useState(false),
     [sidebarOpen, setSidebarOpen] = useState(false);
   const load = useCallback(async () => {
+    const version = ++loadVersion.current;
     setLoading(true);
+    setData(null);
     setError('');
     try {
-      setData(await apiClient.get<Analytics>('/analytics'));
+      const result = await apiClient.get<Analytics>('/analytics' + clinicQuery);
+      if (loadVersion.current === version) setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Analytics could not be loaded.');
+      if (loadVersion.current === version)
+        setError(err instanceof Error ? err.message : 'Analytics could not be loaded.');
     } finally {
-      setLoading(false);
+      if (loadVersion.current === version) setLoading(false);
     }
-  }, []);
+  }, [clinicQuery]);
   useEffect(() => {
     load();
+    return () => { loadVersion.current++; };
   }, [load]);
   const refresh = async () => {
     setLoading(true);
     setError('');
     try {
-      await apiClient.post('/analytics/models/refresh');
+      await apiClient.post('/analytics/models/refresh' + clinicQuery);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Model refresh failed.');
@@ -112,6 +123,11 @@ export const AdminAnalytics = () => {
             title="Operations & Insights"
             subtitle="Consultation trends, model validation, and a traceable record of clinic activity."
           />
+          {user?.demoAllClinics && (
+            <Select label="Clinic insights" value={selectedClinicId}
+              onChange={(event) => setSelectedClinicId(event.target.value)}
+              options={clinics.map((clinic) => ({ value: clinic.id, label: clinic.name }))} />
+          )}
           {error && (
             <p
               role="alert"

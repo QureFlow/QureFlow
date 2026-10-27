@@ -1,0 +1,425 @@
+{
+  "pages": 47,
+  "tocEntriesVerified": 43,
+  "figures": 17,
+  "tables": 27,
+  "terminalCaptures": 7,
+  "visualReview": "13 changed pages inspected; 34 remaining page bodies match previously inspected renders pixel for pixel",
+  "templateUnchanged": true,
+  "terminalTestRun": "24 individual cases plus parent; 25 pass, 0 fail",
+  "hashes": {
+    "BCSE302P_Project_QureFlow.docx": "8ded2949400d8e5f2f258212b0a9f8895312cd81803f9de9c8b8280dd1a8a8da",
+    "BCSE302P_Project_QureFlow.pdf": "5bf4e572241ce07fc2f67153fbf23641cc5352ae5d0b81801c1d1d326ceef69f"
+  },
+  "toc": [
+    {
+      "title": "CERTIFICATE",
+      "page": 2
+    },
+    {
+      "title": "ABSTRACT",
+      "page": 3
+    },
+    {
+      "title": "1 INTRODUCTION",
+      "page": 6
+    },
+    {
+      "title": "1.1 Problem Statement",
+      "page": 6
+    },
+    {
+      "title": "1.2 Objectives",
+      "page": 6
+    },
+    {
+      "title": "1.3 Importance of DBMS",
+      "page": 6
+    },
+    {
+      "title": "1.4 Scope of the Project",
+      "page": 7
+    },
+    {
+      "title": "2 SYSTEM REQUIREMENTS",
+      "page": 8
+    },
+    {
+      "title": "2.1 Hardware Requirements",
+      "page": 8
+    },
+    {
+      "title": "2.2 Software Requirements",
+      "page": 8
+    },
+    {
+      "title": "3 DATABASE DESIGN",
+      "page": 9
+    },
+    {
+      "title": "3.1 Entity Relationship Diagrams",
+      "page": 9
+    },
+    {
+      "title": "3.2 Relational Schema",
+      "page": 11
+    },
+    {
+      "title": "3.3 Schema Definition and Constraints",
+      "page": 17
+    },
+    {
+      "title": "3.4 Normalization",
+      "page": 18
+    },
+    {
+      "title": "4 IMPLEMENTATION",
+      "page": 19
+    },
+    {
+      "title": "4.1 Functions",
+      "page": 19
+    },
+    {
+      "title": "4.2 Procedures",
+      "page": 20
+    },
+    {
+      "title": "4.3 Packages",
+      "page": 21
+    },
+    {
+      "title": "4.4 Triggers",
+      "page": 21
+    },
+    {
+      "title": "4.5 Cursors",
+      "page": 23
+    },
+    {
+      "title": "4.6 SQL Search and Transaction Control",
+      "page": 24
+    },
+    {
+      "title": "5 FRONT END AND ANDROID INTEGRATION",
+      "page": 26
+    },
+    {
+      "title": "5.1 User Interface",
+      "page": 26
+    },
+    {
+      "title": "5.2 Integration with the DBMS",
+      "page": 30
+    },
+    {
+      "title": "5.3 Android Application",
+      "page": 31
+    },
+    {
+      "title": "6 VERIFICATION AND TESTING",
+      "page": 32
+    },
+    {
+      "title": "6.1 Test Cases",
+      "page": 32
+    },
+    {
+      "title": "6.2 Output Screenshots",
+      "page": 34
+    },
+    {
+      "title": "6.3 Validation of Functionality",
+      "page": 36
+    },
+    {
+      "title": "7 RESULTS AND DISCUSSION",
+      "page": 37
+    },
+    {
+      "title": "7.1 Achievements",
+      "page": 37
+    },
+    {
+      "title": "7.2 Challenges Faced",
+      "page": 37
+    },
+    {
+      "title": "7.3 Possible Improvements",
+      "page": 37
+    },
+    {
+      "title": "8 CONCLUSION",
+      "page": 38
+    },
+    {
+      "title": "8.1 Summary of Learning Outcomes",
+      "page": 38
+    },
+    {
+      "title": "8.2 Future Scope",
+      "page": 38
+    },
+    {
+      "title": "9 REFERENCES",
+      "page": 39
+    },
+    {
+      "title": "10 APPENDICES",
+      "page": 40
+    },
+    {
+      "title": "Appendix A Complete Schema Definition",
+      "page": 40
+    },
+    {
+      "title": "Appendix B Additional Code and Source Map",
+      "page": 45
+    },
+    {
+      "title": "Appendix C Terminal Demonstration",
+      "page": 47
+    },
+    {
+      "title": "Appendix D Evidence Provenance",
+      "page": 47
+    }
+  ],
+  "bodyBounds": [
+    {
+      "page": 1,
+      "left": 77.304,
+      "right": 509.02031999999997
+    },
+    {
+      "page": 2,
+      "left": 72.024,
+      "right": 523.45
+    },
+    {
+      "page": 3,
+      "left": 72.024,
+      "right": 523.3319999999998
+    },
+    {
+      "page": 4,
+      "left": 72.024,
+      "right": 522.94
+    },
+    {
+      "page": 5,
+      "left": 72.024,
+      "right": 522.94
+    },
+    {
+      "page": 6,
+      "left": 72.024,
+      "right": 523.39
+    },
+    {
+      "page": 7,
+      "left": 72.024,
+      "right": 523.45
+    },
+    {
+      "page": 8,
+      "left": 72.024,
+      "right": 523.0440000000002
+    },
+    {
+      "page": 9,
+      "left": 72.024,
+      "right": 523.444
+    },
+    {
+      "page": 10,
+      "left": 72.024,
+      "right": 523.26
+    },
+    {
+      "page": 11,
+      "left": 72.024,
+      "right": 523.3359999999999
+    },
+    {
+      "page": 12,
+      "left": 72.024,
+      "right": 519.6940000000001
+    },
+    {
+      "page": 13,
+      "left": 72.024,
+      "right": 519.6940000000001
+    },
+    {
+      "page": 14,
+      "left": 72.024,
+      "right": 516.8140000000001
+    },
+    {
+      "page": 15,
+      "left": 72.024,
+      "right": 515.806
+    },
+    {
+      "page": 16,
+      "left": 72.024,
+      "right": 519.6940000000001
+    },
+    {
+      "page": 17,
+      "left": 72.024,
+      "right": 523.342
+    },
+    {
+      "page": 18,
+      "left": 72.024,
+      "right": 523.45
+    },
+    {
+      "page": 19,
+      "left": 72.024,
+      "right": 523.45
+    },
+    {
+      "page": 20,
+      "left": 72.024,
+      "right": 523.336
+    },
+    {
+      "page": 21,
+      "left": 72.024,
+      "right": 523.33
+    },
+    {
+      "page": 22,
+      "left": 72.024,
+      "right": 523.252
+    },
+    {
+      "page": 23,
+      "left": 72.024,
+      "right": 523.4259999999999
+    },
+    {
+      "page": 24,
+      "left": 72.024,
+      "right": 523.3079999999998
+    },
+    {
+      "page": 25,
+      "left": 72.024,
+      "right": 523.2339999999999
+    },
+    {
+      "page": 26,
+      "left": 72.024,
+      "right": 523.3559999999998
+    },
+    {
+      "page": 27,
+      "left": 72.024,
+      "right": 523.2339999999999
+    },
+    {
+      "page": 28,
+      "left": 72.024,
+      "right": 523.414
+    },
+    {
+      "page": 29,
+      "left": 72.024,
+      "right": 523.498
+    },
+    {
+      "page": 30,
+      "left": 72.024,
+      "right": 523.384
+    },
+    {
+      "page": 31,
+      "left": 72.024,
+      "right": 523.372
+    },
+    {
+      "page": 32,
+      "left": 72.024,
+      "right": 523.396
+    },
+    {
+      "page": 33,
+      "left": 72.024,
+      "right": 511.9
+    },
+    {
+      "page": 34,
+      "left": 72.024,
+      "right": 523.3080000000001
+    },
+    {
+      "page": 35,
+      "left": 100.22,
+      "right": 495.03200000000004
+    },
+    {
+      "page": 36,
+      "left": 72.024,
+      "right": 523.336
+    },
+    {
+      "page": 37,
+      "left": 72.024,
+      "right": 523.336
+    },
+    {
+      "page": 38,
+      "left": 72.024,
+      "right": 523.42
+    },
+    {
+      "page": 39,
+      "left": 72.024,
+      "right": 511.462
+    },
+    {
+      "page": 40,
+      "left": 72.024,
+      "right": 523.1519999999999
+    },
+    {
+      "page": 41,
+      "left": 72.024,
+      "right": 521.088
+    },
+    {
+      "page": 42,
+      "left": 72.024,
+      "right": 521.0639999999999
+    },
+    {
+      "page": 43,
+      "left": 72.024,
+      "right": 520.9679999999996
+    },
+    {
+      "page": 44,
+      "left": 72.024,
+      "right": 520.404
+    },
+    {
+      "page": 45,
+      "left": 72.024,
+      "right": 523.1280000000002
+    },
+    {
+      "page": 46,
+      "left": 72.024,
+      "right": 519.578
+    },
+    {
+      "page": 47,
+      "left": 72.024,
+      "right": 523.468
+    }
+  ]
+}

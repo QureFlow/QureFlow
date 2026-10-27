@@ -1,0 +1,42 @@
+
+> qureflow@1.0.0 test
+> npm run test:dbms --prefix backend
+
+
+> qureflow-backend@1.0.0 test:dbms
+> tsx --test tests/mysql.test.ts
+
+▶ MySQL DBMS integration
+  ✔ directory joins specialty, clinic and normalized language with SQL ordering (91.9774ms)
+  ✔ SQL injection values cannot change search or select arbitrary sort expressions (23.534ms)
+  ✔ empty search and out-of-range pages preserve a correct total (22.8157ms)
+  ✔ unauthenticated access and cross-clinic writes remain denied (256.3238ms)
+  ✔ simultaneous registrations cannot create two active visits for one patient (40.1357ms)
+  ✔ foreign keys reject orphan visits (4.1771ms)
+  ✔ emergency priority is selected by SQL before a normal token (66.0035ms)
+  ✔ database unique constraint prevents a second simultaneous consultation (13.4487ms)
+  ✔ patient queue responses conceal other patient identity (19.7173ms)
+  ✔ trigger records state changes and rejects reopening completed visits (19.6901ms)
+  ✔ pause is respected and the next call resumes correctly (55.3286ms)
+  ✔ appointment and token are created atomically with capacity accounting (61.4083ms)
+  ✔ capacity conflicts roll back without orphan appointments (24.4284ms)
+  ✔ cancellation trigger updates linked appointment and releases its slot (21.6133ms)
+  ✔ unique identities and optimistic profile versions prevent conflicting updates (22.7619ms)
+  ✔ a new conflicting identity cannot overwrite an existing account (9.6572ms)
+  ✔ staff appointment filters and SQL pagination use the assigned clinic (31.8725ms)
+  ✔ stored function, daily procedure, views and cursor return verifiable results (45.6731ms)
+  ✔ parameterized patient and appointment filters stay within the clinic (14.5829ms)
+  ✔ updated buffer capacity is used when an existing slot gains an opening (167.3208ms)
+  ✔ CHECK constraints reject negative fees and impossible slot occupancy (6.408ms)
+  ✔ function returns NULL for missing, reversed and implausible timings (3.6087ms)
+  ✔ concurrent bookings from different patients cannot overfill the last slot (99.2082ms)
+  ✔ a booking submitted through the HTTP API is visible in SQL and cancels both records (89.5318ms)
+✔ MySQL DBMS integration (15344.9926ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15851.9895

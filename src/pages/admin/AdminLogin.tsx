@@ -131,7 +131,7 @@ export const AdminLogin: React.FC = () => {
           {/* Demo account quick filler */}
           {import.meta.env.VITE_ENABLE_DEMO_HINTS === 'true' && (
             <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>Local demo clinic administrator</span>
+              <span>Local demo: all six clinics</span>
               <button
                 type="button"
                 onClick={handleUseDemo}

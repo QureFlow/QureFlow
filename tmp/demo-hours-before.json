@@ -1,0 +1,2776 @@
+{
+  "clinics": [
+    {
+      "id": "clinic-3",
+      "name": "Cedar Multispecialty Clinic",
+      "address": "26 Wellness Avenue, Hooghly",
+      "district": "Hooghly",
+      "state": "West Bengal",
+      "phone": "9900070003",
+      "email": "reception3@example.invalid",
+      "openingHours": "08:00 AM – 06:00 PM",
+      "emergencyContact": "102 / +91 343 258 4499",
+      "metadata": {
+        "source": "synthetic_fixture",
+        "services": [
+          "Outpatient consultations",
+          "Reception check-in",
+          "Scheduled follow-ups"
+        ],
+        "timeZone": "Asia/Kolkata",
+        "amenities": [
+          "Step-free entrance",
+          "Accessible waiting area",
+          "Drinking water",
+          "On-site reception"
+        ],
+        "synthetic": true,
+        "facilityCode": "DEMO-F3",
+        "schemaVersion": 3,
+        "paymentMethods": [
+          "Cash",
+          "UPI"
+        ]
+      },
+      "updatedAt": "2026-10-13T09:35:06.891Z",
+      "activeDoctorsCount": 8
+    },
+    {
+      "id": "clinic-1",
+      "name": "Evergreen Family Clinic",
+      "address": "12 Wellness Avenue, Birbhum",
+      "district": "Birbhum",
+      "state": "West Bengal",
+      "phone": "9900070001",
+      "email": "reception1@example.invalid",
+      "openingHours": "08:00 AM – 06:00 PM",
+      "emergencyContact": "102 / +91 3463 252 999",
+      "metadata": {
+        "source": "synthetic_fixture",
+        "services": [
+          "Outpatient consultations",
+          "Reception check-in",
+          "Scheduled follow-ups"
+        ],
+        "timeZone": "Asia/Kolkata",
+        "amenities": [
+          "Step-free entrance",
+          "Accessible waiting area",
+          "Drinking water",
+          "On-site reception"
+        ],
+        "synthetic": true,
+        "facilityCode": "DEMO-F1",
+        "schemaVersion": 3,
+        "paymentMethods": [
+          "Cash",
+          "UPI"
+        ]
+      },
+      "updatedAt": "2026-10-13T09:35:06.865Z",
+      "activeDoctorsCount": 8
+    },
+    {
+      "id": "clinic-5",
+      "name": "Horizon Health Centre",
+      "address": "40 Wellness Avenue, Nadia",
+      "district": "Nadia",
+      "state": "West Bengal",
+      "phone": "9900070005",
+      "email": "reception5@example.invalid",
+      "openingHours": "08:00 AM – 06:00 PM",
+      "emergencyContact": "108 / +91 3244 251 911",
+      "metadata": {
+        "source": "synthetic_fixture",
+        "services": [
+          "Outpatient consultations",
+          "Reception check-in",
+          "Scheduled follow-ups"
+        ],
+        "timeZone": "Asia/Kolkata",
+        "amenities": [
+          "Step-free entrance",
+          "Accessible waiting area",
+          "Drinking water",
+          "On-site reception"
+        ],
+        "synthetic": true,
+        "facilityCode": "DEMO-F5",
+        "schemaVersion": 3,
+        "paymentMethods": [
+          "Cash",
+          "UPI"
+        ]
+      },
+      "updatedAt": "2026-10-13T09:35:06.908Z",
+      "activeDoctorsCount": 8
+    },
+    {
+      "id": "clinic-6",
+      "name": "Maple Outpatient Centre",
+      "address": "47 Wellness Avenue, Kolkata",
+      "district": "Kolkata",
+      "state": "West Bengal",
+      "phone": "9900070006",
+      "email": "reception6@example.invalid",
+      "openingHours": "08:00 AM – 06:00 PM",
+      "emergencyContact": "102 / +91 343 258 4499",
+      "metadata": {
+        "source": "synthetic_fixture",
+        "services": [
+          "Outpatient consultations",
+          "Reception check-in",
+          "Scheduled follow-ups"
+        ],
+        "timeZone": "Asia/Kolkata",
+        "amenities": [
+          "Step-free entrance",
+          "Accessible waiting area",
+          "Drinking water",
+          "On-site reception"
+        ],
+        "synthetic": true,
+        "facilityCode": "DEMO-F6",
+        "schemaVersion": 3,
+        "paymentMethods": [
+          "Cash",
+          "UPI"
+        ]
+      },
+      "updatedAt": "2026-10-13T09:35:06.916Z",
+      "activeDoctorsCount": 8
+    },
+    {
+      "id": "clinic-2",
+      "name": "Riverstone Medical Centre",
+      "address": "19 Wellness Avenue, Bardhaman",
+      "district": "Bardhaman",
+      "state": "West Bengal",
+      "phone": "9900070002",
+      "email": "reception2@example.invalid",
+      "openingHours": "08:00 AM – 06:00 PM",
+      "emergencyContact": "108 / +91 3244 251 911",
+      "metadata": {
+        "source": "synthetic_fixture",
+        "services": [
+          "Outpatient consultations",
+          "Reception check-in",
+          "Scheduled follow-ups"
+        ],
+        "timeZone": "Asia/Kolkata",
+        "amenities": [
+          "Step-free entrance",
+          "Accessible waiting area",
+          "Drinking water",
+          "On-site reception"
+        ],
+        "synthetic": true,
+        "facilityCode": "DEMO-F2",
+        "schemaVersion": 3,
+        "paymentMethods": [
+          "Cash",
+          "UPI"
+        ]
+      },
+      "updatedAt": "2026-10-13T09:35:06.882Z",
+      "activeDoctorsCount": 8
+    },
+    {
+      "id": "clinic-4",
+      "name": "Willow Community Care",
+      "address": "33 Wellness Avenue, Howrah",
+      "district": "Howrah",
+      "state": "West Bengal",
+      "phone": "9900070004",
+      "email": "reception4@example.invalid",
+      "openingHours": "08:00 AM – 06:00 PM",
+      "emergencyContact": "102 / +91 3463 252 999",
+      "metadata": {
+        "source": "synthetic_fixture",
+        "services": [
+          "Outpatient consultations",
+          "Reception check-in",
+          "Scheduled follow-ups"
+        ],
+        "timeZone": "Asia/Kolkata",
+        "amenities": [
+          "Step-free entrance",
+          "Accessible waiting area",
+          "Drinking water",
+          "On-site reception"
+        ],
+        "synthetic": true,
+        "facilityCode": "DEMO-F4",
+        "schemaVersion": 3,
+        "paymentMethods": [
+          "Cash",
+          "UPI"
+        ]
+      },
+      "updatedAt": "2026-10-13T09:35:06.901Z",
+      "activeDoctorsCount": 8
+    }
+  ],
+  "doctors": [
+    {
+      "id": "doc-25",
+      "clinicId": "clinic-4",
+      "specialtyId": 1,
+      "name": "Dr. Aarav Kapoor",
+      "qualifications": "MBBS, MD",
+      "experienceYears": 7,
+      "consultationFee": 550,
+      "startMinute": 480,
+      "endMinute": 1020,
+      "slotDurationMinutes": 8,
+      "status": "active",
+      "bio": "Dr. Aarav Kapoor offers general medicine consultations and structured follow-up care at Willow Community Care. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "401",
+      "department": "General Medicine",
+      "registrationId": "DEMO-MED-0025",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Willow Community Care",
+      "district": "Howrah",
+      "specialization": "General Medicine",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Chronic condition follow-up",
+        "Preventive care"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-42",
+      "clinicId": "clinic-6",
+      "specialtyId": 6,
+      "name": "Dr. Aditi Chatterjee",
+      "qualifications": "MBBS, MS (OBG)",
+      "experienceYears": 24,
+      "consultationFee": 850,
+      "startMinute": 540,
+      "endMinute": 1050,
+      "slotDurationMinutes": 25,
+      "status": "active",
+      "bio": "Dr. Aditi Chatterjee offers gynecology consultations and structured follow-up care at Maple Outpatient Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "602",
+      "department": "Gynecology",
+      "registrationId": "DEMO-MED-0042",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Maple Outpatient Centre",
+      "district": "Kolkata",
+      "specialization": "Gynecology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Routine outpatient consultations",
+        "Women’s health"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-18",
+      "clinicId": "clinic-2",
+      "specialtyId": 6,
+      "name": "Dr. Aditi Roy",
+      "qualifications": "MBBS, MS (OBG)",
+      "experienceYears": 22,
+      "consultationFee": 550,
+      "startMinute": 540,
+      "endMinute": 1050,
+      "slotDurationMinutes": 25,
+      "status": "active",
+      "bio": "Dr. Aditi Roy offers gynecology consultations and structured follow-up care at Riverstone Medical Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "302",
+      "department": "Gynecology",
+      "registrationId": "DEMO-MED-0018",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Riverstone Medical Centre",
+      "district": "Bardhaman",
+      "specialization": "Gynecology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Routine outpatient consultations",
+        "Women’s health"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-37",
+      "clinicId": "clinic-5",
+      "specialtyId": 1,
+      "name": "Dr. Aditya Mehta",
+      "qualifications": "MBBS, MD",
+      "experienceYears": 19,
+      "consultationFee": 350,
+      "startMinute": 480,
+      "endMinute": 1020,
+      "slotDurationMinutes": 8,
+      "status": "active",
+      "bio": "Dr. Aditya Mehta offers general medicine consultations and structured follow-up care at Horizon Health Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "505",
+      "department": "General Medicine",
+      "registrationId": "DEMO-MED-0037",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Horizon Health Centre",
+      "district": "Nadia",
+      "specialization": "General Medicine",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Chronic condition follow-up",
+        "Preventive care"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-13",
+      "clinicId": "clinic-1",
+      "specialtyId": 1,
+      "name": "Dr. Aditya Mukherjee",
+      "qualifications": "MBBS, MD",
+      "experienceYears": 17,
+      "consultationFee": 750,
+      "startMinute": 480,
+      "endMinute": 1020,
+      "slotDurationMinutes": 8,
+      "status": "active",
+      "bio": "Dr. Aditya Mukherjee offers general medicine consultations and structured follow-up care at Evergreen Family Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "205",
+      "department": "General Medicine",
+      "registrationId": "DEMO-MED-0013",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Evergreen Family Clinic",
+      "district": "Birbhum",
+      "specialization": "General Medicine",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Chronic condition follow-up",
+        "Preventive care"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-10",
+      "clinicId": "clinic-1",
+      "specialtyId": 10,
+      "name": "Dr. Amitav Bhattacharya",
+      "qualifications": "BDS, MDS",
+      "experienceYears": 14,
+      "consultationFee": 450,
+      "startMinute": 480,
+      "endMinute": 1050,
+      "slotDurationMinutes": 15,
+      "status": "active",
+      "bio": "Dr. Amitav Bhattacharya offers dentistry consultations and structured follow-up care at Evergreen Family Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "202",
+      "department": "Dentistry",
+      "registrationId": "DEMO-MED-0010",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Evergreen Family Clinic",
+      "district": "Birbhum",
+      "specialization": "Dentistry",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Dental checks",
+        "Preventive dental care"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-1",
+      "clinicId": "clinic-1",
+      "specialtyId": 1,
+      "name": "Dr. Ananya Sharma",
+      "qualifications": "MBBS, MD",
+      "experienceYears": 5,
+      "consultationFee": 250,
+      "startMinute": 480,
+      "endMinute": 1020,
+      "slotDurationMinutes": 8,
+      "status": "active",
+      "bio": "Dr. Ananya Sharma offers general medicine consultations and structured follow-up care at Evergreen Family Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "101",
+      "department": "General Medicine",
+      "registrationId": "DEMO-MED-0001",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Evergreen Family Clinic",
+      "district": "Birbhum",
+      "specialization": "General Medicine",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Chronic condition follow-up",
+        "Preventive care"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-26",
+      "clinicId": "clinic-4",
+      "specialtyId": 2,
+      "name": "Dr. Anika Kapoor",
+      "qualifications": "MBBS, MD (Pediatrics)",
+      "experienceYears": 8,
+      "consultationFee": 650,
+      "startMinute": 510,
+      "endMinute": 1050,
+      "slotDurationMinutes": 10,
+      "status": "active",
+      "bio": "Dr. Anika Kapoor offers pediatrics consultations and structured follow-up care at Willow Community Care. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "402",
+      "department": "Pediatrics",
+      "registrationId": "DEMO-MED-0026",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Willow Community Care",
+      "district": "Howrah",
+      "specialization": "Pediatrics",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Child wellness",
+        "Routine pediatric follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-31",
+      "clinicId": "clinic-4",
+      "specialtyId": 7,
+      "name": "Dr. Arjun Patel",
+      "qualifications": "MBBS, MS (Ophthalmology)",
+      "experienceYears": 13,
+      "consultationFee": 450,
+      "startMinute": 480,
+      "endMinute": 1020,
+      "slotDurationMinutes": 8,
+      "status": "active",
+      "bio": "Dr. Arjun Patel offers ophthalmology consultations and structured follow-up care at Willow Community Care. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "407",
+      "department": "Ophthalmology",
+      "registrationId": "DEMO-MED-0031",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Willow Community Care",
+      "district": "Howrah",
+      "specialization": "Ophthalmology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Eye health follow-up",
+        "Vision checks"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-4",
+      "clinicId": "clinic-1",
+      "specialtyId": 4,
+      "name": "Dr. Debabrata Roy",
+      "qualifications": "MBBS, MD (Dermatology)",
+      "experienceYears": 8,
+      "consultationFee": 550,
+      "startMinute": 480,
+      "endMinute": 1050,
+      "slotDurationMinutes": 15,
+      "status": "active",
+      "bio": "Dr. Debabrata Roy offers dermatology consultations and structured follow-up care at Evergreen Family Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "104",
+      "department": "Dermatology",
+      "registrationId": "DEMO-MED-0004",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Evergreen Family Clinic",
+      "district": "Birbhum",
+      "specialization": "Dermatology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Routine dermatology consultations",
+        "Skin health"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-33",
+      "clinicId": "clinic-5",
+      "specialtyId": 9,
+      "name": "Dr. Dev Bose",
+      "qualifications": "MBBS, MD, DM (Neurology)",
+      "experienceYears": 15,
+      "consultationFee": 650,
+      "startMinute": 540,
+      "endMinute": 1020,
+      "slotDurationMinutes": 12,
+      "status": "active",
+      "bio": "Dr. Dev Bose offers neurology consultations and structured follow-up care at Horizon Health Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "501",
+      "department": "Neurology",
+      "registrationId": "DEMO-MED-0033",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Horizon Health Centre",
+      "district": "Nadia",
+      "specialization": "Neurology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Neurology follow-up",
+        "Outpatient assessment"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-39",
+      "clinicId": "clinic-5",
+      "specialtyId": 3,
+      "name": "Dr. Ishan Mehta",
+      "qualifications": "MBBS, MD, DM",
+      "experienceYears": 21,
+      "consultationFee": 550,
+      "startMinute": 540,
+      "endMinute": 1020,
+      "slotDurationMinutes": 12,
+      "status": "active",
+      "bio": "Dr. Ishan Mehta offers cardiology consultations and structured follow-up care at Horizon Health Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "507",
+      "department": "Cardiology",
+      "registrationId": "DEMO-MED-0039",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Horizon Health Centre",
+      "district": "Nadia",
+      "specialization": "Cardiology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Heart health follow-up",
+        "Preventive cardiology"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-15",
+      "clinicId": "clinic-2",
+      "specialtyId": 3,
+      "name": "Dr. Ishan Mukherjee",
+      "qualifications": "MBBS, MD, DM",
+      "experienceYears": 19,
+      "consultationFee": 250,
+      "startMinute": 540,
+      "endMinute": 1020,
+      "slotDurationMinutes": 12,
+      "status": "active",
+      "bio": "Dr. Ishan Mukherjee offers cardiology consultations and structured follow-up care at Riverstone Medical Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "207",
+      "department": "Cardiology",
+      "registrationId": "DEMO-MED-0015",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Riverstone Medical Centre",
+      "district": "Bardhaman",
+      "specialization": "Cardiology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Heart health follow-up",
+        "Preventive cardiology"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-28",
+      "clinicId": "clinic-4",
+      "specialtyId": 4,
+      "name": "Dr. Ishita Kapoor",
+      "qualifications": "MBBS, MD (Dermatology)",
+      "experienceYears": 10,
+      "consultationFee": 850,
+      "startMinute": 480,
+      "endMinute": 1050,
+      "slotDurationMinutes": 15,
+      "status": "active",
+      "bio": "Dr. Ishita Kapoor offers dermatology consultations and structured follow-up care at Willow Community Care. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "404",
+      "department": "Dermatology",
+      "registrationId": "DEMO-MED-0028",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Willow Community Care",
+      "district": "Howrah",
+      "specialization": "Dermatology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Routine dermatology consultations",
+        "Skin health"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-29",
+      "clinicId": "clinic-4",
+      "specialtyId": 5,
+      "name": "Dr. Kabir Patel",
+      "qualifications": "MBBS, MS (Orthopedics)",
+      "experienceYears": 11,
+      "consultationFee": 250,
+      "startMinute": 510,
+      "endMinute": 1020,
+      "slotDurationMinutes": 20,
+      "status": "active",
+      "bio": "Dr. Kabir Patel offers orthopedics consultations and structured follow-up care at Willow Community Care. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "405",
+      "department": "Orthopedics",
+      "registrationId": "DEMO-MED-0029",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Willow Community Care",
+      "district": "Howrah",
+      "specialization": "Orthopedics",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Joint mobility",
+        "Musculoskeletal follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-40",
+      "clinicId": "clinic-5",
+      "specialtyId": 4,
+      "name": "Dr. Kavya Mehta",
+      "qualifications": "MBBS, MD (Dermatology)",
+      "experienceYears": 22,
+      "consultationFee": 650,
+      "startMinute": 480,
+      "endMinute": 1050,
+      "slotDurationMinutes": 15,
+      "status": "active",
+      "bio": "Dr. Kavya Mehta offers dermatology consultations and structured follow-up care at Horizon Health Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "508",
+      "department": "Dermatology",
+      "registrationId": "DEMO-MED-0040",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Horizon Health Centre",
+      "district": "Nadia",
+      "specialization": "Dermatology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Routine dermatology consultations",
+        "Skin health"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-16",
+      "clinicId": "clinic-2",
+      "specialtyId": 4,
+      "name": "Dr. Kavya Mukherjee",
+      "qualifications": "MBBS, MD (Dermatology)",
+      "experienceYears": 20,
+      "consultationFee": 350,
+      "startMinute": 480,
+      "endMinute": 1050,
+      "slotDurationMinutes": 15,
+      "status": "active",
+      "bio": "Dr. Kavya Mukherjee offers dermatology consultations and structured follow-up care at Riverstone Medical Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "208",
+      "department": "Dermatology",
+      "registrationId": "DEMO-MED-0016",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Riverstone Medical Centre",
+      "district": "Bardhaman",
+      "specialization": "Dermatology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Routine dermatology consultations",
+        "Skin health"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-43",
+      "clinicId": "clinic-6",
+      "specialtyId": 7,
+      "name": "Dr. Kunal Chatterjee",
+      "qualifications": "MBBS, MS (Ophthalmology)",
+      "experienceYears": 25,
+      "consultationFee": 250,
+      "startMinute": 480,
+      "endMinute": 1020,
+      "slotDurationMinutes": 8,
+      "status": "active",
+      "bio": "Dr. Kunal Chatterjee offers ophthalmology consultations and structured follow-up care at Maple Outpatient Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "603",
+      "department": "Ophthalmology",
+      "registrationId": "DEMO-MED-0043",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Maple Outpatient Centre",
+      "district": "Kolkata",
+      "specialization": "Ophthalmology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Eye health follow-up",
+        "Vision checks"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-19",
+      "clinicId": "clinic-3",
+      "specialtyId": 7,
+      "name": "Dr. Kunal Roy",
+      "qualifications": "MBBS, MS (Ophthalmology)",
+      "experienceYears": 23,
+      "consultationFee": 650,
+      "startMinute": 480,
+      "endMinute": 1020,
+      "slotDurationMinutes": 8,
+      "status": "active",
+      "bio": "Dr. Kunal Roy offers ophthalmology consultations and structured follow-up care at Cedar Multispecialty Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "303",
+      "department": "Ophthalmology",
+      "registrationId": "DEMO-MED-0019",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Cedar Multispecialty Clinic",
+      "district": "Hooghly",
+      "specialization": "Ophthalmology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Eye health follow-up",
+        "Vision checks"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-30",
+      "clinicId": "clinic-4",
+      "specialtyId": 6,
+      "name": "Dr. Meera Patel",
+      "qualifications": "MBBS, MS (OBG)",
+      "experienceYears": 12,
+      "consultationFee": 350,
+      "startMinute": 540,
+      "endMinute": 1050,
+      "slotDurationMinutes": 25,
+      "status": "active",
+      "bio": "Dr. Meera Patel offers gynecology consultations and structured follow-up care at Willow Community Care. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "406",
+      "department": "Gynecology",
+      "registrationId": "DEMO-MED-0030",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Willow Community Care",
+      "district": "Howrah",
+      "specialization": "Gynecology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Routine outpatient consultations",
+        "Women’s health"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-7",
+      "clinicId": "clinic-2",
+      "specialtyId": 7,
+      "name": "Dr. Mousumi Chatterjee",
+      "qualifications": "MBBS, MS (Ophthalmology)",
+      "experienceYears": 11,
+      "consultationFee": 850,
+      "startMinute": 480,
+      "endMinute": 1020,
+      "slotDurationMinutes": 8,
+      "status": "active",
+      "bio": "Dr. Mousumi Chatterjee offers ophthalmology consultations and structured follow-up care at Riverstone Medical Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "107",
+      "department": "Ophthalmology",
+      "registrationId": "DEMO-MED-0007",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Riverstone Medical Centre",
+      "district": "Bardhaman",
+      "specialization": "Ophthalmology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Eye health follow-up",
+        "Vision checks"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-32",
+      "clinicId": "clinic-4",
+      "specialtyId": 8,
+      "name": "Dr. Nandini Patel",
+      "qualifications": "MBBS, MS (ENT)",
+      "experienceYears": 14,
+      "consultationFee": 550,
+      "startMinute": 510,
+      "endMinute": 1050,
+      "slotDurationMinutes": 10,
+      "status": "active",
+      "bio": "Dr. Nandini Patel offers ent consultations and structured follow-up care at Willow Community Care. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "408",
+      "department": "ENT",
+      "registrationId": "DEMO-MED-0032",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Willow Community Care",
+      "district": "Howrah",
+      "specialization": "ENT",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Ear and hearing care",
+        "ENT follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-23",
+      "clinicId": "clinic-3",
+      "specialtyId": 11,
+      "name": "Dr. Nikhil Banerjee",
+      "qualifications": "MBBS, MD, DM",
+      "experienceYears": 5,
+      "consultationFee": 350,
+      "startMinute": 510,
+      "endMinute": 1020,
+      "slotDurationMinutes": 20,
+      "status": "active",
+      "bio": "Dr. Nikhil Banerjee offers endocrinology consultations and structured follow-up care at Cedar Multispecialty Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "307",
+      "department": "Endocrinology",
+      "registrationId": "DEMO-MED-0023",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Cedar Multispecialty Clinic",
+      "district": "Hooghly",
+      "specialization": "Endocrinology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Endocrine follow-up",
+        "Metabolic health"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-47",
+      "clinicId": "clinic-6",
+      "specialtyId": 11,
+      "name": "Dr. Nikhil Rao",
+      "qualifications": "MBBS, MD, DM",
+      "experienceYears": 7,
+      "consultationFee": 650,
+      "startMinute": 510,
+      "endMinute": 1020,
+      "slotDurationMinutes": 20,
+      "status": "active",
+      "bio": "Dr. Nikhil Rao offers endocrinology consultations and structured follow-up care at Maple Outpatient Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "607",
+      "department": "Endocrinology",
+      "registrationId": "DEMO-MED-0047",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Maple Outpatient Centre",
+      "district": "Kolkata",
+      "specialization": "Endocrinology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Endocrine follow-up",
+        "Metabolic health"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-24",
+      "clinicId": "clinic-3",
+      "specialtyId": 12,
+      "name": "Dr. Pooja Banerjee",
+      "qualifications": "MBBS, MD",
+      "experienceYears": 6,
+      "consultationFee": 450,
+      "startMinute": 540,
+      "endMinute": 1050,
+      "slotDurationMinutes": 25,
+      "status": "active",
+      "bio": "Dr. Pooja Banerjee offers pulmonology consultations and structured follow-up care at Cedar Multispecialty Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "308",
+      "department": "Pulmonology",
+      "registrationId": "DEMO-MED-0024",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Cedar Multispecialty Clinic",
+      "district": "Hooghly",
+      "specialization": "Pulmonology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Outpatient respiratory care",
+        "Respiratory follow-up"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-48",
+      "clinicId": "clinic-6",
+      "specialtyId": 12,
+      "name": "Dr. Pooja Rao",
+      "qualifications": "MBBS, MD",
+      "experienceYears": 8,
+      "consultationFee": 750,
+      "startMinute": 540,
+      "endMinute": 1050,
+      "slotDurationMinutes": 25,
+      "status": "active",
+      "bio": "Dr. Pooja Rao offers pulmonology consultations and structured follow-up care at Maple Outpatient Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "608",
+      "department": "Pulmonology",
+      "registrationId": "DEMO-MED-0048",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Maple Outpatient Centre",
+      "district": "Kolkata",
+      "specialization": "Pulmonology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Outpatient respiratory care",
+        "Respiratory follow-up"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-8",
+      "clinicId": "clinic-3",
+      "specialtyId": 8,
+      "name": "Dr. Pradeep Haldar",
+      "qualifications": "MBBS, MS (ENT)",
+      "experienceYears": 12,
+      "consultationFee": 250,
+      "startMinute": 510,
+      "endMinute": 1050,
+      "slotDurationMinutes": 10,
+      "status": "active",
+      "bio": "Dr. Pradeep Haldar offers ent consultations and structured follow-up care at Cedar Multispecialty Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "108",
+      "department": "ENT",
+      "registrationId": "DEMO-MED-0008",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Cedar Multispecialty Clinic",
+      "district": "Hooghly",
+      "specialization": "ENT",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Ear and hearing care",
+        "ENT follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-38",
+      "clinicId": "clinic-5",
+      "specialtyId": 2,
+      "name": "Dr. Priya Mehta",
+      "qualifications": "MBBS, MD (Pediatrics)",
+      "experienceYears": 20,
+      "consultationFee": 450,
+      "startMinute": 510,
+      "endMinute": 1050,
+      "slotDurationMinutes": 10,
+      "status": "active",
+      "bio": "Dr. Priya Mehta offers pediatrics consultations and structured follow-up care at Horizon Health Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "506",
+      "department": "Pediatrics",
+      "registrationId": "DEMO-MED-0038",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Horizon Health Centre",
+      "district": "Nadia",
+      "specialization": "Pediatrics",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Child wellness",
+        "Routine pediatric follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-14",
+      "clinicId": "clinic-2",
+      "specialtyId": 2,
+      "name": "Dr. Priya Mukherjee",
+      "qualifications": "MBBS, MD (Pediatrics)",
+      "experienceYears": 18,
+      "consultationFee": 850,
+      "startMinute": 510,
+      "endMinute": 1050,
+      "slotDurationMinutes": 10,
+      "status": "active",
+      "bio": "Dr. Priya Mukherjee offers pediatrics consultations and structured follow-up care at Riverstone Medical Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "206",
+      "department": "Pediatrics",
+      "registrationId": "DEMO-MED-0014",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Riverstone Medical Centre",
+      "district": "Bardhaman",
+      "specialization": "Pediatrics",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Child wellness",
+        "Routine pediatric follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-5",
+      "clinicId": "clinic-2",
+      "specialtyId": 5,
+      "name": "Dr. Priya Mukhopadhyay",
+      "qualifications": "MBBS, MS (Orthopedics)",
+      "experienceYears": 9,
+      "consultationFee": 650,
+      "startMinute": 510,
+      "endMinute": 1020,
+      "slotDurationMinutes": 20,
+      "status": "active",
+      "bio": "Dr. Priya Mukhopadhyay offers orthopedics consultations and structured follow-up care at Riverstone Medical Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "105",
+      "department": "Orthopedics",
+      "registrationId": "DEMO-MED-0005",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Riverstone Medical Centre",
+      "district": "Bardhaman",
+      "specialization": "Orthopedics",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Joint mobility",
+        "Musculoskeletal follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-41",
+      "clinicId": "clinic-6",
+      "specialtyId": 5,
+      "name": "Dr. Rahul Chatterjee",
+      "qualifications": "MBBS, MS (Orthopedics)",
+      "experienceYears": 23,
+      "consultationFee": 750,
+      "startMinute": 510,
+      "endMinute": 1020,
+      "slotDurationMinutes": 20,
+      "status": "active",
+      "bio": "Dr. Rahul Chatterjee offers orthopedics consultations and structured follow-up care at Maple Outpatient Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "601",
+      "department": "Orthopedics",
+      "registrationId": "DEMO-MED-0041",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Maple Outpatient Centre",
+      "district": "Kolkata",
+      "specialization": "Orthopedics",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Joint mobility",
+        "Musculoskeletal follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-17",
+      "clinicId": "clinic-2",
+      "specialtyId": 5,
+      "name": "Dr. Rahul Roy",
+      "qualifications": "MBBS, MS (Orthopedics)",
+      "experienceYears": 21,
+      "consultationFee": 450,
+      "startMinute": 510,
+      "endMinute": 1020,
+      "slotDurationMinutes": 20,
+      "status": "active",
+      "bio": "Dr. Rahul Roy offers orthopedics consultations and structured follow-up care at Riverstone Medical Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "301",
+      "department": "Orthopedics",
+      "registrationId": "DEMO-MED-0017",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Riverstone Medical Centre",
+      "district": "Bardhaman",
+      "specialization": "Orthopedics",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Joint mobility",
+        "Musculoskeletal follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-2",
+      "clinicId": "clinic-1",
+      "specialtyId": 2,
+      "name": "Dr. Rahul Sen",
+      "qualifications": "MBBS, MD (Pediatrics)",
+      "experienceYears": 6,
+      "consultationFee": 350,
+      "startMinute": 510,
+      "endMinute": 1050,
+      "slotDurationMinutes": 10,
+      "status": "active",
+      "bio": "Dr. Rahul Sen offers pediatrics consultations and structured follow-up care at Evergreen Family Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "102",
+      "department": "Pediatrics",
+      "registrationId": "DEMO-MED-0002",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Evergreen Family Clinic",
+      "district": "Birbhum",
+      "specialization": "Pediatrics",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Child wellness",
+        "Routine pediatric follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-22",
+      "clinicId": "clinic-3",
+      "specialtyId": 10,
+      "name": "Dr. Riya Banerjee",
+      "qualifications": "BDS, MDS",
+      "experienceYears": 26,
+      "consultationFee": 250,
+      "startMinute": 480,
+      "endMinute": 1050,
+      "slotDurationMinutes": 15,
+      "status": "active",
+      "bio": "Dr. Riya Banerjee offers dentistry consultations and structured follow-up care at Cedar Multispecialty Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "306",
+      "department": "Dentistry",
+      "registrationId": "DEMO-MED-0022",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Cedar Multispecialty Clinic",
+      "district": "Hooghly",
+      "specialization": "Dentistry",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Dental checks",
+        "Preventive dental care"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-46",
+      "clinicId": "clinic-6",
+      "specialtyId": 10,
+      "name": "Dr. Riya Rao",
+      "qualifications": "BDS, MDS",
+      "experienceYears": 6,
+      "consultationFee": 550,
+      "startMinute": 480,
+      "endMinute": 1050,
+      "slotDurationMinutes": 15,
+      "status": "active",
+      "bio": "Dr. Riya Rao offers dentistry consultations and structured follow-up care at Maple Outpatient Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "606",
+      "department": "Dentistry",
+      "registrationId": "DEMO-MED-0046",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Maple Outpatient Centre",
+      "district": "Kolkata",
+      "specialization": "Dentistry",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Dental checks",
+        "Preventive dental care"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-27",
+      "clinicId": "clinic-4",
+      "specialtyId": 3,
+      "name": "Dr. Rohan Kapoor",
+      "qualifications": "MBBS, MD, DM",
+      "experienceYears": 9,
+      "consultationFee": 750,
+      "startMinute": 540,
+      "endMinute": 1020,
+      "slotDurationMinutes": 12,
+      "status": "active",
+      "bio": "Dr. Rohan Kapoor offers cardiology consultations and structured follow-up care at Willow Community Care. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "403",
+      "department": "Cardiology",
+      "registrationId": "DEMO-MED-0027",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Willow Community Care",
+      "district": "Howrah",
+      "specialization": "Cardiology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Heart health follow-up",
+        "Preventive cardiology"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-36",
+      "clinicId": "clinic-5",
+      "specialtyId": 12,
+      "name": "Dr. Sana Bose",
+      "qualifications": "MBBS, MD",
+      "experienceYears": 18,
+      "consultationFee": 250,
+      "startMinute": 540,
+      "endMinute": 1050,
+      "slotDurationMinutes": 25,
+      "status": "active",
+      "bio": "Dr. Sana Bose offers pulmonology consultations and structured follow-up care at Horizon Health Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "504",
+      "department": "Pulmonology",
+      "registrationId": "DEMO-MED-0036",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Horizon Health Centre",
+      "district": "Nadia",
+      "specialization": "Pulmonology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Outpatient respiratory care",
+        "Respiratory follow-up"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-12",
+      "clinicId": "clinic-1",
+      "specialtyId": 12,
+      "name": "Dr. Sana Das",
+      "qualifications": "MBBS, MD",
+      "experienceYears": 16,
+      "consultationFee": 650,
+      "startMinute": 540,
+      "endMinute": 1050,
+      "slotDurationMinutes": 25,
+      "status": "active",
+      "bio": "Dr. Sana Das offers pulmonology consultations and structured follow-up care at Evergreen Family Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "204",
+      "department": "Pulmonology",
+      "registrationId": "DEMO-MED-0012",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Evergreen Family Clinic",
+      "district": "Birbhum",
+      "specialization": "Pulmonology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Outpatient respiratory care",
+        "Respiratory follow-up"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-44",
+      "clinicId": "clinic-6",
+      "specialtyId": 8,
+      "name": "Dr. Sneha Chatterjee",
+      "qualifications": "MBBS, MS (ENT)",
+      "experienceYears": 26,
+      "consultationFee": 350,
+      "startMinute": 510,
+      "endMinute": 1050,
+      "slotDurationMinutes": 10,
+      "status": "active",
+      "bio": "Dr. Sneha Chatterjee offers ent consultations and structured follow-up care at Maple Outpatient Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "604",
+      "department": "ENT",
+      "registrationId": "DEMO-MED-0044",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Maple Outpatient Centre",
+      "district": "Kolkata",
+      "specialization": "ENT",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Ear and hearing care",
+        "ENT follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-20",
+      "clinicId": "clinic-3",
+      "specialtyId": 8,
+      "name": "Dr. Sneha Roy",
+      "qualifications": "MBBS, MS (ENT)",
+      "experienceYears": 24,
+      "consultationFee": 750,
+      "startMinute": 510,
+      "endMinute": 1050,
+      "slotDurationMinutes": 10,
+      "status": "active",
+      "bio": "Dr. Sneha Roy offers ent consultations and structured follow-up care at Cedar Multispecialty Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "304",
+      "department": "ENT",
+      "registrationId": "DEMO-MED-0020",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Cedar Multispecialty Clinic",
+      "district": "Hooghly",
+      "specialization": "ENT",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Ear and hearing care",
+        "ENT follow-up"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-6",
+      "clinicId": "clinic-2",
+      "specialtyId": 6,
+      "name": "Dr. Sourav Ganguly",
+      "qualifications": "MBBS, MS (OBG)",
+      "experienceYears": 10,
+      "consultationFee": 750,
+      "startMinute": 540,
+      "endMinute": 1050,
+      "slotDurationMinutes": 25,
+      "status": "active",
+      "bio": "Dr. Sourav Ganguly offers gynecology consultations and structured follow-up care at Riverstone Medical Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "106",
+      "department": "Gynecology",
+      "registrationId": "DEMO-MED-0006",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Riverstone Medical Centre",
+      "district": "Bardhaman",
+      "specialization": "Gynecology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Routine outpatient consultations",
+        "Women’s health"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-3",
+      "clinicId": "clinic-1",
+      "specialtyId": 3,
+      "name": "Dr. Sunita Banerjee",
+      "qualifications": "MBBS, MD, DM",
+      "experienceYears": 7,
+      "consultationFee": 450,
+      "startMinute": 540,
+      "endMinute": 1020,
+      "slotDurationMinutes": 12,
+      "status": "active",
+      "bio": "Dr. Sunita Banerjee offers cardiology consultations and structured follow-up care at Evergreen Family Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "103",
+      "department": "Cardiology",
+      "registrationId": "DEMO-MED-0003",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Evergreen Family Clinic",
+      "district": "Birbhum",
+      "specialization": "Cardiology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Heart health follow-up",
+        "Preventive cardiology"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-9",
+      "clinicId": "clinic-3",
+      "specialtyId": 9,
+      "name": "Dr. Tanusree Adhikari",
+      "qualifications": "MBBS, MD, DM (Neurology)",
+      "experienceYears": 13,
+      "consultationFee": 350,
+      "startMinute": 540,
+      "endMinute": 1020,
+      "slotDurationMinutes": 12,
+      "status": "active",
+      "bio": "Dr. Tanusree Adhikari offers neurology consultations and structured follow-up care at Cedar Multispecialty Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "201",
+      "department": "Neurology",
+      "registrationId": "DEMO-MED-0009",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Cedar Multispecialty Clinic",
+      "district": "Hooghly",
+      "specialization": "Neurology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Neurology follow-up",
+        "Outpatient assessment"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-34",
+      "clinicId": "clinic-5",
+      "specialtyId": 10,
+      "name": "Dr. Tara Bose",
+      "qualifications": "BDS, MDS",
+      "experienceYears": 16,
+      "consultationFee": 750,
+      "startMinute": 480,
+      "endMinute": 1050,
+      "slotDurationMinutes": 15,
+      "status": "active",
+      "bio": "Dr. Tara Bose offers dentistry consultations and structured follow-up care at Horizon Health Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "502",
+      "department": "Dentistry",
+      "registrationId": "DEMO-MED-0034",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Horizon Health Centre",
+      "district": "Nadia",
+      "specialization": "Dentistry",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Hindi",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Dental checks",
+        "Preventive dental care"
+      ],
+      "startTime": "08:00 AM",
+      "endTime": "05:30 PM",
+      "nextAvailableSlot": "08:00 AM"
+    },
+    {
+      "id": "doc-35",
+      "clinicId": "clinic-5",
+      "specialtyId": 11,
+      "name": "Dr. Vihaan Bose",
+      "qualifications": "MBBS, MD, DM",
+      "experienceYears": 17,
+      "consultationFee": 850,
+      "startMinute": 510,
+      "endMinute": 1020,
+      "slotDurationMinutes": 20,
+      "status": "active",
+      "bio": "Dr. Vihaan Bose offers endocrinology consultations and structured follow-up care at Horizon Health Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "503",
+      "department": "Endocrinology",
+      "registrationId": "DEMO-MED-0035",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Horizon Health Centre",
+      "district": "Nadia",
+      "specialization": "Endocrinology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Endocrine follow-up",
+        "Metabolic health"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-11",
+      "clinicId": "clinic-1",
+      "specialtyId": 11,
+      "name": "Dr. Vihaan Das",
+      "qualifications": "MBBS, MD, DM",
+      "experienceYears": 15,
+      "consultationFee": 550,
+      "startMinute": 510,
+      "endMinute": 1020,
+      "slotDurationMinutes": 20,
+      "status": "active",
+      "bio": "Dr. Vihaan Das offers endocrinology consultations and structured follow-up care at Evergreen Family Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "203",
+      "department": "Endocrinology",
+      "registrationId": "DEMO-MED-0011",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Evergreen Family Clinic",
+      "district": "Birbhum",
+      "specialization": "Endocrinology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Endocrine follow-up",
+        "Metabolic health"
+      ],
+      "startTime": "08:30 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "08:30 AM"
+    },
+    {
+      "id": "doc-21",
+      "clinicId": "clinic-3",
+      "specialtyId": 9,
+      "name": "Dr. Vikram Banerjee",
+      "qualifications": "MBBS, MD, DM (Neurology)",
+      "experienceYears": 25,
+      "consultationFee": 850,
+      "startMinute": 540,
+      "endMinute": 1020,
+      "slotDurationMinutes": 12,
+      "status": "active",
+      "bio": "Dr. Vikram Banerjee offers neurology consultations and structured follow-up care at Cedar Multispecialty Clinic. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "305",
+      "department": "Neurology",
+      "registrationId": "DEMO-MED-0021",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Cedar Multispecialty Clinic",
+      "district": "Hooghly",
+      "specialization": "Neurology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Neurology follow-up",
+        "Outpatient assessment"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "09:00 AM"
+    },
+    {
+      "id": "doc-45",
+      "clinicId": "clinic-6",
+      "specialtyId": 9,
+      "name": "Dr. Vikram Rao",
+      "qualifications": "MBBS, MD, DM (Neurology)",
+      "experienceYears": 5,
+      "consultationFee": 450,
+      "startMinute": 540,
+      "endMinute": 1020,
+      "slotDurationMinutes": 12,
+      "status": "active",
+      "bio": "Dr. Vikram Rao offers neurology consultations and structured follow-up care at Maple Outpatient Centre. This profile belongs to the synthetic demonstration directory.",
+      "roomNumber": "605",
+      "department": "Neurology",
+      "registrationId": "DEMO-MED-0045",
+      "metadata": {
+        "synthetic": true,
+        "profileSource": "synthetic_fixture",
+        "onboardingDate": "2026-01-15",
+        "profileVersion": 3,
+        "appointmentModes": [
+          "In-person"
+        ],
+        "credentialStatus": "Demonstration profile",
+        "followUpWindowDays": 14,
+        "accessibleConsultation": true
+      },
+      "clinicName": "Maple Outpatient Centre",
+      "district": "Kolkata",
+      "specialization": "Neurology",
+      "isAvailableToday": true,
+      "consultationDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "languages": [
+        "English",
+        "Bengali"
+      ],
+      "clinicalInterests": [
+        "Neurology follow-up",
+        "Outpatient assessment"
+      ],
+      "startTime": "09:00 AM",
+      "endTime": "05:00 PM",
+      "nextAvailableSlot": "09:00 AM"
+    }
+  ]
+}

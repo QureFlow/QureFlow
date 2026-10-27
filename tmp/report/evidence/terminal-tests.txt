@@ -1,0 +1,36 @@
+> node --import tsx --test --test-reporter=spec tests/mysql.test.ts
+
+▶ MySQL DBMS integration
+  ✔ directory joins specialty, clinic and normalized language with SQL ordering (69.3683ms)
+  ✔ SQL injection values cannot change search or select arbitrary sort expressions (32.0191ms)
+  ✔ empty search and out-of-range pages preserve a correct total (38.72ms)
+  ✔ unauthenticated access and cross-clinic writes remain denied (228.2184ms)
+  ✔ simultaneous registrations cannot create two active visits for one patient (40.5216ms)
+  ✔ foreign keys reject orphan visits (4.7005ms)
+  ✔ emergency priority is selected by SQL before a normal token (51.958ms)
+  ✔ database unique constraint prevents a second simultaneous consultation (10.7698ms)
+  ✔ patient queue responses conceal other patient identity (23.2472ms)
+  ✔ trigger records state changes and rejects reopening completed visits (15.9719ms)
+  ✔ pause is respected and the next call resumes correctly (46.1872ms)
+  ✔ appointment and token are created atomically with capacity accounting (46.6926ms)
+  ✔ capacity conflicts roll back without orphan appointments (16.5866ms)
+  ✔ cancellation trigger updates linked appointment and releases its slot (18.9847ms)
+  ✔ unique identities and optimistic profile versions prevent conflicting updates (17.6396ms)
+  ✔ a new conflicting identity cannot overwrite an existing account (10.3427ms)
+  ✔ staff appointment filters and SQL pagination use the assigned clinic (58.0529ms)
+  ✔ stored function, daily procedure, views and cursor return verifiable results (54.5088ms)
+  ✔ parameterized patient and appointment filters stay within the clinic (22.5508ms)
+  ✔ updated buffer capacity is used when an existing slot gains an opening (134.6932ms)
+  ✔ CHECK constraints reject negative fees and impossible slot occupancy (6.239ms)
+  ✔ function returns NULL for missing, reversed and implausible timings (2.6185ms)
+  ✔ concurrent bookings from different patients cannot overfill the last slot (81.7937ms)
+  ✔ a booking submitted through the HTTP API is visible in SQL and cancels both records (76.5818ms)
+✔ MySQL DBMS integration (14600.2074ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15446.2201

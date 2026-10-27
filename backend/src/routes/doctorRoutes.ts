@@ -5,7 +5,7 @@ import { db } from '../repositories/repository.js';
 import { appointmentService } from '../services/appointmentService.js';
 import { authenticateToken, requireRoles } from '../middlewares/authMiddleware.js';
 import { route } from '../lib/http.js';
-import { accessDoctor, staffClinic } from '../lib/access.js';
+import { accessDoctor, staffClinic, managesAllDemoClinics } from '../lib/access.js';
 import { parse, nameSchema } from '../lib/validation.js';
 import { clinicDate, weekday, clockMinutes } from '../lib/time.js';
 import { AppError } from '../lib/errors.js';
@@ -129,7 +129,7 @@ router.post(
   requireRoles('admin'),
   route(async (req, res) => {
     const data = parse(schema, req.body);
-    if (data.clinicId !== staffClinic(req))
+    if (!managesAllDemoClinics(req) && data.clinicId !== staffClinic(req))
       throw new AppError(403, 'Doctors must belong to your clinic.');
     const clinic = await db.getClinicById(data.clinicId);
     if (!clinic) throw new AppError(404, 'Clinic not found');

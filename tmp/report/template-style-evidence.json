@@ -1,0 +1,171 @@
+{
+  "input": "C:\\Users\\ASUS\\Downloads\\BCSE302P_Mini_Project_Report_Template.docx",
+  "fonts_by_char_count": {
+    "Times New Roman": 7020,
+    "Courier New": 854
+  },
+  "direct_run_formatting_runs": 224,
+  "direct_paragraph_formatting_paragraphs": 145,
+  "heading_like_paragraphs_not_heading_style": [
+    {
+      "para_index": 1,
+      "text": "VELLORE INSTITUTE OF TECHNOLOGY, VELLORE",
+      "style": ""
+    },
+    {
+      "para_index": 5,
+      "text": "MINI PROJECT REPORT",
+      "style": ""
+    },
+    {
+      "para_index": 7,
+      "text": "<Project Title>",
+      "style": ""
+    },
+    {
+      "para_index": 17,
+      "text": "Dr. G. M. Karthik",
+      "style": ""
+    },
+    {
+      "para_index": 21,
+      "text": "Date of Submission: ____ / ____ / 2026",
+      "style": ""
+    },
+    {
+      "para_index": 29,
+      "text": "Signature of the Faculty",
+      "style": ""
+    },
+    {
+      "para_index": 38,
+      "text": "Keywords: <4\u20136 keywords, e.g., DBMS, PL/SQL, Normalization, Triggers, ER Model>",
+      "style": ""
+    },
+    {
+      "para_index": 62,
+      "text": "Table 3.1: <TABLE_NAME>",
+      "style": ""
+    },
+    {
+      "para_index": 162,
+      "text": "Name",
+      "style": ""
+    },
+    {
+      "para_index": 163,
+      "text": "Registration Number",
+      "style": ""
+    },
+    {
+      "para_index": 176,
+      "text": "Component",
+      "style": ""
+    },
+    {
+      "para_index": 177,
+      "text": "Specification",
+      "style": ""
+    },
+    {
+      "para_index": 186,
+      "text": "Category",
+      "style": ""
+    },
+    {
+      "para_index": 187,
+      "text": "Tool / Version",
+      "style": ""
+    },
+    {
+      "para_index": 201,
+      "text": "Attribute",
+      "style": ""
+    },
+    {
+      "para_index": 202,
+      "text": "Data Type",
+      "style": ""
+    },
+    {
+      "para_index": 203,
+      "text": "Constraint",
+      "style": ""
+    },
+    {
+      "para_index": 204,
+      "text": "Description",
+      "style": ""
+    },
+    {
+      "para_index": 221,
+      "text": "Normal Form",
+      "style": ""
+    },
+    {
+      "para_index": 222,
+      "text": "Relations",
+      "style": ""
+    }
+  ],
+  "examples": {
+    "direct_paragraph_formatting": [
+      {
+        "para_index": 1,
+        "text": "VELLORE INSTITUTE OF TECHNOLOGY, VELLORE",
+        "style": ""
+      },
+      {
+        "para_index": 2,
+        "text": "School of Computer Science and Engineering (SCOPE)",
+        "style": ""
+      },
+      {
+        "para_index": 5,
+        "text": "MINI PROJECT REPORT",
+        "style": ""
+      },
+      {
+        "para_index": 7,
+        "text": "<Project Title>",
+        "style": ""
+      },
+      {
+        "para_index": 9,
+        "text": "Course Code: BCSE302P \u2013 Database Systems Laboratory",
+        "style": ""
+      }
+    ],
+    "direct_run_formatting": [
+      {
+        "para_index": 1,
+        "run_text": "VELLORE INSTITUTE OF TECHNOLOGY, VELLORE",
+        "style": ""
+      },
+      {
+        "para_index": 2,
+        "run_text": "School of Computer Science and Engineering (SCOPE)",
+        "style": ""
+      },
+      {
+        "para_index": 5,
+        "run_text": "MINI PROJECT REPORT",
+        "style": ""
+      },
+      {
+        "para_index": 7,
+        "run_text": "<Project Title>",
+        "style": ""
+      },
+      {
+        "para_index": 9,
+        "run_text": "Course Code: BCSE302P \u2013 Database Systems Laboratory",
+        "style": ""
+      }
+    ]
+  },
+  "notes": [
+    "Direct formatting is not always wrong, but it often causes inconsistent output when templates change.",
+    "Heading-like paragraphs not using Heading styles can break TOC and accessibility."
+  ]
+}

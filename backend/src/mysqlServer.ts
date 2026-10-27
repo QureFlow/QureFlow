@@ -1,7 +1,9 @@
 import { randomBytes } from 'node:crypto';
 process.env.DATABASE_PROVIDER = 'mysql';
 process.env.AUTH_PROVIDER = 'local';
-process.env.NODE_ENV = 'development';
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+process.env.DBMS_DEMO_ALL_CLINICS = process.env.NODE_ENV === 'development'
+  ? process.env.DBMS_DEMO_ALL_CLINICS || 'true' : 'false';
 process.env.PORT = process.env.DBMS_PORT || '5001';
 process.env.JWT_SECRET = process.env.DBMS_JWT_SECRET || randomBytes(48).toString('hex');
 process.env.CORS_ORIGINS = process.env.DBMS_CORS_ORIGINS ||

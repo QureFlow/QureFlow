@@ -1,0 +1,22 @@
+
+> qureflow@1.0.0 test:discovery
+> npm run test:discovery --prefix backend
+
+
+> qureflow-backend@1.0.0 test:discovery
+> tsx --test tests/discovery.test.ts tests/localDiscovery.test.ts
+
+✔ long and Unicode clinic names fit one valid DNS label without splitting a character (0.8418ms)
+[QureFlow Wi-Fi] Automatic Android connection available on this network.
+✔ the Wi-Fi advertisement resolves to the running API with the same stable identity (1636.4977ms)
+✔ hotspot discovery returns only public routing identity and the request nonce (2.2425ms)
+✔ malformed, unrelated, oversized and non-local discovery requests receive no reply (0.3946ms)
+✔ direct discovery works over a real UDP socket without an mDNS service (24.1633ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1985.9989

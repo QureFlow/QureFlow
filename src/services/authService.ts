@@ -1,6 +1,6 @@
 import { User } from '../types';
 import { storage } from './storage';
-import { apiClient } from './apiClient';
+import { apiClient, ClinicConnectionPending } from './apiClient';
 export class AccountConfirmationRequired extends Error {
   constructor(
     public identifier: string,
@@ -28,7 +28,8 @@ export const authService = {
       const user = await apiClient.get<User>('/auth/me');
       storage.setActiveUser(user);
       return user;
-    } catch {
+    } catch (error) {
+      if (error instanceof ClinicConnectionPending) return storage.getActiveUser();
       apiClient.clearAuthToken();
       storage.setActiveUser(null);
       return null;

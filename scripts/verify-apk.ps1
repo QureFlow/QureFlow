@@ -26,6 +26,7 @@ try {
     }
     $assets = $archive.Entries | Where-Object { $_.FullName -like 'assets/public/assets/*.js' }
     $containsPhoneApi = $false
+    $containsDiscoveryUi = $false
     foreach ($entry in $assets) {
         $reader = [System.IO.StreamReader]::new($entry.Open())
         try { $text = $reader.ReadToEnd() } finally { $reader.Dispose() }
@@ -33,8 +34,22 @@ try {
             throw 'MySQL credentials were found in packaged frontend assets.'
         }
         if ($text.Contains($expectedApi)) { $containsPhoneApi = $true }
+        if ($text.Contains('qureflow_mobile_server_id') -and $text.Contains('Finding your clinic')) { $containsDiscoveryUi = $true }
     }
     if (-not $containsPhoneApi) { throw 'Expected phone API URL is missing from this APK.' }
+    if (-not $containsDiscoveryUi) { throw 'Automatic clinic connection UI is missing from this APK.' }
+    $nativeDiscovery = ''
+    foreach ($entry in ($archive.Entries | Where-Object { $_.FullName -match '^classes[0-9]*\.dex$' })) {
+        $memory = [System.IO.MemoryStream]::new()
+        $stream = $entry.Open()
+        try {
+            $stream.CopyTo($memory)
+            $nativeDiscovery += [System.Text.Encoding]::ASCII.GetString($memory.ToArray())
+        } finally { $stream.Dispose(); $memory.Dispose() }
+    }
+    foreach ($marker in @('ClinicDiscoveryPlugin','_qureflow._tcp.','networkChanged','QureFlowDiscover','QureFlowServer')) {
+        if (-not $nativeDiscovery.Contains($marker)) { throw "Native discovery code is missing: $marker" }
+    }
 } finally { $archive.Dispose() }
 $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
 $apkStream = [System.IO.File]::OpenRead($apkPath)
@@ -52,6 +67,8 @@ $report = [ordered]@{
     package = 'com.qureflow.dbms'
     signatureVerified = $true
     packagedFrontendVerified = $true
+    nativeDiscoveryPackaged = $true
+    hotspotDiscoveryPackaged = $true
     mysqlCredentialsAbsent = $true
     defaultPhoneApi = $expectedApi
     nativeDeviceTested = $false

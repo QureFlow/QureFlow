@@ -1,0 +1,22 @@
+--------------
+SELECT ROUTINE_NAME,ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA=DATABASE()
+--------------
+
++---------------------------+--------------+
+| ROUTINE_NAME              | ROUTINE_TYPE |
++---------------------------+--------------+
+| fn_consultation_minutes   | FUNCTION     |
+| sp_daily_patient_flow     | PROCEDURE    |
+| sp_doctor_workload_cursor | PROCEDURE    |
++---------------------------+--------------+
+--------------
+SELECT TRIGGER_NAME,ACTION_TIMING,EVENT_MANIPULATION FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=DATABASE()
+--------------
+
++---------------------------+---------------+--------------------+
+| TRIGGER_NAME              | ACTION_TIMING | EVENT_MANIPULATION |
++---------------------------+---------------+--------------------+
+| validate_token_transition | BEFORE        | UPDATE             |
+| audit_token_insert        | AFTER         | INSERT             |
+| synchronize_token_update  | AFTER         | UPDATE             |
++---------------------------+---------------+--------------------+

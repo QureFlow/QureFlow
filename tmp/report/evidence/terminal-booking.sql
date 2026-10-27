@@ -1,0 +1,7 @@
+SELECT a.date, a.tokenNumber, a.status AS appointmentStatus,
+ t.status AS tokenStatus, s.bookedCount
+FROM appointments a
+JOIN queue_tokens t ON t.appointmentId=a.id
+JOIN appointment_slots s ON s.doctorId=a.doctorId
+ AND s.slotDate=a.date AND s.slotMinute=a.slotMinute
+WHERE a.id='apt-7fb41770-fa6a-4da3-a025-33261330f765';

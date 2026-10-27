@@ -1,0 +1,18 @@
+
+> qureflow@1.0.0 build
+> tsc && vite build --mode dbms && npm run build --prefix backend
+
+vite v6.4.3 building for dbms...
+transforming...
+✓ 1959 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.15 kB │ gzip:   0.62 kB
+dist/assets/index-CNm5bb_q.css   64.02 kB │ gzip:  12.45 kB
+dist/assets/web-QeO9cTIE.js       0.84 kB │ gzip:   0.40 kB
+dist/assets/index-Dmp747hd.js   448.31 kB │ gzip: 124.23 kB
+✓ built in 6.06s
+
+> qureflow-backend@1.0.0 build
+> tsc
+

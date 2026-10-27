@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "C:\Users\ASUS\.codex\worktrees\mysql-dbms\QureFlow\tmp\report\capture_terminal.py", line 93, in <module>
+    capture(sys.argv[1])
+  File "C:\Users\ASUS\.codex\worktrees\mysql-dbms\QureFlow\tmp\report\capture_terminal.py", line 64, in capture
+    text = execute(group)
+           ^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\.codex\worktrees\mysql-dbms\QureFlow\tmp\report\capture_terminal.py", line 33, in execute
+    return 'PS> ' + command + '\n\n' + result.stdout
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~
+TypeError: can only concatenate str (not "NoneType") to str

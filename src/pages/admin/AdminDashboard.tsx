@@ -24,7 +24,8 @@ export const AdminDashboard = () => {
     [walkin, setWalkin] = useState(false);
   const clinic = clinics.find((c) => c.id === user?.clinicId),
     roster = doctors.filter(
-      (d) => d.clinicId === user?.clinicId && (user?.role !== 'doctor' || d.id === user.doctorId),
+      (d) => (user?.demoAllClinics || d.clinicId === user?.clinicId) &&
+        (user?.role !== 'doctor' || d.id === user.doctorId),
     );
   const waiting = tokens.filter((t) => t.status === 'waiting'),
     current = tokens.filter((t) => t.status === 'current'),
@@ -50,7 +51,7 @@ export const AdminDashboard = () => {
             </button>
             <span className="text-sm font-semibold text-brand-950">Clinic overview</span>
             <span className="hidden sm:inline text-[10px] border-l pl-3 text-slate-400">
-              {clinic?.name}
+              {user?.demoAllClinics ? 'All demo clinics' : clinic?.name}
             </span>
           </div>
           <div className="flex gap-3 items-center">
@@ -79,7 +80,7 @@ export const AdminDashboard = () => {
               </p>
               <h1 className="qf-title text-3xl sm:text-4xl mt-3">Clinic overview</h1>
               <p className="text-sm text-slate-500 mt-3">
-                Welcome back, {firstName}. Here’s what’s happening at your clinic.
+                Welcome back, {firstName}. Here’s what’s happening {user?.demoAllClinics ? 'across all demo clinics' : 'at your clinic'}.
               </p>
             </div>
             <Link

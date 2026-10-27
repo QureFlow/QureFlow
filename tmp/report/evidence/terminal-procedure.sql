@@ -1,0 +1,1 @@
+CALL sp_daily_patient_flow('clinic-1','2026-10-06','2026-10-19');

@@ -9,9 +9,12 @@ import { Footer } from '../../components/layout/Footer';
 import { DoctorCard } from '../../components/patient/DoctorCard';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
 import { specialtyAppearance } from '../../lib/specialtyAppearance';
+import { useClinicConnectionRevision } from '../../hooks/useClinicConnectionRevision';
 
 export const DoctorList: React.FC = () => {
   const { doctors, clinics } = useQueue();
+  const connectionRevision = useClinicConnectionRevision();
+  const [retry, setRetry] = useState(0);
   const [params, setParams] = useSearchParams();
   const specialty = params.get('specialty') || 'all';
   const [query, setQuery] = useState('');
@@ -47,7 +50,7 @@ export const DoctorList: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [connectionRevision, retry]);
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -85,7 +88,7 @@ export const DoctorList: React.FC = () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, specialty, clinic, language, today, sort, page]);
+  }, [query, specialty, clinic, language, today, sort, page, connectionRevision, retry]);
   useEffect(() => {
     setPage(1);
   }, [query, specialty, clinic, language, today, sort]);
@@ -247,9 +250,13 @@ export const DoctorList: React.FC = () => {
           </aside>
           <section aria-busy={loading}>
             {error && (
-              <p role="alert" className="qf-panel border-red-200 p-4 mb-4 text-sm text-red-800">
-                {error}
-              </p>
+              <div role="alert" className="qf-panel border-red-200 p-4 mb-4 text-sm text-red-800">
+                <p>{error}</p>
+                <button onClick={() => setRetry(value => value + 1)}
+                  className="mt-3 font-semibold underline rounded focus-visible:outline focus-visible:outline-2">
+                  Retry loading doctors
+                </button>
+              </div>
             )}
             {loading && (
               <p role="status" className="text-sm text-slate-500 mb-4">
@@ -257,7 +264,7 @@ export const DoctorList: React.FC = () => {
               </p>
             )}
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-semibold text-slate-800">{total} doctors available to explore</h2>
+              <h2 className="font-semibold text-slate-800">{error ? 'Directory temporarily unavailable' : `${total} doctors available to explore`}</h2>
               <span className="text-xs text-slate-500">
                 Page {page} / {pages}
               </span>

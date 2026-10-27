@@ -1,0 +1,2743 @@
+{
+  "executedAt": "2026-10-18T20:13:46.247Z",
+  "sql": {
+    "directory": {
+      "sql": "SELECT d.name,s.name AS specialty,c.name AS clinic,d.consultationFee FROM doctors d JOIN specialties s ON s.id=d.specialtyId JOIN clinics c ON c.id=d.clinicId WHERE s.name='Gynecology' AND d.status='active' ORDER BY d.consultationFee,d.name;",
+      "raw": "--------------\nSELECT d.name,s.name AS specialty,c.name AS clinic,d.consultationFee FROM doctors d JOIN specialties s ON s.id=d.specialtyId JOIN clinics c ON c.id=d.clinicId WHERE s.name='Gynecology' AND d.status='active' ORDER BY d.consultationFee,d.name\n--------------\n\n+----------------------+------------+---------------------------+-----------------+\n| name                 | specialty  | clinic                    | consultationFee |\n+----------------------+------------+---------------------------+-----------------+\n| Dr. Meera Patel      | Gynecology | Willow Community Care     |          350.00 |\n| Dr. Aditi Roy        | Gynecology | Riverstone Medical Centre |          550.00 |\n| Dr. Sourav Ganguly   | Gynecology | Riverstone Medical Centre |          750.00 |\n| Dr. Aditi Chatterjee | Gynecology | Maple Outpatient Centre   |          850.00 |\n+----------------------+------------+---------------------------+-----------------+\n"
+    },
+    "function": {
+      "sql": "SELECT fn_consultation_minutes('2026-10-19 10:00:00','2026-10-19 10:12:30') AS minutes, fn_consultation_minutes(NULL,'2026-10-19 10:12:30') AS missingInput, fn_consultation_minutes('2026-10-19 11:00:00','2026-10-19 10:00:00') AS reversedInput;",
+      "raw": "--------------\nSELECT fn_consultation_minutes('2026-10-19 10:00:00','2026-10-19 10:12:30') AS minutes, fn_consultation_minutes(NULL,'2026-10-19 10:12:30') AS missingInput, fn_consultation_minutes('2026-10-19 11:00:00','2026-10-19 10:00:00') AS reversedInput\n--------------\n\n+---------+--------------+---------------+\n| minutes | missingInput | reversedInput |\n+---------+--------------+---------------+\n|   12.50 |         NULL |          NULL |\n+---------+--------------+---------------+\n"
+    },
+    "procedure": {
+      "sql": "CALL sp_daily_patient_flow('clinic-1','2026-10-06','2026-10-19');",
+      "raw": "--------------\nCALL sp_daily_patient_flow('clinic-1','2026-10-06','2026-10-19')\n--------------\n\n+------------+-------+-----------+-----------+--------+\n| date       | total | completed | cancelled | noShow |\n+------------+-------+-----------+-----------+--------+\n| 2026-10-06 |    43 |        37 |         2 |      4 |\n| 2026-10-07 |    40 |        36 |         1 |      3 |\n| 2026-10-08 |    37 |        34 |         0 |      3 |\n| 2026-10-09 |    39 |        37 |         0 |      2 |\n| 2026-10-10 |    41 |        40 |         0 |      1 |\n| 2026-10-11 |    43 |        42 |         0 |      1 |\n| 2026-10-12 |    40 |        40 |         0 |      0 |\n| 2026-10-13 |    48 |        16 |         0 |      0 |\n| 2026-10-14 |     8 |         0 |         0 |      0 |\n| 2026-10-15 |     8 |         0 |         0 |      0 |\n| 2026-10-16 |     8 |         0 |         0 |      0 |\n| 2026-10-17 |     0 |         0 |         0 |      0 |\n| 2026-10-18 |     0 |         0 |         0 |      0 |\n| 2026-10-19 |     0 |         0 |         0 |      0 |\n+------------+-------+-----------+-----------+--------+\n"
+    },
+    "cursor": {
+      "sql": "CALL sp_doctor_workload_cursor('clinic-1','2026-10-13');",
+      "raw": "--------------\nCALL sp_doctor_workload_cursor('clinic-1','2026-10-13')\n--------------\n\n+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\n| workload                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |\n+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\n| [{\"name\": \"Dr. Aditya Mukherjee\", \"waiting\": 3, \"doctorId\": \"doc-13\"}, {\"name\": \"Dr. Amitav Bhattacharya\", \"waiting\": 3, \"doctorId\": \"doc-10\"}, {\"name\": \"Dr. Ananya Sharma\", \"waiting\": 3, \"doctorId\": \"doc-1\"}, {\"name\": \"Dr. Debabrata Roy\", \"waiting\": 3, \"doctorId\": \"doc-4\"}, {\"name\": \"Dr. Rahul Sen\", \"waiting\": 3, \"doctorId\": \"doc-2\"}, {\"name\": \"Dr. Sana Das\", \"waiting\": 3, \"doctorId\": \"doc-12\"}, {\"name\": \"Dr. Sunita Banerjee\", \"waiting\": 3, \"doctorId\": \"doc-3\"}, {\"name\": \"Dr. Vihaan Das\", \"waiting\": 3, \"doctorId\": \"doc-11\"}] |\n+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\n"
+    },
+    "objects": {
+      "sql": "SELECT ROUTINE_NAME,ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA=DATABASE(); SELECT TRIGGER_NAME,ACTION_TIMING,EVENT_MANIPULATION FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=DATABASE();",
+      "raw": "--------------\nSELECT ROUTINE_NAME,ROUTINE_TYPE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA=DATABASE()\n--------------\n\n+---------------------------+--------------+\n| ROUTINE_NAME              | ROUTINE_TYPE |\n+---------------------------+--------------+\n| fn_consultation_minutes   | FUNCTION     |\n| sp_daily_patient_flow     | PROCEDURE    |\n| sp_doctor_workload_cursor | PROCEDURE    |\n+---------------------------+--------------+\n--------------\nSELECT TRIGGER_NAME,ACTION_TIMING,EVENT_MANIPULATION FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=DATABASE()\n--------------\n\n+---------------------------+---------------+--------------------+\n| TRIGGER_NAME              | ACTION_TIMING | EVENT_MANIPULATION |\n+---------------------------+---------------+--------------------+\n| validate_token_transition | BEFORE        | UPDATE             |\n| audit_token_insert        | AFTER         | INSERT             |\n| synchronize_token_update  | AFTER         | UPDATE             |\n+---------------------------+---------------+--------------------+\n"
+    },
+    "totals": {
+      "sql": "SELECT 'clinics' AS entity,COUNT(*) AS total FROM clinics UNION ALL SELECT 'doctors',COUNT(*) FROM doctors UNION ALL SELECT 'patient profiles',COUNT(*) FROM users WHERE role='patient' UNION ALL SELECT 'appointments',COUNT(*) FROM appointments UNION ALL SELECT 'queue tokens',COUNT(*) FROM queue_tokens;",
+      "raw": "--------------\nSELECT 'clinics' AS entity,COUNT(*) AS total FROM clinics UNION ALL SELECT 'doctors',COUNT(*) FROM doctors UNION ALL SELECT 'patient profiles',COUNT(*) FROM users WHERE role='patient' UNION ALL SELECT 'appointments',COUNT(*) FROM appointments UNION ALL SELECT 'queue tokens',COUNT(*) FROM queue_tokens\n--------------\n\n+------------------+-------+\n| entity           | total |\n+------------------+-------+\n| clinics          |     6 |\n| doctors          |    48 |\n| patient profiles |   737 |\n| appointments     |  6196 |\n| queue tokens     |  6196 |\n+------------------+-------+\n"
+    }
+  },
+  "version": "8.4.11",
+  "transaction": "--------------\n-- Synthetic disposable records only. The final rollback removes every write.\n--------------\n\n--------------\n-- Run the entire file in ONE Workbench connection; do not commit halfway through.\n--------------\n\n--------------\nSET @patient=CONCAT('sql-demo-',UUID())\n--------------\n\n--------------\nSET @appointment=CONCAT('sql-demo-',UUID())\n--------------\n\n--------------\nSET @token=CONCAT('sql-demo-',UUID())\n--------------\n\n--------------\nSET @demo_date='2099-12-31'\n--------------\n\n--------------\nSTART TRANSACTION\n--------------\n\n--------------\nINSERT INTO users(id,name,role,metadata,createdAt,updatedAt)\nVALUES (@patient,'Synthetic SQL demonstration','patient',JSON_OBJECT('synthetic',true),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))\n--------------\n\n--------------\nINSERT INTO appointment_slots(doctorId,slotDate,slotMinute,bookedCount,capacity)\nVALUES ('doc-1',@demo_date,480,1,1)\n--------------\n\n--------------\nINSERT INTO appointments(id,patientId,doctorId,date,slotMinute,tokenNumber,status,priority,metadata,createdAt,updatedAt)\nVALUES (@appointment,@patient,'doc-1',@demo_date,480,'SQL-DEMO','booked','normal',JSON_OBJECT('synthetic',true),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))\n--------------\n\n--------------\nSET @seq=(SELECT COALESCE(MAX(tokenSeq),0)+1 FROM queue_tokens WHERE doctorId='doc-1' AND queueDate=@demo_date)\n--------------\n\n--------------\nINSERT INTO queue_tokens(id,appointmentId,patientId,doctorId,queueDate,tokenSeq,tokenNumber,status,metadata,createdAt,updatedAt)\nVALUES (@token,@appointment,@patient,'doc-1',@demo_date,@seq,'SQL-DEMO','waiting',JSON_OBJECT('synthetic',true),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))\n--------------\n\n--------------\nSELECT a.id,a.status appointmentStatus,t.status tokenStatus,s.bookedCount\nFROM appointments a JOIN queue_tokens t ON t.appointmentId=a.id\nJOIN appointment_slots s ON s.doctorId=a.doctorId AND s.slotDate=a.date AND s.slotMinute=a.slotMinute WHERE a.id=@appointment\n--------------\n\n+-----------------------------------------------+-------------------+-------------+-------------+\n| id                                            | appointmentStatus | tokenStatus | bookedCount |\n+-----------------------------------------------+-------------------+-------------+-------------+\n| sql-demo-6d6ce7f5-cb30-11f1-bd37-8a9f1a3da0b5 | booked            | waiting     |           1 |\n+-----------------------------------------------+-------------------+-------------+-------------+\n--------------\nUPDATE queue_tokens SET status='cancelled',updatedAt=UTC_TIMESTAMP(3) WHERE id=@token\n--------------\n\n--------------\n-- AFTER UPDATE trigger synchronizes the appointment and releases the slot.\n--------------\n\n--------------\nSELECT a.id,a.status appointmentStatus,t.status tokenStatus,s.bookedCount\nFROM appointments a JOIN queue_tokens t ON t.appointmentId=a.id\nJOIN appointment_slots s ON s.doctorId=a.doctorId AND s.slotDate=a.date AND s.slotMinute=a.slotMinute WHERE a.id=@appointment\n--------------\n\n+-----------------------------------------------+-------------------+-------------+-------------+\n| id                                            | appointmentStatus | tokenStatus | bookedCount |\n+-----------------------------------------------+-------------------+-------------+-------------+\n| sql-demo-6d6ce7f5-cb30-11f1-bd37-8a9f1a3da0b5 | cancelled         | cancelled   |           0 |\n+-----------------------------------------------+-------------------+-------------+-------------+\n--------------\nSELECT action,actorId,details FROM audit_events WHERE entityId=@token ORDER BY timestamp\n--------------\n\n+----------------+------------+-------------------------------------------------------------------+\n| action         | actorId    | details                                                           |\n+----------------+------------+-------------------------------------------------------------------+\n| created        | sql-client | {\"status\": \"waiting\", \"queueDate\": \"2099-12-31\"}                  |\n| status_changed | sql-client | {\"to\": \"cancelled\", \"from\": \"waiting\", \"queueDate\": \"2099-12-31\"} |\n+----------------+------------+-------------------------------------------------------------------+\n--------------\nROLLBACK\n--------------\n\n--------------\nSELECT (SELECT COUNT(*) FROM users WHERE id=@patient) remainingUsers,\n (SELECT COUNT(*) FROM appointments WHERE id=@appointment) remainingAppointments,\n (SELECT COUNT(*) FROM queue_tokens WHERE id=@token) remainingTokens,\n (SELECT COUNT(*) FROM audit_events WHERE entityId=@token) remainingAuditEvents\n--------------\n\n+----------------+-----------------------+-----------------+----------------------+\n| remainingUsers | remainingAppointments | remainingTokens | remainingAuditEvents |\n+----------------+-----------------------+-----------------+----------------------+\n|              0 |                     0 |               0 |                    0 |\n+----------------+-----------------------+-----------------+----------------------+\n",
+  "tables": [
+    {
+      "TABLE_NAME": "appointment_slots"
+    },
+    {
+      "TABLE_NAME": "appointments"
+    },
+    {
+      "TABLE_NAME": "audit_events"
+    },
+    {
+      "TABLE_NAME": "clinic_settings"
+    },
+    {
+      "TABLE_NAME": "clinics"
+    },
+    {
+      "TABLE_NAME": "demo_seed"
+    },
+    {
+      "TABLE_NAME": "doctor_days"
+    },
+    {
+      "TABLE_NAME": "doctor_interests"
+    },
+    {
+      "TABLE_NAME": "doctor_languages"
+    },
+    {
+      "TABLE_NAME": "doctors"
+    },
+    {
+      "TABLE_NAME": "languages"
+    },
+    {
+      "TABLE_NAME": "prediction_models"
+    },
+    {
+      "TABLE_NAME": "queue_counters"
+    },
+    {
+      "TABLE_NAME": "queue_state"
+    },
+    {
+      "TABLE_NAME": "queue_tokens"
+    },
+    {
+      "TABLE_NAME": "schema_migrations"
+    },
+    {
+      "TABLE_NAME": "specialties"
+    },
+    {
+      "TABLE_NAME": "users"
+    }
+  ],
+  "columns": [
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "patientId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "date",
+      "COLUMN_TYPE": "date",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "slotMinute",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "tokenNumber",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "status",
+      "COLUMN_TYPE": "enum('booked','waiting','in_consultation','completed','cancelled','no_show')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "priority",
+      "COLUMN_TYPE": "enum('normal','emergency')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "isWalkIn",
+      "COLUMN_TYPE": "tinyint(1)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "notes",
+      "COLUMN_TYPE": "text",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "version",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "1",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "metadata",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "createdAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "updatedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "patientName",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "patientPhone",
+      "COLUMN_TYPE": "varchar(20)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "doctorName",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "doctorSpecialization",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "clinicId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "clinicName",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_details",
+      "COLUMN_NAME": "tokenId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_slots",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_slots",
+      "COLUMN_NAME": "slotDate",
+      "COLUMN_TYPE": "date",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_slots",
+      "COLUMN_NAME": "slotMinute",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_slots",
+      "COLUMN_NAME": "bookedCount",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointment_slots",
+      "COLUMN_NAME": "capacity",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "patientId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "date",
+      "COLUMN_TYPE": "date",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "slotMinute",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "tokenNumber",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "status",
+      "COLUMN_TYPE": "enum('booked','waiting','in_consultation','completed','cancelled','no_show')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "priority",
+      "COLUMN_TYPE": "enum('normal','emergency')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "isWalkIn",
+      "COLUMN_TYPE": "tinyint(1)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "notes",
+      "COLUMN_TYPE": "text",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "version",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "1",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "metadata",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "createdAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "updatedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "COLUMN_NAME": "clinicId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "COLUMN_NAME": "entityType",
+      "COLUMN_TYPE": "varchar(60)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "COLUMN_NAME": "entityId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "COLUMN_NAME": "action",
+      "COLUMN_TYPE": "varchar(60)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "COLUMN_NAME": "actorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "COLUMN_NAME": "requestId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "COLUMN_NAME": "timestamp",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP(3)",
+      "COLUMN_KEY": "",
+      "EXTRA": "DEFAULT_GENERATED",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "COLUMN_NAME": "details",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "clinicId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "averageConsultationMinutes",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "bufferMinutes",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "2",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "allowWalkIns",
+      "COLUMN_TYPE": "tinyint(1)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "1",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "allowEmergencyPriority",
+      "COLUMN_TYPE": "tinyint(1)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "1",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "notifyOnTwoAhead",
+      "COLUMN_TYPE": "tinyint(1)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "autoTokenPrefixByDoctor",
+      "COLUMN_TYPE": "tinyint(1)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "1",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "clinicName",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "contactNumber",
+      "COLUMN_TYPE": "varchar(30)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "name",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "address",
+      "COLUMN_TYPE": "varchar(500)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "district",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "state",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "phone",
+      "COLUMN_TYPE": "varchar(20)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "email",
+      "COLUMN_TYPE": "varchar(254)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "openingHours",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "emergencyContact",
+      "COLUMN_TYPE": "varchar(30)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "metadata",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "COLUMN_NAME": "updatedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP(3)",
+      "COLUMN_KEY": "",
+      "EXTRA": "DEFAULT_GENERATED",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "daily_patient_flow",
+      "COLUMN_NAME": "clinicId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "daily_patient_flow",
+      "COLUMN_NAME": "date",
+      "COLUMN_TYPE": "date",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "daily_patient_flow",
+      "COLUMN_NAME": "total",
+      "COLUMN_TYPE": "bigint",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "daily_patient_flow",
+      "COLUMN_NAME": "completed",
+      "COLUMN_TYPE": "decimal(23,0)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "daily_patient_flow",
+      "COLUMN_NAME": "cancelled",
+      "COLUMN_TYPE": "decimal(23,0)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "daily_patient_flow",
+      "COLUMN_NAME": "noShow",
+      "COLUMN_TYPE": "decimal(23,0)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "demo_seed",
+      "COLUMN_NAME": "version",
+      "COLUMN_TYPE": "varchar(30)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "demo_seed",
+      "COLUMN_NAME": "seededAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP(3)",
+      "COLUMN_KEY": "",
+      "EXTRA": "DEFAULT_GENERATED",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_days",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_days",
+      "COLUMN_NAME": "dayOfWeek",
+      "COLUMN_TYPE": "enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "clinicId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "specialtyId",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "name",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "qualifications",
+      "COLUMN_TYPE": "varchar(300)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "experienceYears",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "consultationFee",
+      "COLUMN_TYPE": "decimal(10,2)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "startMinute",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "endMinute",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "slotDurationMinutes",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "status",
+      "COLUMN_TYPE": "enum('active','inactive')",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "active",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "avatar",
+      "COLUMN_TYPE": "varchar(1000)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "bio",
+      "COLUMN_TYPE": "text",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "roomNumber",
+      "COLUMN_TYPE": "varchar(30)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "department",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "registrationId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "metadata",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "clinicName",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "district",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "specialization",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "isAvailableToday",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "consultationDays",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "languages",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_directory",
+      "COLUMN_NAME": "clinicalInterests",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_interests",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_interests",
+      "COLUMN_NAME": "interest",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_languages",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctor_languages",
+      "COLUMN_NAME": "languageId",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "clinicId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "specialtyId",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "name",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "qualifications",
+      "COLUMN_TYPE": "varchar(300)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "experienceYears",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "consultationFee",
+      "COLUMN_TYPE": "decimal(10,2)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "startMinute",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "endMinute",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "slotDurationMinutes",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "status",
+      "COLUMN_TYPE": "enum('active','inactive')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "active",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "avatar",
+      "COLUMN_TYPE": "varchar(1000)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "bio",
+      "COLUMN_TYPE": "text",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "roomNumber",
+      "COLUMN_TYPE": "varchar(30)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "department",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "registrationId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "metadata",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "languages",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "auto_increment",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "languages",
+      "COLUMN_NAME": "name",
+      "COLUMN_TYPE": "varchar(60)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "UNI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "prediction_models",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "prediction_models",
+      "COLUMN_NAME": "clinicId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "prediction_models",
+      "COLUMN_NAME": "model",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "prediction_models",
+      "COLUMN_NAME": "updatedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP(3)",
+      "COLUMN_KEY": "",
+      "EXTRA": "DEFAULT_GENERATED",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_counters",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_counters",
+      "COLUMN_NAME": "queueDate",
+      "COLUMN_TYPE": "date",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_counters",
+      "COLUMN_NAME": "currentNumber",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_state",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_state",
+      "COLUMN_NAME": "isPaused",
+      "COLUMN_TYPE": "tinyint(1)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "appointmentId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "UNI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "patientId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "queueDate",
+      "COLUMN_TYPE": "date",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "tokenSeq",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "tokenNumber",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "scheduledMinute",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "priority",
+      "COLUMN_TYPE": "enum('normal','emergency')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "normal",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "isWalkIn",
+      "COLUMN_TYPE": "tinyint(1)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "status",
+      "COLUMN_TYPE": "enum('waiting','current','completed','skipped','cancelled')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "createdAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "calledAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "servedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "version",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "1",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "updatedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "metadata",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "activePatientId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "STORED GENERATED",
+      "GENERATION_EXPRESSION": "(case when (`status` in (_utf8mb4\\'waiting\\',_utf8mb4\\'current\\')) then `patientId` else NULL end)"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "servingDoctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "STORED GENERATED",
+      "GENERATION_EXPRESSION": "(case when (`status` = _utf8mb4\\'current\\') then `doctorId` else NULL end)"
+    },
+    {
+      "TABLE_NAME": "schema_migrations",
+      "COLUMN_NAME": "version",
+      "COLUMN_TYPE": "varchar(30)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "schema_migrations",
+      "COLUMN_NAME": "appliedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP(3)",
+      "COLUMN_KEY": "",
+      "EXTRA": "DEFAULT_GENERATED",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "specialties",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "auto_increment",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "specialties",
+      "COLUMN_NAME": "name",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "UNI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "PRI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "name",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "phone",
+      "COLUMN_TYPE": "varchar(20)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "UNI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "email",
+      "COLUMN_TYPE": "varchar(254)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "UNI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "role",
+      "COLUMN_TYPE": "enum('patient','doctor','health_worker','admin')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "dob",
+      "COLUMN_TYPE": "date",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "gender",
+      "COLUMN_TYPE": "enum('Male','Female','Other')",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "staffId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "UNI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "clinicId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "MUL",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "passwordHash",
+      "COLUMN_TYPE": "varchar(255)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "cognitoSub",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "UNI",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "sessionVersion",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "version",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "1",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "metadata",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "createdAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "updatedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "id",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "appointmentId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "patientId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "doctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "queueDate",
+      "COLUMN_TYPE": "date",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "tokenSeq",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "tokenNumber",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "scheduledMinute",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "priority",
+      "COLUMN_TYPE": "enum('normal','emergency')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "normal",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "isWalkIn",
+      "COLUMN_TYPE": "tinyint(1)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "status",
+      "COLUMN_TYPE": "enum('waiting','current','completed','skipped','cancelled')",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "createdAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "calledAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "servedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "version",
+      "COLUMN_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "1",
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "updatedAt",
+      "COLUMN_TYPE": "datetime(3)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "metadata",
+      "COLUMN_TYPE": "json",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "activePatientId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "servingDoctorId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "patientName",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "patientPhone",
+      "COLUMN_TYPE": "varchar(20)",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "doctorName",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "clinicId",
+      "COLUMN_TYPE": "varchar(100)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    },
+    {
+      "TABLE_NAME": "visit_details",
+      "COLUMN_NAME": "clinicName",
+      "COLUMN_TYPE": "varchar(200)",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": null,
+      "COLUMN_KEY": "",
+      "EXTRA": "",
+      "GENERATION_EXPRESSION": ""
+    }
+  ],
+  "foreignKeys": [
+    {
+      "TABLE_NAME": "appointment_slots",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "patientId",
+      "REFERENCED_TABLE_NAME": "users",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "COLUMN_NAME": "clinicId",
+      "REFERENCED_TABLE_NAME": "clinics",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "doctor_days",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "doctor_interests",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "doctor_languages",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "doctor_languages",
+      "COLUMN_NAME": "languageId",
+      "REFERENCED_TABLE_NAME": "languages",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "clinicId",
+      "REFERENCED_TABLE_NAME": "clinics",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "COLUMN_NAME": "specialtyId",
+      "REFERENCED_TABLE_NAME": "specialties",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "prediction_models",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "queue_counters",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "queue_state",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "patientId",
+      "REFERENCED_TABLE_NAME": "users",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "COLUMN_NAME": "appointmentId",
+      "REFERENCED_TABLE_NAME": "appointments",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "clinicId",
+      "REFERENCED_TABLE_NAME": "clinics",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "doctorId",
+      "REFERENCED_TABLE_NAME": "doctors",
+      "REFERENCED_COLUMN_NAME": "id"
+    }
+  ],
+  "counts": [
+    {
+      "entity": "clinics",
+      "total": 6
+    },
+    {
+      "entity": "doctors",
+      "total": 48
+    },
+    {
+      "entity": "patient profiles",
+      "total": 737
+    },
+    {
+      "entity": "appointments",
+      "total": 6196
+    },
+    {
+      "entity": "queue tokens",
+      "total": 6196
+    }
+  ],
+  "indexes": [
+    {
+      "TABLE_NAME": "appointment_slots",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "doctorId,slotDate,slotMinute"
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "INDEX_NAME": "appointments_doctor",
+      "NON_UNIQUE": 1,
+      "columns": "doctorId,date,slotMinute"
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "INDEX_NAME": "appointments_patient",
+      "NON_UNIQUE": 1,
+      "columns": "patientId,date"
+    },
+    {
+      "TABLE_NAME": "appointments",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "id"
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "INDEX_NAME": "audit_clinic",
+      "NON_UNIQUE": 1,
+      "columns": "clinicId,timestamp"
+    },
+    {
+      "TABLE_NAME": "audit_events",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "id"
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "clinicId"
+    },
+    {
+      "TABLE_NAME": "clinics",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "id"
+    },
+    {
+      "TABLE_NAME": "demo_seed",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "version"
+    },
+    {
+      "TABLE_NAME": "doctor_days",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "doctorId,dayOfWeek"
+    },
+    {
+      "TABLE_NAME": "doctor_interests",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "doctorId,interest"
+    },
+    {
+      "TABLE_NAME": "doctor_languages",
+      "INDEX_NAME": "languageId",
+      "NON_UNIQUE": 1,
+      "columns": "languageId"
+    },
+    {
+      "TABLE_NAME": "doctor_languages",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "doctorId,languageId"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "INDEX_NAME": "clinicId",
+      "NON_UNIQUE": 1,
+      "columns": "clinicId"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "INDEX_NAME": "doctors_directory",
+      "NON_UNIQUE": 1,
+      "columns": "specialtyId,clinicId,status"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "INDEX_NAME": "doctors_experience",
+      "NON_UNIQUE": 1,
+      "columns": "experienceYears"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "INDEX_NAME": "doctors_fee",
+      "NON_UNIQUE": 1,
+      "columns": "consultationFee"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "id"
+    },
+    {
+      "TABLE_NAME": "languages",
+      "INDEX_NAME": "name",
+      "NON_UNIQUE": 0,
+      "columns": "name"
+    },
+    {
+      "TABLE_NAME": "languages",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "id"
+    },
+    {
+      "TABLE_NAME": "prediction_models",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "doctorId"
+    },
+    {
+      "TABLE_NAME": "queue_counters",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "doctorId,queueDate"
+    },
+    {
+      "TABLE_NAME": "queue_state",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "doctorId"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "INDEX_NAME": "active_visit",
+      "NON_UNIQUE": 0,
+      "columns": "activePatientId,queueDate"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "INDEX_NAME": "appointmentId",
+      "NON_UNIQUE": 0,
+      "columns": "appointmentId"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "INDEX_NAME": "one_consultation",
+      "NON_UNIQUE": 0,
+      "columns": "servingDoctorId,queueDate"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "INDEX_NAME": "patientId",
+      "NON_UNIQUE": 1,
+      "columns": "patientId"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "id"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "INDEX_NAME": "queue_waiting",
+      "NON_UNIQUE": 1,
+      "columns": "doctorId,queueDate,status,priority,tokenSeq"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "INDEX_NAME": "token_sequence",
+      "NON_UNIQUE": 0,
+      "columns": "doctorId,queueDate,tokenSeq"
+    },
+    {
+      "TABLE_NAME": "schema_migrations",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "version"
+    },
+    {
+      "TABLE_NAME": "specialties",
+      "INDEX_NAME": "name",
+      "NON_UNIQUE": 0,
+      "columns": "name"
+    },
+    {
+      "TABLE_NAME": "specialties",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "id"
+    },
+    {
+      "TABLE_NAME": "users",
+      "INDEX_NAME": "clinicId",
+      "NON_UNIQUE": 1,
+      "columns": "clinicId"
+    },
+    {
+      "TABLE_NAME": "users",
+      "INDEX_NAME": "cognitoSub",
+      "NON_UNIQUE": 0,
+      "columns": "cognitoSub"
+    },
+    {
+      "TABLE_NAME": "users",
+      "INDEX_NAME": "doctorId",
+      "NON_UNIQUE": 1,
+      "columns": "doctorId"
+    },
+    {
+      "TABLE_NAME": "users",
+      "INDEX_NAME": "email",
+      "NON_UNIQUE": 0,
+      "columns": "email"
+    },
+    {
+      "TABLE_NAME": "users",
+      "INDEX_NAME": "phone",
+      "NON_UNIQUE": 0,
+      "columns": "phone"
+    },
+    {
+      "TABLE_NAME": "users",
+      "INDEX_NAME": "PRIMARY",
+      "NON_UNIQUE": 0,
+      "columns": "id"
+    },
+    {
+      "TABLE_NAME": "users",
+      "INDEX_NAME": "staffId",
+      "NON_UNIQUE": 0,
+      "columns": "staffId"
+    }
+  ],
+  "checks": [
+    {
+      "TABLE_NAME": "doctors",
+      "CHECK_CLAUSE": "(`experienceYears` between 0 and 70)"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "CHECK_CLAUSE": "(`consultationFee` >= 0)"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "CHECK_CLAUSE": "(`slotDurationMinutes` between 2 and 30)"
+    },
+    {
+      "TABLE_NAME": "doctors",
+      "CHECK_CLAUSE": "((`startMinute` >= 0) and (`endMinute` <= 1440) and (`endMinute` > `startMinute`))"
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "CHECK_CLAUSE": "(`averageConsultationMinutes` between 1 and 120)"
+    },
+    {
+      "TABLE_NAME": "clinic_settings",
+      "CHECK_CLAUSE": "(`bufferMinutes` >= 0)"
+    },
+    {
+      "TABLE_NAME": "appointment_slots",
+      "CHECK_CLAUSE": "((`bookedCount` >= 0) and (`bookedCount` <= `capacity`))"
+    },
+    {
+      "TABLE_NAME": "appointment_slots",
+      "CHECK_CLAUSE": "(`capacity` > 0)"
+    },
+    {
+      "TABLE_NAME": "queue_tokens",
+      "CHECK_CLAUSE": "((`servedAt` is null) or ((`calledAt` is not null) and (`servedAt` >= `calledAt`)))"
+    }
+  ],
+  "objects": [
+    {
+      "ROUTINE_NAME": "fn_consultation_minutes",
+      "ROUTINE_TYPE": "FUNCTION"
+    },
+    {
+      "ROUTINE_NAME": "sp_daily_patient_flow",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "sp_doctor_workload_cursor",
+      "ROUTINE_TYPE": "PROCEDURE"
+    }
+  ],
+  "views": [
+    {
+      "TABLE_NAME": "appointment_details"
+    },
+    {
+      "TABLE_NAME": "daily_patient_flow"
+    },
+    {
+      "TABLE_NAME": "doctor_directory"
+    },
+    {
+      "TABLE_NAME": "visit_details"
+    }
+  ],
+  "testCases": [
+    {
+      "id": "TC01",
+      "name": "directory joins specialty, clinic and normalized language with SQL ordering",
+      "passed": true
+    },
+    {
+      "id": "TC02",
+      "name": "SQL injection values cannot change search or select arbitrary sort expressions",
+      "passed": true
+    },
+    {
+      "id": "TC03",
+      "name": "empty search and out-of-range pages preserve a correct total",
+      "passed": true
+    },
+    {
+      "id": "TC04",
+      "name": "unauthenticated access and cross-clinic writes remain denied",
+      "passed": true
+    },
+    {
+      "id": "TC05",
+      "name": "simultaneous registrations cannot create two active visits for one patient",
+      "passed": true
+    },
+    {
+      "id": "TC06",
+      "name": "foreign keys reject orphan visits",
+      "passed": true
+    },
+    {
+      "id": "TC07",
+      "name": "emergency priority is selected by SQL before a normal token",
+      "passed": true
+    },
+    {
+      "id": "TC08",
+      "name": "database unique constraint prevents a second simultaneous consultation",
+      "passed": true
+    },
+    {
+      "id": "TC09",
+      "name": "patient queue responses conceal other patient identity",
+      "passed": true
+    },
+    {
+      "id": "TC10",
+      "name": "trigger records state changes and rejects reopening completed visits",
+      "passed": true
+    },
+    {
+      "id": "TC11",
+      "name": "pause is respected and the next call resumes correctly",
+      "passed": true
+    },
+    {
+      "id": "TC12",
+      "name": "appointment and token are created atomically with capacity accounting",
+      "passed": true
+    },
+    {
+      "id": "TC13",
+      "name": "capacity conflicts roll back without orphan appointments",
+      "passed": true
+    },
+    {
+      "id": "TC14",
+      "name": "cancellation trigger updates linked appointment and releases its slot",
+      "passed": true
+    },
+    {
+      "id": "TC15",
+      "name": "unique identities and optimistic profile versions prevent conflicting updates",
+      "passed": true
+    },
+    {
+      "id": "TC16",
+      "name": "a new conflicting identity cannot overwrite an existing account",
+      "passed": true
+    },
+    {
+      "id": "TC17",
+      "name": "staff appointment filters and SQL pagination use the assigned clinic",
+      "passed": true
+    },
+    {
+      "id": "TC18",
+      "name": "stored function, daily procedure, views and cursor return verifiable results",
+      "passed": true
+    },
+    {
+      "id": "TC19",
+      "name": "parameterized patient and appointment filters stay within the clinic",
+      "passed": true
+    },
+    {
+      "id": "TC20",
+      "name": "updated buffer capacity is used when an existing slot gains an opening",
+      "passed": true
+    },
+    {
+      "id": "TC21",
+      "name": "CHECK constraints reject negative fees and impossible slot occupancy",
+      "passed": true
+    },
+    {
+      "id": "TC22",
+      "name": "function returns NULL for missing, reversed and implausible timings",
+      "passed": true
+    },
+    {
+      "id": "TC23",
+      "name": "concurrent bookings from different patients cannot overfill the last slot",
+      "passed": true
+    },
+    {
+      "id": "TC24",
+      "name": "a booking submitted through the HTTP API is visible in SQL and cancels both records",
+      "passed": true
+    }
+  ],
+  "finalCounts": [
+    {
+      "entity": "clinics",
+      "total": 6
+    },
+    {
+      "entity": "doctors",
+      "total": 48
+    },
+    {
+      "entity": "patient profiles",
+      "total": 737
+    },
+    {
+      "entity": "appointments",
+      "total": 6196
+    },
+    {
+      "entity": "queue tokens",
+      "total": 6196
+    }
+  ],
+  "browser": {
+    "executedAt": "2026-10-18T20:11:37.537Z",
+    "appointment": {
+      "id": "apt-7fb41770-fa6a-4da3-a025-33261330f765",
+      "patientId": "patient-1",
+      "doctorId": "doc-1",
+      "date": "2026-10-20",
+      "slotMinute": 480,
+      "tokenNumber": "A-001",
+      "status": "booked",
+      "priority": "normal",
+      "isWalkIn": false,
+      "notes": "Synthetic report verification booking",
+      "version": 1,
+      "metadata": {
+        "createdBy": "patient-1",
+        "requestId": "0b604e1e-36db-495a-9fa6-77f352ea083b"
+      },
+      "createdAt": "2026-10-18T20:11:36.778Z",
+      "updatedAt": "2026-10-18T20:11:36.778Z",
+      "patientName": "Demo Patient",
+      "patientPhone": "9900000002",
+      "doctorName": "Dr. Ananya Sharma",
+      "doctorSpecialization": "General Medicine",
+      "clinicId": "clinic-1",
+      "clinicName": "Evergreen Family Clinic",
+      "tokenId": "tok-6ee848a7-c906-4ff9-bdfa-b7be3aaf7ea9",
+      "time": "08:00 AM"
+    },
+    "token": {
+      "id": "tok-6ee848a7-c906-4ff9-bdfa-b7be3aaf7ea9",
+      "appointmentId": "apt-7fb41770-fa6a-4da3-a025-33261330f765",
+      "patientId": "patient-1",
+      "doctorId": "doc-1",
+      "queueDate": "2026-10-20",
+      "tokenSeq": 1,
+      "tokenNumber": "A-001",
+      "scheduledMinute": 480,
+      "priority": "normal",
+      "isWalkIn": false,
+      "status": "waiting",
+      "createdAt": "2026-10-18T20:11:36.800Z",
+      "version": 1,
+      "updatedAt": "2026-10-18T20:11:36.801Z",
+      "metadata": {
+        "source": "online",
+        "timeZone": "Asia/Kolkata",
+        "createdBy": "patient-1",
+        "requestId": "0b604e1e-36db-495a-9fa6-77f352ea083b",
+        "synthetic": true
+      },
+      "activePatientId": "patient-1",
+      "patientName": "Demo Patient",
+      "patientPhone": "9900000002",
+      "doctorName": "Dr. Ananya Sharma",
+      "clinicId": "clinic-1",
+      "clinicName": "Evergreen Family Clinic",
+      "scheduledTime": "08:00 AM",
+      "queueId": "2026-10-20#doc-1"
+    },
+    "sql": "SELECT a.id,a.date,a.status AS appointmentStatus,t.status AS tokenStatus,s.bookedCount FROM appointments a JOIN queue_tokens t ON t.appointmentId=a.id JOIN appointment_slots s ON s.doctorId=a.doctorId AND s.slotDate=a.date AND s.slotMinute=a.slotMinute WHERE a.id=?",
+    "before": [
+      {
+        "id": "apt-7fb41770-fa6a-4da3-a025-33261330f765",
+        "date": "2026-10-20",
+        "appointmentStatus": "booked",
+        "tokenStatus": "waiting",
+        "bookedCount": 1
+      }
+    ],
+    "after": [
+      {
+        "id": "apt-7fb41770-fa6a-4da3-a025-33261330f765",
+        "date": "2026-10-20",
+        "appointmentStatus": "cancelled",
+        "tokenStatus": "cancelled",
+        "bookedCount": 0
+      }
+    ]
+  }
+}

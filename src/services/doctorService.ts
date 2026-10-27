@@ -47,7 +47,7 @@ export const doctorService = {
     if (filters?.availableTodayOnly) params.set('availableTodayOnly', 'true');
     const list = await apiClient.get<Doctor[]>(`/doctors?${params}`),
       user = storage.getActiveUser();
-    return user && user.role !== 'patient'
+    return user && user.role !== 'patient' && !user.demoAllClinics
       ? list.filter(
           (d) => d.clinicId === user.clinicId && (user.role !== 'doctor' || d.id === user.doctorId),
         )

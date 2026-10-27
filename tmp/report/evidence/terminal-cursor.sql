@@ -1,0 +1,1 @@
+CALL sp_doctor_workload_cursor('clinic-1','2026-10-13')\G

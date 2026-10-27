@@ -5,7 +5,8 @@ export const clinicService = {
   async getClinics(): Promise<Clinic[]> {
     const list = await apiClient.get<Clinic[]>('/clinics'),
       user = storage.getActiveUser();
-    return user && user.role !== 'patient' ? list.filter((c) => c.id === user.clinicId) : list;
+    return user && user.role !== 'patient' && !user.demoAllClinics
+      ? list.filter((c) => c.id === user.clinicId) : list;
   },
   getClinicById: (id: string) => apiClient.get<Clinic | null>(`/clinics/${encodeURIComponent(id)}`),
   updateClinic: (id: string, updates: Partial<Clinic>) => {
@@ -24,6 +25,10 @@ export const clinicService = {
     );
     return apiClient.patch<Clinic>(`/clinics/${encodeURIComponent(id)}`, data);
   },
-  getSettings: () => apiClient.get<QueueSettings>('/settings'),
-  updateSettings: (data: Partial<QueueSettings>) => apiClient.put<QueueSettings>('/settings', data),
+  getSettings: (clinicId?: string) => apiClient.get<QueueSettings>(
+    '/settings' + (clinicId ? '?clinicId=' + encodeURIComponent(clinicId) : ''),
+  ),
+  updateSettings: (data: Partial<QueueSettings>, clinicId?: string) => apiClient.put<QueueSettings>(
+    '/settings' + (clinicId ? '?clinicId=' + encodeURIComponent(clinicId) : ''), data,
+  ),
 };

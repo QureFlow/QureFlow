@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Button } from '../../components/common/Button';
+import { Select } from '../../components/common/Select';
 import { QueueTable } from '../../components/admin/QueueTable';
 import { WalkInModal } from '../../components/admin/WalkInModal';
 import { displayQueue, nextCallableToken } from '../../lib/queuePresentation';
@@ -43,7 +44,10 @@ export const AdminQueue: React.FC = () => {
 
   // Selected doctor
   const queryDoctorId = searchParams.get('doctor');
-  const selectedDoctor = doctors.find((d) => d.id === queryDoctorId) || doctors[0];
+  const selectedDoctor = doctors.find((d) => d.id === queryDoctorId) ||
+    (user?.demoAllClinics
+      ? doctors.find((d) => tokens.some((t) => t.doctorId === d.id &&
+          ['waiting', 'current'].includes(t.status))) : undefined) || doctors[0];
   const selectedDoctorId = selectedDoctor?.id || '';
 
   const handleCallNext = async () => {
@@ -108,7 +112,18 @@ export const AdminQueue: React.FC = () => {
 
           {/* Doctor Queue Tabs */}
           <div className="qf-panel p-3 overflow-x-auto">
-            <div className="flex items-center gap-2 min-w-max">
+            {user?.demoAllClinics ? (
+              <Select
+                label="Doctor queue across all demo clinics"
+                value={selectedDoctorId}
+                onChange={(event) => handleSelectDoctor(event.target.value)}
+                options={doctors.map((doc) => ({ value: doc.id,
+                  label: `${doc.name} · ${doc.clinicName} · ${tokens.filter(
+                    (token) => token.doctorId === doc.id && token.status === 'waiting',
+                  ).length} waiting`,
+                }))}
+              />
+            ) : <div className="flex items-center gap-2 min-w-max">
               {doctors.map((doc) => {
                 const isSelected = doc.id === selectedDoctorId;
                 const docWaiting = tokens.filter(
@@ -143,7 +158,7 @@ export const AdminQueue: React.FC = () => {
                   </button>
                 );
               })}
-            </div>
+            </div>}
           </div>
 
           {/* Active Queue Control Header for Selected Doctor */}

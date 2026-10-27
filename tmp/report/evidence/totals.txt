@@ -1,0 +1,13 @@
+--------------
+SELECT 'clinics' AS entity,COUNT(*) AS total FROM clinics UNION ALL SELECT 'doctors',COUNT(*) FROM doctors UNION ALL SELECT 'patient profiles',COUNT(*) FROM users WHERE role='patient' UNION ALL SELECT 'appointments',COUNT(*) FROM appointments UNION ALL SELECT 'queue tokens',COUNT(*) FROM queue_tokens
+--------------
+
++------------------+-------+
+| entity           | total |
++------------------+-------+
+| clinics          |     6 |
+| doctors          |    48 |
+| patient profiles |   737 |
+| appointments     |  6196 |
+| queue tokens     |  6196 |
++------------------+-------+

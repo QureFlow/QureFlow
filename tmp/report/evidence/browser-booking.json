@@ -1,0 +1,80 @@
+{
+  "executedAt": "2026-10-18T20:11:37.537Z",
+  "appointment": {
+    "id": "apt-7fb41770-fa6a-4da3-a025-33261330f765",
+    "patientId": "patient-1",
+    "doctorId": "doc-1",
+    "date": "2026-10-20",
+    "slotMinute": 480,
+    "tokenNumber": "A-001",
+    "status": "booked",
+    "priority": "normal",
+    "isWalkIn": false,
+    "notes": "Synthetic report verification booking",
+    "version": 1,
+    "metadata": {
+      "createdBy": "patient-1",
+      "requestId": "0b604e1e-36db-495a-9fa6-77f352ea083b"
+    },
+    "createdAt": "2026-10-18T20:11:36.778Z",
+    "updatedAt": "2026-10-18T20:11:36.778Z",
+    "patientName": "Demo Patient",
+    "patientPhone": "9900000002",
+    "doctorName": "Dr. Ananya Sharma",
+    "doctorSpecialization": "General Medicine",
+    "clinicId": "clinic-1",
+    "clinicName": "Evergreen Family Clinic",
+    "tokenId": "tok-6ee848a7-c906-4ff9-bdfa-b7be3aaf7ea9",
+    "time": "08:00 AM"
+  },
+  "token": {
+    "id": "tok-6ee848a7-c906-4ff9-bdfa-b7be3aaf7ea9",
+    "appointmentId": "apt-7fb41770-fa6a-4da3-a025-33261330f765",
+    "patientId": "patient-1",
+    "doctorId": "doc-1",
+    "queueDate": "2026-10-20",
+    "tokenSeq": 1,
+    "tokenNumber": "A-001",
+    "scheduledMinute": 480,
+    "priority": "normal",
+    "isWalkIn": false,
+    "status": "waiting",
+    "createdAt": "2026-10-18T20:11:36.800Z",
+    "version": 1,
+    "updatedAt": "2026-10-18T20:11:36.801Z",
+    "metadata": {
+      "source": "online",
+      "timeZone": "Asia/Kolkata",
+      "createdBy": "patient-1",
+      "requestId": "0b604e1e-36db-495a-9fa6-77f352ea083b",
+      "synthetic": true
+    },
+    "activePatientId": "patient-1",
+    "patientName": "Demo Patient",
+    "patientPhone": "9900000002",
+    "doctorName": "Dr. Ananya Sharma",
+    "clinicId": "clinic-1",
+    "clinicName": "Evergreen Family Clinic",
+    "scheduledTime": "08:00 AM",
+    "queueId": "2026-10-20#doc-1"
+  },
+  "sql": "SELECT a.id,a.date,a.status AS appointmentStatus,t.status AS tokenStatus,s.bookedCount FROM appointments a JOIN queue_tokens t ON t.appointmentId=a.id JOIN appointment_slots s ON s.doctorId=a.doctorId AND s.slotDate=a.date AND s.slotMinute=a.slotMinute WHERE a.id=?",
+  "before": [
+    {
+      "id": "apt-7fb41770-fa6a-4da3-a025-33261330f765",
+      "date": "2026-10-20",
+      "appointmentStatus": "booked",
+      "tokenStatus": "waiting",
+      "bookedCount": 1
+    }
+  ],
+  "after": [
+    {
+      "id": "apt-7fb41770-fa6a-4da3-a025-33261330f765",
+      "date": "2026-10-20",
+      "appointmentStatus": "cancelled",
+      "tokenStatus": "cancelled",
+      "bookedCount": 0
+    }
+  ]
+}

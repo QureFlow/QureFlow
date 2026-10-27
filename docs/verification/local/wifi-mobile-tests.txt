@@ -1,0 +1,30 @@
+
+> qureflow@1.0.0 test:mobile
+> node --test tests/mobile-connection.test.cjs
+
+✔ doctor directory reloads after a connection check without losing search filters (979.5933ms)
+✔ temporary native verification preserves login but a rejected session clears it (23.8262ms)
+✔ native API calls are blocked before discovery and while identity is being rechecked (25.077ms)
+✔ a connection check cancels in-flight calls and never replays a mutation (19.1347ms)
+✔ a failed native request signals rediscovery without retrying the booking (15.4881ms)
+✔ first launch finds a clinic without a saved IP and probes without credentials (1.3909ms)
+✔ a healthy saved clinic connects immediately without starting discovery (0.507ms)
+✔ a changed IP is recovered by discovery and duplicate interfaces are collapsed (0.8762ms)
+✔ a reused IP with a different server identity triggers discovery (0.3704ms)
+✔ discovery rejects public URLs, wrong databases and mismatched advertised identities (1.048ms)
+✔ multiple clinics remain distinct so the interface can offer a choice (0.2346ms)
+✔ failed or malformed health responses are never accepted (0.1969ms)
+✔ phone, emulator and USB addresses retain the server port (0.0899ms)
+✔ server input accepts an API suffix and whitespace without duplicating the path (0.0535ms)
+✔ public hosts and private network lookalikes cannot receive app sessions (0.2101ms)
+✔ embedded credentials, unrelated paths, query strings and fragments are rejected (0.1498ms)
+✔ web configuration ignores a saved phone server (0.0482ms)
+✔ native configuration uses a valid saved server and rejects corrupt stored settings (0.0531ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1363.5993

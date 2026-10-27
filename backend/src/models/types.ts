@@ -10,6 +10,7 @@ export type AppointmentStatus =
   | 'no_show';
 
 export interface User {
+  demoAllClinics?: boolean;
   id: string;
   name: string;
   phone: string;

@@ -7,6 +7,7 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(ClinicDiscoveryPlugin.class);
         super.onCreate(savedInstanceState);
         // Only debug builds can fetch the computer's HTTP development API.
         // Release builds keep WebView mixed-content protection enabled.
