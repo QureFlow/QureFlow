@@ -9,7 +9,8 @@ import path from 'node:path';
 process.env.NODE_ENV = process.env.NODE_ENV || 'test';
 const DAYS = 60,
   EVALUATION_DAYS = 21,
-  ANCHOR = Date.parse('2026-09-30T12:00:00+05:30'),
+  // EVAL_ANCHOR and EVAL_SEED replay a different simulated period as a holdout check.
+  ANCHOR = Date.parse(process.env.EVAL_ANCHOR || '2026-09-30T12:00:00+05:30'),
   BUFFER = 2,
   CONFIGURED_MINUTES = 12;
 
@@ -17,7 +18,7 @@ async function evaluate() {
   const { buildDemoDirectory, PATIENTS_PER_CLINIC } = await import('../demo/demoDirectory.js');
   const { simulateDay } = await import('../demo/simulation.js');
   const { clinicDate } = await import('../lib/time.js');
-  const { backtestWaits, formulaPredictor, learnedPredictor } =
+  const { backtestWaits, formulaPredictor, learnedPredictor, snapshots } =
     await import('../services/waitBacktest.js');
   const { trainClinicModels, consultationSamples } =
     await import('../services/predictionService.js');
@@ -49,7 +50,7 @@ async function evaluate() {
         dayIndex: DAYS - day,
         patients: patients.slice(index * PATIENTS_PER_CLINIC, (index + 1) * PATIENTS_PER_CLINIC),
         seenBefore: seen,
-        idPrefix: 'eval',
+        idPrefix: process.env.EVAL_SEED || 'eval',
       });
       const linked = new Set(appointments.map((a) => a.tokenId));
       byClinic.set(doctor.clinicId, [
@@ -237,6 +238,34 @@ async function evaluate() {
     }),
   );
   const allTokens = [...byClinic.values()].flat();
+  // How long patients actually waited on the evaluation days, to put errors in proportion.
+  const evaluatedDays = new Set(
+    [...new Set(allTokens.map((t) => t.queueDate!))].sort().slice(-EVALUATION_DAYS),
+  );
+  const waits: { minutes: number; walkIn: boolean }[] = [];
+  for (const doctor of doctors) {
+    const own = allTokens.filter((t) => t.doctorId === doctor.id && evaluatedDays.has(t.queueDate!));
+    for (const day of evaluatedDays)
+      for (const s of snapshots(own.filter((t) => t.queueDate === day), new Set()))
+        waits.push({
+          minutes: (Date.parse(s.target.calledAt!) - s.at) / 60000,
+          walkIn: s.target.isWalkIn,
+        });
+  }
+  const waitStats = (list: number[]) => {
+    const sorted = [...list].sort((a, b) => a - b);
+    return {
+      cases: sorted.length,
+      meanMinutes: round(sorted.reduce((sum, v) => sum + v, 0) / sorted.length),
+      medianMinutes: round(sorted[Math.floor(sorted.length / 2)]),
+      p90Minutes: round(sorted[Math.floor(sorted.length * 0.9)]),
+    };
+  };
+  const actualWaits = {
+    all: waitStats(waits.map((w) => w.minutes)),
+    walkIn: waitStats(waits.filter((w) => w.walkIn).map((w) => w.minutes)),
+    booked: waitStats(waits.filter((w) => !w.walkIn).map((w) => w.minutes)),
+  };
   const report = {
     generatedAt: new Date().toISOString(),
     dataset: {
@@ -257,13 +286,17 @@ async function evaluate() {
     waitTimeBacktest: scores,
     waitTimeByArrival: byArrival,
     consultationDuration: { ...durationStudy, observedMeanByMethod },
+    actualWaits,
   };
   const dir = path.resolve(
     process.cwd(),
     process.cwd().endsWith('backend') ? '../docs/evaluation' : 'docs/evaluation',
   );
   await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, 'wait-model-evaluation.json'), JSON.stringify(report, null, 2));
+  await writeFile(
+    path.join(dir, process.env.EVAL_OUT || 'wait-model-evaluation.json'),
+    JSON.stringify(report, null, 2),
+  );
   console.log(JSON.stringify(report.dataset, null, 2));
   console.table(
     Object.fromEntries(

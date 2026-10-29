@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-24T10:26:13.462Z",
+  "generatedAt": "2026-10-29T17:09:16.474Z",
   "dataset": {
     "description": "Simulated outpatient sessions (synthetic; no real patient data).",
     "clinics": 6,
@@ -346,6 +346,26 @@
         "minMinutes": 12.8,
         "maxMinutes": 20.65
       }
+    }
+  },
+  "actualWaits": {
+    "all": {
+      "cases": 11588,
+      "meanMinutes": 25.86,
+      "medianMinutes": 13.63,
+      "p90Minutes": 67.01
+    },
+    "walkIn": {
+      "cases": 7447,
+      "meanMinutes": 32.24,
+      "medianMinutes": 14.34,
+      "p90Minutes": 91.94
+    },
+    "booked": {
+      "cases": 4141,
+      "meanMinutes": 14.39,
+      "medianMinutes": 13.16,
+      "p90Minutes": 26.22
     }
   }
 }

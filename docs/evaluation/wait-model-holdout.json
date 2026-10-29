@@ -1,0 +1,371 @@
+{
+  "generatedAt": "2026-10-29T17:13:44.517Z",
+  "dataset": {
+    "description": "Simulated outpatient sessions (synthetic; no real patient data).",
+    "clinics": 6,
+    "doctors": 48,
+    "days": 60,
+    "evaluationDays": 21,
+    "visits": 35270,
+    "completedConsultations": 32813,
+    "noShows": 1134,
+    "cancellations": 1323,
+    "walkIns": 21203,
+    "emergencies": 696,
+    "configuredMinutes": 12,
+    "bufferMinutes": 2
+  },
+  "waitTimeBacktest": {
+    "practice_queue_length": {
+      "cases": 11677,
+      "maeMinutes": 11.59,
+      "medianAbsoluteErrorMinutes": 8.64,
+      "rmseMinutes": 17.28,
+      "meanBiasMinutes": -5.8,
+      "withinFiveMinutes": 0.35,
+      "withinTenMinutes": 0.58,
+      "rangeCoverage80": null
+    },
+    "practice_queue_length_feedback": {
+      "cases": 11677,
+      "maeMinutes": 12.21,
+      "medianAbsoluteErrorMinutes": 9.85,
+      "rmseMinutes": 17.12,
+      "meanBiasMinutes": 0.23,
+      "withinFiveMinutes": 0.3,
+      "withinTenMinutes": 0.51,
+      "rangeCoverage80": null
+    },
+    "practice_last_to_enter_service": {
+      "cases": 11677,
+      "maeMinutes": 20.23,
+      "medianAbsoluteErrorMinutes": 11.69,
+      "rmseMinutes": 34.86,
+      "meanBiasMinutes": -11.64,
+      "withinFiveMinutes": 0.25,
+      "withinTenMinutes": 0.45,
+      "rangeCoverage80": null
+    },
+    "practice_rolling_average_1h": {
+      "cases": 11677,
+      "maeMinutes": 19.89,
+      "medianAbsoluteErrorMinutes": 10.62,
+      "rmseMinutes": 35.25,
+      "meanBiasMinutes": -12.89,
+      "withinFiveMinutes": 0.27,
+      "withinTenMinutes": 0.48,
+      "rangeCoverage80": null
+    },
+    "practice_rolling_average_2h": {
+      "cases": 11677,
+      "maeMinutes": 20.19,
+      "medianAbsoluteErrorMinutes": 10.32,
+      "rmseMinutes": 36.27,
+      "meanBiasMinutes": -13.6,
+      "withinFiveMinutes": 0.26,
+      "withinTenMinutes": 0.49,
+      "rangeCoverage80": null
+    },
+    "practice_rolling_average_4h": {
+      "cases": 11677,
+      "maeMinutes": 20.22,
+      "medianAbsoluteErrorMinutes": 10.26,
+      "rmseMinutes": 36.4,
+      "meanBiasMinutes": -13.68,
+      "withinFiveMinutes": 0.26,
+      "withinTenMinutes": 0.49,
+      "rangeCoverage80": null
+    },
+    "research_q_lasso": {
+      "cases": 11677,
+      "maeMinutes": 9.56,
+      "medianAbsoluteErrorMinutes": 6.52,
+      "rmseMinutes": 14.31,
+      "meanBiasMinutes": 0.63,
+      "withinFiveMinutes": 0.41,
+      "withinTenMinutes": 0.67,
+      "rangeCoverage80": null
+    },
+    "research_quantile_regression": {
+      "cases": 11677,
+      "maeMinutes": 8.92,
+      "medianAbsoluteErrorMinutes": 5.18,
+      "rmseMinutes": 14.38,
+      "meanBiasMinutes": -1.45,
+      "withinFiveMinutes": 0.49,
+      "withinTenMinutes": 0.72,
+      "rangeCoverage80": null
+    },
+    "research_gradient_boosting": {
+      "cases": 11677,
+      "maeMinutes": 7.39,
+      "medianAbsoluteErrorMinutes": 4.01,
+      "rmseMinutes": 12.67,
+      "meanBiasMinutes": 0.55,
+      "withinFiveMinutes": 0.57,
+      "withinTenMinutes": 0.78,
+      "rangeCoverage80": null
+    },
+    "proposed_projection_boosting": {
+      "cases": 11677,
+      "maeMinutes": 6.6,
+      "medianAbsoluteErrorMinutes": 3.35,
+      "rmseMinutes": 11.92,
+      "meanBiasMinutes": -0.48,
+      "withinFiveMinutes": 0.63,
+      "withinTenMinutes": 0.81,
+      "rangeCoverage80": 0.88
+    },
+    "formula_original": {
+      "cases": 11677,
+      "maeMinutes": 27.8,
+      "medianAbsoluteErrorMinutes": 19.28,
+      "rmseMinutes": 38.23,
+      "meanBiasMinutes": 12.13,
+      "withinFiveMinutes": 0.16,
+      "withinTenMinutes": 0.29,
+      "rangeCoverage80": null
+    },
+    "ridge_v1": {
+      "cases": 11677,
+      "maeMinutes": 11.36,
+      "medianAbsoluteErrorMinutes": 8.73,
+      "rmseMinutes": 16.6,
+      "meanBiasMinutes": -3.42,
+      "withinFiveMinutes": 0.34,
+      "withinTenMinutes": 0.57,
+      "rangeCoverage80": null
+    },
+    "queue_projection_configured_durations": {
+      "cases": 11677,
+      "maeMinutes": 15.55,
+      "medianAbsoluteErrorMinutes": 8.71,
+      "rmseMinutes": 26.39,
+      "meanBiasMinutes": -0.3,
+      "withinFiveMinutes": 0.35,
+      "withinTenMinutes": 0.53,
+      "rangeCoverage80": null
+    },
+    "lognormal_v2_without_no_show": {
+      "cases": 11677,
+      "maeMinutes": 9.57,
+      "medianAbsoluteErrorMinutes": 5.14,
+      "rmseMinutes": 15.59,
+      "meanBiasMinutes": 1.73,
+      "withinFiveMinutes": 0.49,
+      "withinTenMinutes": 0.68,
+      "rangeCoverage80": 0.83
+    },
+    "lognormal_v2_parametric_range": {
+      "cases": 11677,
+      "maeMinutes": 9.44,
+      "medianAbsoluteErrorMinutes": 4.99,
+      "rmseMinutes": 15.55,
+      "meanBiasMinutes": 0.71,
+      "withinFiveMinutes": 0.5,
+      "withinTenMinutes": 0.68,
+      "rangeCoverage80": 0.5
+    },
+    "lognormal_v2": {
+      "cases": 11677,
+      "maeMinutes": 9.44,
+      "medianAbsoluteErrorMinutes": 4.99,
+      "rmseMinutes": 15.55,
+      "meanBiasMinutes": 0.71,
+      "withinFiveMinutes": 0.5,
+      "withinTenMinutes": 0.68,
+      "rangeCoverage80": 0.83
+    },
+    "lognormal_v2_history_3_days": {
+      "cases": 11677,
+      "maeMinutes": 9.77,
+      "medianAbsoluteErrorMinutes": 5.26,
+      "rmseMinutes": 16.37,
+      "meanBiasMinutes": 0.48,
+      "withinFiveMinutes": 0.49,
+      "withinTenMinutes": 0.68,
+      "rangeCoverage80": 0.82
+    },
+    "lognormal_v2_history_7_days": {
+      "cases": 11677,
+      "maeMinutes": 9.61,
+      "medianAbsoluteErrorMinutes": 5.06,
+      "rmseMinutes": 16.05,
+      "meanBiasMinutes": 0.33,
+      "withinFiveMinutes": 0.5,
+      "withinTenMinutes": 0.69,
+      "rangeCoverage80": 0.83
+    },
+    "lognormal_v2_history_14_days": {
+      "cases": 11677,
+      "maeMinutes": 9.48,
+      "medianAbsoluteErrorMinutes": 5.01,
+      "rmseMinutes": 15.82,
+      "meanBiasMinutes": 0.22,
+      "withinFiveMinutes": 0.5,
+      "withinTenMinutes": 0.69,
+      "rangeCoverage80": 0.83
+    }
+  },
+  "waitTimeByArrival": {
+    "practice_queue_length": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 12.68,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 9.55
+    },
+    "practice_queue_length_feedback": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 13.83,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 9.18
+    },
+    "practice_last_to_enter_service": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 24.2,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 12.78
+    },
+    "practice_rolling_average_1h": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 24.77,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 10.75
+    },
+    "practice_rolling_average_2h": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 25.62,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 10
+    },
+    "practice_rolling_average_4h": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 25.74,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 9.88
+    },
+    "research_q_lasso": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 11.4,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 6.11
+    },
+    "research_quantile_regression": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 10.87,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 5.26
+    },
+    "research_gradient_boosting": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 8.99,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 4.39
+    },
+    "proposed_projection_boosting": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 7.96,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 4.04
+    },
+    "formula_original": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 34.68,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 14.9
+    },
+    "ridge_v1": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 12.52,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 9.18
+    },
+    "queue_projection_configured_durations": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 20.9,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 5.5
+    },
+    "lognormal_v2_without_no_show": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 12.5,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 4.09
+    },
+    "lognormal_v2_parametric_range": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 12.34,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 4.01
+    },
+    "lognormal_v2": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 12.34,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 4.01
+    },
+    "lognormal_v2_history_3_days": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 12.81,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 4.07
+    },
+    "lognormal_v2_history_7_days": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 12.6,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 4.01
+    },
+    "lognormal_v2_history_14_days": {
+      "walkInCases": 7614,
+      "walkInMaeMinutes": 12.42,
+      "bookedCases": 4063,
+      "bookedMaeMinutes": 3.99
+    }
+  },
+  "consultationDuration": {
+    "doctors": 48,
+    "selected": {
+      "hierarchical_lognormal": 40,
+      "configured": 8
+    },
+    "maeByCandidate": {
+      "ridge_v1": 3.49,
+      "configured": 5.4,
+      "doctor_history": 3.73,
+      "hierarchical_lognormal": 2.76
+    },
+    "observedMeanByMethod": {
+      "hierarchical_lognormal": {
+        "doctors": 40,
+        "minMinutes": 5.28,
+        "maxMinutes": 29.23
+      },
+      "configured": {
+        "doctors": 8,
+        "minMinutes": 12.72,
+        "maxMinutes": 20.79
+      }
+    }
+  },
+  "actualWaits": {
+    "all": {
+      "cases": 11677,
+      "meanMinutes": 25.07,
+      "medianMinutes": 13.63,
+      "p90Minutes": 64.89
+    },
+    "walkIn": {
+      "cases": 7614,
+      "meanMinutes": 30.71,
+      "medianMinutes": 14.4,
+      "p90Minutes": 88.63
+    },
+    "booked": {
+      "cases": 4063,
+      "meanMinutes": 14.49,
+      "medianMinutes": 13.08,
+      "p90Minutes": 26.59
+    }
+  }
+}
