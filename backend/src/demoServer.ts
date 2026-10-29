@@ -10,7 +10,7 @@ process.env.DEMO_ALL_CLINICS = process.env.DEMO_ALL_CLINICS || 'true';
 process.env.CLINIC_DISCOVERY = process.env.CLINIC_DISCOVERY || 'true';
 process.env.CORS_ORIGINS =
   process.env.CORS_ORIGINS ||
-  'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5000,http://127.0.0.1:5000,https://localhost';
+  'http://localhost:5180,http://127.0.0.1:5180,http://localhost:5000,http://127.0.0.1:5000,https://localhost';
 async function start() {
   const { seedLocalDemo } = await import('./demo/localDatabase.js');
   await seedLocalDemo();

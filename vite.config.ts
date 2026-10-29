@@ -8,7 +8,9 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     build: { outDir: mode === 'mobile' ? 'dist-mobile' : 'dist' },
     server: {
-      port: 5173,
+      // 5173 is Vite's default and is often taken by other local projects.
+      port: 5180,
+      strictPort: true,
       watch: {
         // Backend compilation and verification artifacts must not reset an in-progress booking.
         ignored: ['**/backend/**', '**/docs/**', '**/dist/**', '**/dist-mobile/**',

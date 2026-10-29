@@ -72,7 +72,7 @@ npm run db:up
 npm run dev:demo
 ```
 
-Open http://localhost:5173. The demo uses DynamoDB Local on loopback port 18000 with the table
+Open http://localhost:5180. The demo uses DynamoDB Local on loopback port 18000 with the table
 `QureFlowDemo` and local password authentication; it never touches AWS. The first start builds a
 synthetic dataset (6 fictional clinics, 48 doctors, 12 specialties, ~740 patients, 14 days of
 simulated sessions, today's queues and three booked future days); this takes several minutes.
