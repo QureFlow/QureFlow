@@ -85,16 +85,24 @@ export const qLassoPredictor =
       point(linear(model.w, model.b, scale(features(data.index, s, defaultMinutes, buffer))));
   };
 
-/** Median regression by iteratively reweighted least squares (small ridge for stability). */
-function medianRegression(x: number[][], y: number[]) {
+/**
+ * Linear least squares, reweighted on each pass (small ridge for stability). One unweighted
+ * pass is ordinary least squares; weights 1/|residual| over 40 passes give median regression.
+ */
+function reweightedLeastSquares(
+  x: number[][],
+  y: number[],
+  passes: number,
+  weightOf: (residual: number) => number,
+) {
   const width = x[0].length + 1;
   let beta = new Array(width).fill(0);
-  for (let iter = 0; iter < 40; iter++) {
+  for (let iter = 0; iter < passes; iter++) {
     const a = Array.from({ length: width }, () => new Array(width + 1).fill(0));
     x.forEach((row, i) => {
       const r = [1, ...row];
       const residual = y[i] - r.reduce((s, v, j) => s + v * beta[j], 0);
-      const weight = 1 / Math.max(0.5, Math.abs(residual));
+      const weight = weightOf(residual);
       for (let p = 0; p < width; p++) {
         for (let q = 0; q < width; q++) a[p][q] += weight * r[p] * r[q];
         a[p][width] += weight * r[p] * y[i];
@@ -118,6 +126,19 @@ function medianRegression(x: number[][], y: number[]) {
   }
   return (row: number[]) => [1, ...row].reduce((s, v, j) => s + v * beta[j], 0);
 }
+const medianRegression = (x: number[][], y: number[]) =>
+  reweightedLeastSquares(x, y, 40, (residual) => 1 / Math.max(0.5, Math.abs(residual)));
+
+/** Ordinary least squares on the same features: the linear baseline of Li et al. (2023). */
+export const linearRegressionPredictor =
+  (defaultMinutes: number, buffer: number): PredictorFactory =>
+  (history) => {
+    const data = dataset(history, defaultMinutes, buffer);
+    if (data.x.length < 50) return (s) => point(queueLength(data.index, s, defaultMinutes, buffer));
+    const scale = standardiser(data.x);
+    const predict = reweightedLeastSquares(data.x.map(scale), data.y, 1, () => 1);
+    return (s) => point(predict(scale(features(data.index, s, defaultMinutes, buffer))));
+  };
 
 export const quantileRegressionPredictor =
   (defaultMinutes: number, buffer: number): PredictorFactory =>

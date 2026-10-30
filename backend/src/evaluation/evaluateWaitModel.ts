@@ -33,8 +33,10 @@ async function evaluate() {
     qLassoPredictor,
     quantileRegressionPredictor,
     gradientBoostingPredictor,
+    linearRegressionPredictor,
     projectionBoostingPredictor,
   } = await import('./researchBaselines.js');
+  const { erlangCPredictor } = await import('./queueingBaselines.js');
   type QueueToken = import('../models/types.js').QueueToken;
   type PredictorFactory = import('../services/waitBacktest.js').PredictorFactory;
 
@@ -109,7 +111,10 @@ async function evaluate() {
     practice_rolling_average_1h: rollingAveragePredictor(1, CONFIGURED_MINUTES, BUFFER),
     practice_rolling_average_2h: rollingAveragePredictor(2, CONFIGURED_MINUTES, BUFFER),
     practice_rolling_average_4h: rollingAveragePredictor(4, CONFIGURED_MINUTES, BUFFER),
+    // Steady-state queueing theory (see queueingBaselines.ts).
+    theory_erlang_c: erlangCPredictor(CONFIGURED_MINUTES, BUFFER),
     // Learned predictors from the research literature (see researchBaselines.ts for sources).
+    research_linear_regression: linearRegressionPredictor(CONFIGURED_MINUTES, BUFFER),
     research_q_lasso: qLassoPredictor(CONFIGURED_MINUTES, BUFFER),
     research_quantile_regression: quantileRegressionPredictor(CONFIGURED_MINUTES, BUFFER),
     research_gradient_boosting: gradientBoostingPredictor(CONFIGURED_MINUTES, BUFFER),
@@ -132,7 +137,14 @@ async function evaluate() {
     lognormal_v2_history_14_days: recent(14, learned),
   };
 
-  const errors: Record<string, { error: number; inRange: boolean; walkIn: boolean }[]> = {};
+  type CaseError = {
+    error: number;
+    actual: number;
+    inRange: boolean;
+    walkIn: boolean;
+    cluster: string;
+  };
+  const errors: Record<string, CaseError[]> = {};
   for (const tokens of byClinic.values()) {
     const result = backtestWaits(tokens, {
       defaultMinutes: CONFIGURED_MINUTES,
@@ -156,6 +168,12 @@ async function evaluate() {
       },
     ]),
   );
+  const sse = (list: CaseError[]) => list.reduce((s, e) => s + e.error ** 2, 0);
+  const sst = (list: CaseError[]) => {
+    const mean = list.reduce((s, e) => s + e.actual, 0) / list.length;
+    return list.reduce((s, e) => s + (e.actual - mean) ** 2, 0);
+  };
+  const longWaits = (list: CaseError[]) => list.filter((e) => e.actual >= 5);
   const scores = Object.fromEntries(
     Object.entries(errors).map(([name, list]) => {
       const abs = list.map((e) => Math.abs(e.error)).sort((a, b) => a - b);
@@ -169,6 +187,12 @@ async function evaluate() {
           meanBiasMinutes: round(list.reduce((s, e) => s + e.error, 0) / list.length),
           withinFiveMinutes: round(list.filter((e) => Math.abs(e.error) <= 5).length / list.length),
           withinTenMinutes: round(list.filter((e) => Math.abs(e.error) <= 10).length / list.length),
+          rSquared: round(1 - sse(list) / sst(list)),
+          // Percentage errors explode for waits near zero, so MAPE covers waits of 5 min or more.
+          mapePercentWaitsAtLeast5: round(
+            (100 * longWaits(list).reduce((s, e) => s + Math.abs(e.error) / e.actual, 0)) /
+              longWaits(list).length,
+          ),
           rangeCoverage80:
             name.startsWith('lognormal') || name.startsWith('proposed')
               ? round(list.filter((e) => e.inRange).length / list.length)
@@ -177,6 +201,57 @@ async function evaluate() {
       ];
     }),
   );
+
+  // Paired cluster bootstrap of MAE differences. Every method is scored on the same cases in the
+  // same order, and whole doctor-sessions are resampled because errors within one are correlated.
+  const bootstrap = (method: string, baseline: string, resamples = 2000) => {
+    const a = errors[method],
+      b = errors[baseline];
+    const clusters = new Map<string, { diff: number; n: number }>();
+    a.forEach((e, i) => {
+      const c = clusters.get(e.cluster) || { diff: 0, n: 0 };
+      c.diff += Math.abs(e.error) - Math.abs(b[i].error);
+      c.n++;
+      clusters.set(e.cluster, c);
+    });
+    const list = [...clusters.values()];
+    let seed = 20261030;
+    const random = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const draws: number[] = [];
+    for (let r = 0; r < resamples; r++) {
+      let diff = 0,
+        n = 0;
+      for (let k = 0; k < list.length; k++) {
+        const c = list[Math.floor(random() * list.length)];
+        diff += c.diff;
+        n += c.n;
+      }
+      draws.push(diff / n);
+    }
+    draws.sort((x, y) => x - y);
+    const observed = list.reduce((s, c) => s + c.diff, 0) / list.reduce((s, c) => s + c.n, 0);
+    return {
+      method,
+      baseline,
+      sessions: list.length,
+      resamples,
+      maeDifferenceMinutes: round(observed),
+      ci95Minutes: [round(draws[Math.floor(resamples * 0.025)]), round(draws[Math.floor(resamples * 0.975)])],
+      shareOfResamplesNotBetter: round(draws.filter((d) => d >= 0).length / resamples),
+    };
+  };
+  const significance = [
+    'research_gradient_boosting',
+    'research_quantile_regression',
+    'practice_queue_length',
+    'theory_erlang_c',
+    'research_linear_regression',
+  ].map((baseline) => bootstrap('proposed_projection_boosting', baseline));
 
   // Consultation-duration accuracy on each doctor's most recent 20% of consultations.
   const durationStudy = {
@@ -285,6 +360,7 @@ async function evaluate() {
     },
     waitTimeBacktest: scores,
     waitTimeByArrival: byArrival,
+    significance,
     consultationDuration: { ...durationStudy, observedMeanByMethod },
     actualWaits,
   };
@@ -310,12 +386,15 @@ async function evaluate() {
           '≤5m': s.withinFiveMinutes,
           '≤10m': s.withinTenMinutes,
           cover80: s.rangeCoverage80,
+          R2: s.rSquared,
+          MAPE5: s.mapePercentWaitsAtLeast5,
         },
       ]),
     ),
   );
   console.table(byArrival);
   console.log(durationStudy);
+  console.table(significance);
 }
 evaluate().catch((e) => {
   console.error(e);

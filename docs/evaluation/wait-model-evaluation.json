@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-29T17:09:16.474Z",
+  "generatedAt": "2026-10-30T14:36:46.685Z",
   "dataset": {
     "description": "Simulated outpatient sessions (synthetic; no real patient data).",
     "clinics": 6,
@@ -24,6 +24,8 @@
       "meanBiasMinutes": -6.63,
       "withinFiveMinutes": 0.34,
       "withinTenMinutes": 0.58,
+      "rSquared": 0.77,
+      "mapePercentWaitsAtLeast5": 48.54,
       "rangeCoverage80": null
     },
     "practice_queue_length_feedback": {
@@ -34,6 +36,8 @@
       "meanBiasMinutes": -0.3,
       "withinFiveMinutes": 0.3,
       "withinTenMinutes": 0.52,
+      "rSquared": 0.79,
+      "mapePercentWaitsAtLeast5": 53.51,
       "rangeCoverage80": null
     },
     "practice_last_to_enter_service": {
@@ -44,6 +48,8 @@
       "meanBiasMinutes": -12.66,
       "withinFiveMinutes": 0.26,
       "withinTenMinutes": 0.45,
+      "rSquared": 0.05,
+      "mapePercentWaitsAtLeast5": 79.4,
       "rangeCoverage80": null
     },
     "practice_rolling_average_1h": {
@@ -54,6 +60,8 @@
       "meanBiasMinutes": -13.63,
       "withinFiveMinutes": 0.26,
       "withinTenMinutes": 0.49,
+      "rSquared": 0.05,
+      "mapePercentWaitsAtLeast5": 68.93,
       "rangeCoverage80": null
     },
     "practice_rolling_average_2h": {
@@ -64,6 +72,8 @@
       "meanBiasMinutes": -14.37,
       "withinFiveMinutes": 0.26,
       "withinTenMinutes": 0.49,
+      "rSquared": -0.01,
+      "mapePercentWaitsAtLeast5": 66.05,
       "rangeCoverage80": null
     },
     "practice_rolling_average_4h": {
@@ -74,6 +84,32 @@
       "meanBiasMinutes": -14.46,
       "withinFiveMinutes": 0.26,
       "withinTenMinutes": 0.49,
+      "rSquared": -0.02,
+      "mapePercentWaitsAtLeast5": 65.69,
+      "rangeCoverage80": null
+    },
+    "theory_erlang_c": {
+      "cases": 11588,
+      "maeMinutes": 92.25,
+      "medianAbsoluteErrorMinutes": 29,
+      "rmseMinutes": 161.63,
+      "meanBiasMinutes": 88.16,
+      "withinFiveMinutes": 0.1,
+      "withinTenMinutes": 0.21,
+      "rSquared": -15.85,
+      "mapePercentWaitsAtLeast5": 482.27,
+      "rangeCoverage80": null
+    },
+    "research_linear_regression": {
+      "cases": 11588,
+      "maeMinutes": 9.78,
+      "medianAbsoluteErrorMinutes": 6.43,
+      "rmseMinutes": 15.04,
+      "meanBiasMinutes": -0.06,
+      "withinFiveMinutes": 0.41,
+      "withinTenMinutes": 0.67,
+      "rSquared": 0.85,
+      "mapePercentWaitsAtLeast5": 44.1,
       "rangeCoverage80": null
     },
     "research_q_lasso": {
@@ -84,6 +120,8 @@
       "meanBiasMinutes": -0.07,
       "withinFiveMinutes": 0.41,
       "withinTenMinutes": 0.67,
+      "rSquared": 0.85,
+      "mapePercentWaitsAtLeast5": 42.91,
       "rangeCoverage80": null
     },
     "research_quantile_regression": {
@@ -94,6 +132,8 @@
       "meanBiasMinutes": -2.05,
       "withinFiveMinutes": 0.5,
       "withinTenMinutes": 0.71,
+      "rSquared": 0.84,
+      "mapePercentWaitsAtLeast5": 39.46,
       "rangeCoverage80": null
     },
     "research_gradient_boosting": {
@@ -104,6 +144,8 @@
       "meanBiasMinutes": 0.27,
       "withinFiveMinutes": 0.58,
       "withinTenMinutes": 0.78,
+      "rSquared": 0.89,
+      "mapePercentWaitsAtLeast5": 33.52,
       "rangeCoverage80": null
     },
     "proposed_projection_boosting": {
@@ -114,6 +156,8 @@
       "meanBiasMinutes": -0.57,
       "withinFiveMinutes": 0.63,
       "withinTenMinutes": 0.81,
+      "rSquared": 0.91,
+      "mapePercentWaitsAtLeast5": 28.7,
       "rangeCoverage80": 0.88
     },
     "formula_original": {
@@ -124,6 +168,8 @@
       "meanBiasMinutes": 11.93,
       "withinFiveMinutes": 0.16,
       "withinTenMinutes": 0.29,
+      "rSquared": -0.04,
+      "mapePercentWaitsAtLeast5": 137.31,
       "rangeCoverage80": null
     },
     "ridge_v1": {
@@ -134,6 +180,8 @@
       "meanBiasMinutes": -3.99,
       "withinFiveMinutes": 0.34,
       "withinTenMinutes": 0.57,
+      "rSquared": 0.81,
+      "mapePercentWaitsAtLeast5": 47.96,
       "rangeCoverage80": null
     },
     "queue_projection_configured_durations": {
@@ -144,6 +192,8 @@
       "meanBiasMinutes": -1.09,
       "withinFiveMinutes": 0.35,
       "withinTenMinutes": 0.53,
+      "rSquared": 0.46,
+      "mapePercentWaitsAtLeast5": 53.61,
       "rangeCoverage80": null
     },
     "lognormal_v2_without_no_show": {
@@ -154,6 +204,8 @@
       "meanBiasMinutes": 1.53,
       "withinFiveMinutes": 0.49,
       "withinTenMinutes": 0.68,
+      "rSquared": 0.82,
+      "mapePercentWaitsAtLeast5": 32.69,
       "rangeCoverage80": 0.83
     },
     "lognormal_v2_parametric_range": {
@@ -164,6 +216,8 @@
       "meanBiasMinutes": 0.38,
       "withinFiveMinutes": 0.49,
       "withinTenMinutes": 0.68,
+      "rSquared": 0.82,
+      "mapePercentWaitsAtLeast5": 31.13,
       "rangeCoverage80": 0.49
     },
     "lognormal_v2": {
@@ -174,6 +228,8 @@
       "meanBiasMinutes": 0.38,
       "withinFiveMinutes": 0.49,
       "withinTenMinutes": 0.68,
+      "rSquared": 0.82,
+      "mapePercentWaitsAtLeast5": 31.13,
       "rangeCoverage80": 0.83
     },
     "lognormal_v2_history_3_days": {
@@ -184,6 +240,8 @@
       "meanBiasMinutes": 0.06,
       "withinFiveMinutes": 0.48,
       "withinTenMinutes": 0.68,
+      "rSquared": 0.8,
+      "mapePercentWaitsAtLeast5": 32.36,
       "rangeCoverage80": 0.81
     },
     "lognormal_v2_history_7_days": {
@@ -194,6 +252,8 @@
       "meanBiasMinutes": 0.04,
       "withinFiveMinutes": 0.49,
       "withinTenMinutes": 0.69,
+      "rSquared": 0.81,
+      "mapePercentWaitsAtLeast5": 31.08,
       "rangeCoverage80": 0.82
     },
     "lognormal_v2_history_14_days": {
@@ -204,6 +264,8 @@
       "meanBiasMinutes": -0.07,
       "withinFiveMinutes": 0.5,
       "withinTenMinutes": 0.69,
+      "rSquared": 0.82,
+      "mapePercentWaitsAtLeast5": 30.63,
       "rangeCoverage80": 0.82
     }
   },
@@ -243,6 +305,18 @@
       "walkInMaeMinutes": 27.4,
       "bookedCases": 4141,
       "bookedMaeMinutes": 9.55
+    },
+    "theory_erlang_c": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 100.8,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 76.87
+    },
+    "research_linear_regression": {
+      "walkInCases": 7447,
+      "walkInMaeMinutes": 11.82,
+      "bookedCases": 4141,
+      "bookedMaeMinutes": 6.12
     },
     "research_q_lasso": {
       "walkInCases": 7447,
@@ -323,6 +397,68 @@
       "bookedMaeMinutes": 3.95
     }
   },
+  "significance": [
+    {
+      "method": "proposed_projection_boosting",
+      "baseline": "research_gradient_boosting",
+      "sessions": 1008,
+      "resamples": 2000,
+      "maeDifferenceMinutes": -0.85,
+      "ci95Minutes": [
+        -0.98,
+        -0.73
+      ],
+      "shareOfResamplesNotBetter": 0
+    },
+    {
+      "method": "proposed_projection_boosting",
+      "baseline": "research_quantile_regression",
+      "sessions": 1008,
+      "resamples": 2000,
+      "maeDifferenceMinutes": -2.72,
+      "ci95Minutes": [
+        -2.95,
+        -2.49
+      ],
+      "shareOfResamplesNotBetter": 0
+    },
+    {
+      "method": "proposed_projection_boosting",
+      "baseline": "practice_queue_length",
+      "sessions": 1008,
+      "resamples": 2000,
+      "maeDifferenceMinutes": -5.51,
+      "ci95Minutes": [
+        -5.83,
+        -5.2
+      ],
+      "shareOfResamplesNotBetter": 0
+    },
+    {
+      "method": "proposed_projection_boosting",
+      "baseline": "theory_erlang_c",
+      "sessions": 1008,
+      "resamples": 2000,
+      "maeDifferenceMinutes": -85.66,
+      "ci95Minutes": [
+        -93.43,
+        -78.45
+      ],
+      "shareOfResamplesNotBetter": 0
+    },
+    {
+      "method": "proposed_projection_boosting",
+      "baseline": "research_linear_regression",
+      "sessions": 1008,
+      "resamples": 2000,
+      "maeDifferenceMinutes": -3.19,
+      "ci95Minutes": [
+        -3.39,
+        -2.99
+      ],
+      "shareOfResamplesNotBetter": 0
+    }
+  ],
   "consultationDuration": {
     "doctors": 48,
     "selected": {

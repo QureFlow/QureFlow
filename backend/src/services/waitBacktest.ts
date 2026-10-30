@@ -218,8 +218,10 @@ export function backtestWaits(tokens: QueueToken[], options: BacktestOptions) {
   const evaluated = days.slice(-options.evaluationDays);
   // Interval coverage is reported only for methods that give a range at all.
   const ranged = new Set<string>();
-  const errors: Record<string, { error: number; inRange: boolean; walkIn: boolean }[]> =
-    Object.fromEntries(Object.keys(predictors).map((name) => [name, []]));
+  const errors: Record<
+    string,
+    { error: number; actual: number; inRange: boolean; walkIn: boolean; cluster: string }[]
+  > = Object.fromEntries(Object.keys(predictors).map((name) => [name, []]));
   const doctorIds = [...new Set(tokens.map((t) => t.doctorId))];
   for (const day of evaluated) {
     const history = tokens.filter((t) => t.queueDate! < day);
@@ -242,8 +244,11 @@ export function backtestWaits(tokens: QueueToken[], options: BacktestOptions) {
           if (estimate.high > estimate.low) ranged.add(name);
           errors[name].push({
             error: estimate.minutes - actual,
+            actual,
             inRange: actual >= estimate.low - 0.5 && actual <= estimate.high + 0.5,
             walkIn: snapshot.target.isWalkIn,
+            // One doctor's session: errors within it are correlated, so it is the bootstrap unit.
+            cluster: `${day}|${doctorId}`,
           });
         }
       }
