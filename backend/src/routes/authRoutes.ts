@@ -24,6 +24,13 @@ router.post(
     res.json(await authService.login(data.identifier, data.password));
   }),
 );
+router.post(
+  '/guest',
+  route(async (req, res) => {
+    const data = parse(z.object({ role: z.enum(['patient', 'staff']) }).strict(), req.body);
+    res.json(await authService.guestLogin(data.role));
+  }),
+);
 router.get(
   '/me',
   authenticateToken,

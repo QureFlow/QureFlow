@@ -52,6 +52,11 @@ export const authService = {
       throw new Error('Use the patient portal for this account.');
     return saveSession(session);
   },
+  async loginGuest(role: 'patient' | 'staff'): Promise<User> {
+    return saveSession(
+      await apiClient.post<{ user: User; token: string }>('/auth/guest', { role }),
+    );
+  },
   async registerPatient(data: {
     name: string;
     phone: string;

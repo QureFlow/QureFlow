@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Phone, Lock, ArrowRight, Shield } from 'lucide-react';
 
 export const PatientLogin: React.FC = () => {
-  const { loginPatient } = useAuth();
+  const { loginPatient, loginGuest } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [identifier, setIdentifier] = useState('');
@@ -118,6 +118,30 @@ export const PatientLogin: React.FC = () => {
               Sign in to Patient Portal
             </Button>
           </form>
+
+          {import.meta.env.VITE_GUEST_LOGIN === 'true' && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              className="w-full mt-3"
+              disabled={isLoading}
+              onClick={async () => {
+                try {
+                  setIsLoading(true);
+                  setError('');
+                  await loginGuest('patient');
+                  navigate('/patient/dashboard', { replace: true });
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : 'Guest sign-in failed');
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+            >
+              Continue as guest patient
+            </Button>
+          )}
 
           {/* Demo account quick filler */}
           {import.meta.env.VITE_ENABLE_DEMO_HINTS === 'true' && (

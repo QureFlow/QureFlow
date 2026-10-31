@@ -1,8 +1,9 @@
 import { Activity, Baby, Bone, Brain, Ear, Eye, Flower2, HeartPulse, Smile, Stethoscope, Wind } from 'lucide-react';
+import { specialtyDepartment } from './specialtyPhotography';
 
 // Shared visual identity for specialties in the directory and doctor profiles.
 export const specialtyAppearance = (name: string) => {
-  switch (name.toLowerCase()) {
+  switch (specialtyDepartment(name)) {
     case 'cardiology': return { Icon: HeartPulse, tone: 'coral', description: 'Heart & cardiovascular care' };
     case 'orthopedics': return { Icon: Bone, tone: 'gold', description: 'Bone, joint & mobility care' };
     case 'neurology': return { Icon: Brain, tone: 'lavender', description: 'Brain & nervous system' };

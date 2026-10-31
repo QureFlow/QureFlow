@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Shield, Lock, ArrowRight, UserCheck } from 'lucide-react';
 
 export const AdminLogin: React.FC = () => {
-  const { loginAdmin } = useAuth();
+  const { loginAdmin, loginGuest } = useAuth();
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -127,6 +127,30 @@ export const AdminLogin: React.FC = () => {
               Sign in to Staff Console
             </Button>
           </form>
+
+          {import.meta.env.VITE_GUEST_LOGIN === 'true' && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              className="w-full mt-3"
+              disabled={isLoading}
+              onClick={async () => {
+                try {
+                  setIsLoading(true);
+                  setError('');
+                  await loginGuest('staff');
+                  navigate('/admin/dashboard');
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : 'Guest sign-in failed');
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+            >
+              Continue as guest staff (demo clinic)
+            </Button>
+          )}
 
           {/* Demo account quick filler */}
           {import.meta.env.VITE_ENABLE_DEMO_HINTS === 'true' && (

@@ -115,6 +115,40 @@ export class AuthService {
       throw new AppError(401, 'Invalid identifier or password.');
     return { user: publicUser(user), token: this.generateToken(user) };
   }
+  /**
+   * Temporary guest sessions for demonstrations, enabled with GUEST_LOGIN=true. Each role has
+   * one fixed synthetic account with no password or Cognito identity; the staff guest
+   * administers a demo clinic only, so it never sees a real clinic's patients.
+   */
+  async guestLogin(role: 'patient' | 'staff') {
+    if (process.env.GUEST_LOGIN !== 'true') throw new AppError(404, 'Guest access is not enabled.');
+    const guest: User =
+      role === 'patient'
+        ? {
+            id: 'guest-patient',
+            name: 'Guest Patient',
+            phone: '0000000001',
+            email: 'guest.patient@example.invalid',
+            role: 'patient',
+            createdAt: new Date().toISOString(),
+            sessionVersion: 0,
+            metadata: { synthetic: true, guest: true },
+          }
+        : {
+            id: 'guest-staff',
+            name: 'Guest Clinic Administrator',
+            phone: '0000000002',
+            email: 'guest.staff@example.invalid',
+            staffId: 'GUEST-STAFF',
+            role: 'admin',
+            clinicId: 'demo-clinic-1',
+            createdAt: new Date().toISOString(),
+            sessionVersion: 0,
+            metadata: { synthetic: true, guest: true },
+          };
+    const user = (await db.getUserById(guest.id)) || (await db.saveUser(guest));
+    return { user: publicUser(user), token: this.generateToken(user) };
+  }
   async forgotPassword(identifier: string) {
     if (typeof identifier !== 'string')
       throw new AppError(400, 'Enter your registered email or phone.');

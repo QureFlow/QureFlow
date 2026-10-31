@@ -13,6 +13,7 @@
     "verify:aws": "tsx src/verifyAws.ts",
     "verify:demo": "tsx src/demo/verifyDataset.ts",
     "demo:reset": "tsx src/demo/resetLocalDemo.ts",
+    "demo:cloud": "tsx src/demo/cloudDemoDirectory.ts",
     "evaluate:model": "tsx src/evaluation/evaluateWaitModel.ts",
     "test": "tsx tests/backend.test.ts",
     "test:discovery": "tsx --test tests/discovery.test.ts tests/localDiscovery.test.ts"

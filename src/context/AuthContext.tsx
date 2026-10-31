@@ -16,6 +16,7 @@ interface AuthContextType {
     password?: string;
   }) => Promise<void>;
   loginAdmin: (identifier: string, password?: string) => Promise<void>;
+  loginGuest: (role: 'patient' | 'staff') => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -72,6 +73,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(logged);
   };
 
+  const loginGuest = async (role: 'patient' | 'staff') => {
+    setUser(await authService.loginGuest(role));
+  };
+
   const logout = async () => {
     await authService.logout();
     setUser(null);
@@ -85,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginPatient,
         registerPatient,
         loginAdmin,
+        loginGuest,
         logout,
       }}
     >

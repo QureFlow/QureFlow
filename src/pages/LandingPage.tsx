@@ -7,7 +7,7 @@ import { useQueue } from '../context/QueueContext';
 import { useAuth } from '../context/AuthContext';
 import { DoctorCard } from '../components/patient/DoctorCard';
 import { specialtyAppearance } from '../lib/specialtyAppearance';
-import { specialtyPhotography } from '../lib/specialtyPhotography';
+import { specialtyDepartment, specialtyPhotography } from '../lib/specialtyPhotography';
 
 export const LandingPage = () => {
   const { doctors, clinics } = useQueue();
@@ -16,6 +16,16 @@ export const LandingPage = () => {
   const patientPath = user?.role === 'patient' ? '/patient/dashboard' : '/patient/login';
   const staffPath = user && user.role !== 'patient' ? '/admin/dashboard' : '/admin/login';
   const specialties = [...new Set(doctors.map((d) => d.specialization))];
+  // One card per department: names that map to the same department share a photo, so the card
+  // links to the name with the most doctors.
+  const doctorsIn = (name: string) => doctors.filter((d) => d.specialization === name).length;
+  const departmentCards = [...specialties]
+    .sort((a, b) => doctorsIn(b) - doctorsIn(a) || a.localeCompare(b))
+    .filter((name, i, all) => {
+      const department = specialtyDepartment(name);
+      return !department || all.findIndex((other) => specialtyDepartment(other) === department) === i;
+    })
+    .sort((a, b) => a.localeCompare(b));
   const featured = [...doctors].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 3);
   const demo = doctors.some((d) => d.metadata?.synthetic === true);
 
@@ -99,7 +109,7 @@ export const LandingPage = () => {
         </section>
         <section className="qf-directory-strip" aria-label="Care directory overview">
           <div className="qf-container grid grid-cols-2 md:grid-cols-4 gap-y-6 py-7">
-            {[[String(doctors.length), 'Doctors in our directory'], [String(clinics.length), 'Connected care facilities'], [String(specialties.length), 'Medical specialties'], ['Your visit', 'From booking to consultation']].map(([value, label]) => (
+            {[[String(doctors.length), 'Doctors in our directory'], [String(clinics.length), 'Connected care facilities'], [String(departmentCards.length), 'Medical specialties'], ['Your visit', 'From booking to consultation']].map(([value, label]) => (
               <div key={label} className="qf-directory-stat"><strong className="block text-2xl font-semibold tracking-tight text-brand-900">{value}</strong><span className="block text-xs text-slate-500 mt-1.5">{label}</span></div>
             ))}
           </div>
@@ -110,7 +120,7 @@ export const LandingPage = () => {
             <Link to="/patient/doctors" className="qf-text-link">View all doctors <ArrowRight size={17} /></Link>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {specialties.map((specialty) => {
+            {departmentCards.map((specialty) => {
               const { description } = specialtyAppearance(specialty);
               const photo = specialtyPhotography(specialty);
               return (
